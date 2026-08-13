@@ -58,8 +58,18 @@ iframe { width: 100%; height: 380px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA LIMPA + BOTÃO FLASH
+# SCRIPT: MIRA LIMPA + BOTÃO FLASH + SOM DE BIP
 js_camera = """<script>
+function playBeep() {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+}
+
 function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(frame) {
@@ -131,7 +141,7 @@ if arquivo_pdf:
         if m_stop:
             stop_atual = int(m_stop.group(1))
         
-        # FILTRO EXATO DE TAMANHO DE RASTREIO (Pega apenas BR com 10 a 14 caracteres numéricos após)
+        # FILTRO EXATO DE TAMANHO DE RASTREIO
         cods_candidatos = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
         cods = [c for c in cods_candidatos if 12 <= len(c) <= 16]
         
@@ -174,12 +184,15 @@ if arquivo_pdf:
                 st.session_state.pacotes_bipados.add(cod)
                 num_p = stop_correspondente.get(cod, "?")
                 
+                # CHAMA O BIP DE SUCESSO
+                components.html("<script>playBeep();</script>", height=0)
+                
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
                 if len(lista) > 1: 
                     st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
 
-                # ÁUDIO
+                # ÁUDIO (VOZ)
                 if usar_audio:
                     pitch_val = "1.0"
                     rate_val = "1.0"
@@ -228,6 +241,10 @@ else:
         <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
         <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
         <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
+</div>"""
+    st.markdown(welcome_html, unsafe_allow_html=True)
+</div>
     </div>
 </div>"""
     st.markdown(welcome_html, unsafe_allow_html=True)
