@@ -28,10 +28,10 @@ with st.sidebar:
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
     
-    # SELEÇÃO DE TEMA / COR DO APP
+    # SELEÇÃO DE TEMA / COR DO APP (INCLUINDO RGB)
     tema_cor = st.selectbox(
         "🎨 Cor do Tema",
-        ["Preto (Dark)", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
+        ["Preto (Dark)", "RGB Gamer 🌈", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
     )
     
     arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
@@ -61,6 +61,9 @@ estilos_temas = {
     "Preto (Dark)": {
         "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500"
     },
+    "RGB Gamer 🌈": {
+        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC"
+    },
     "Branco (Light)": {
         "bg_app": "#F5F5F7", "text_app": "#1D1D1F", "card_bg": "#FFFFFF", "border": "#E5E5EA", "accent": "#007AFF"
     },
@@ -77,7 +80,27 @@ estilos_temas = {
 
 t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
 
-# ESTILO VISUAL DINÂMICO PREMIUM
+# ANIMAÇÃO CSS RGB SE O TEMA FOR "RGB Gamer 🌈"
+css_rgb_anim = ""
+if tema_cor == "RGB Gamer 🌈":
+    css_rgb_anim = """
+    @keyframes rgbGlow {
+        0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+        20% { border-color: #FF8800; color: #FF8800; box-shadow: 0 0 12px rgba(255,136,0,0.5); }
+        40% { border-color: #FFFF00; color: #FFFF00; box-shadow: 0 0 12px rgba(255,255,0,0.5); }
+        60% { border-color: #00FF66; color: #00FF66; box-shadow: 0 0 12px rgba(0,255,102,0.5); }
+        80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
+        100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+    }
+    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {
+        animation: rgbGlow 6s infinite linear !important;
+    }
+    .upload-card, div[data-testid="stCustomComponentV1"] {
+        animation: rgbGlow 6s infinite linear !important;
+    }
+    """
+
+# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
@@ -137,6 +160,8 @@ div[data-testid="stCustomComponentV1"] {{
     width: 100%; height: 350px; display: flex; justify-content: center; align-items: center; border-radius: 16px; border: 2px solid {t['accent']}; background-color: #000000; margin-bottom: 15px; overflow: hidden; position: relative; 
 }}
 iframe {{ width: 100%; height: 350px; border: none; }}
+
+{css_rgb_anim}
 </style>
 """, unsafe_allow_html=True)
 
