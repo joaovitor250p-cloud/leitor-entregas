@@ -5,35 +5,49 @@ from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
 # Configuração da Página
-st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
+NOME_DO_APP = "PACOTE É MATO"
+URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
+
+st.set_page_config(
+    page_title=NOME_DO_APP,
+    page_icon=URL_DO_LOGO,
+    layout="centered"
+)
 
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# CSS e Scripts
+# ESTILO VISUAL PROFISSIONAL
 st.markdown("""
 <style>
 .stApp { background-color: #121212; color: #FFFFFF; }
-.block-container { padding-top: 2rem !important; }
+.block-container { padding-top: 2.5rem !important; padding-bottom: 2rem !important; }
+
+/* Cards */
+.welcome-card { background-color: #1E1E1E; padding: 24px; border-radius: 18px; border: 1px solid #333333; text-align: center; margin-bottom: 20px; }
+.welcome-logo { width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }
+.welcome-title { font-size: 1.5rem; font-weight: 800; color: #FF9500; }
+.stat-banner { background-color: #1E1E1E; border-radius: 12px; padding: 12px; border: 1px solid #333; display: flex; justify-content: space-around; margin-bottom: 15px; }
+.stat-value { font-size: 1.3rem; font-weight: bold; color: #28a745; }
+.stat-value-orange { font-size: 1.3rem; font-weight: bold; color: #FF9500; }
 .custom-card { background-color: #1E1E1E; padding: 18px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; }
-.stop-number-big { font-size: 3rem; font-weight: 900; color: #FF9500; }
+.stop-number-big { font-size: 3.5rem; font-weight: 900; color: #FF9500; line-height: 1; margin-bottom: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH + SOM DE BIP
-components.html("""<script>
+# SCRIPT: FLASH E SOM DE BIP
+js_setup = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();
-    osc.type = 'sine';
+    osc.type = 'square';
     osc.frequency.setValueAtTime(880, ctx.currentTime);
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.1);
 }
 
-// Flash Script
 function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(frame) {
@@ -55,46 +69,65 @@ function aplicarMelhorias() {
     });
 }
 setInterval(aplicarMelhorias, 300);
-</script>""", height=0)
+</script>"""
+components.html(js_setup, height=0)
 
 # MENU LATERAL
 with st.sidebar:
-    st.title("📦 PACOTE É MATO")
-    arquivo_pdf = st.file_uploader("📂 Enviar PDF", type=["pdf"])
-    if st.button("🔄 Zerar Rota"):
+    st.title(f"🚚 {NOME_DO_APP}")
+    arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
+    if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-# LÓGICA
-mapa_rotas, todos_pacotes = {}, set()
+# LÓGICA DE EXTRAÇÃO
+def extrair_endereco_limpo(texto):
+    match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
+    if match: return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
+    return None
+
+mapa_rotas, stop_correspondente, todos_pacotes = {}, {}, set()
+
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "".join([p.extract_text() + "\n" for p in leitor.pages])
-    for linha in texto.split('\n'):
-        cods = [c for c in re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE) if 12 <= len(c) <= 16]
+    linhas = texto.split('\n')
+    stop_atual = 0
+    for linha in linhas:
+        m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
+        if m_stop: stop_atual = int(m_stop.group(1))
+        cods_candidatos = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
+        cods = [c for c in cods_candidatos if 12 <= len(c) <= 16]
         for c in cods:
             c_u = c.upper()
             todos_pacotes.add(c_u)
-            m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
-            stop = int(m_stop.group(1)) if m_stop else "?"
-            mapa_rotas[c_u] = stop
+            endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
+            if endereco not in mapa_rotas: mapa_rotas[endereco] = []
+            if c_u not in mapa_rotas[endereco]:
+                mapa_rotas[endereco].append(c_u)
+                stop_correspondente[c_u] = stop_atual
 
 # TELA PRINCIPAL
 if arquivo_pdf:
-    st.write(f"### {len(st.session_state.pacotes_bipados)} / {len(todos_pacotes)} Bipados")
+    bipados = len(st.session_state.pacotes_bipados)
+    total = len(todos_pacotes)
+    st.markdown(f'<div class="stat-banner"><div class="stat-value">{bipados} / {total} Bipados</div></div>', unsafe_allow_html=True)
+    
     code = qrcode_scanner(key="s1") or st.text_input("Digitar:", placeholder="BR...")
     
     if code:
         cod = code.upper().strip()
-        if cod in todos_pacotes:
-            if cod not in st.session_state.pacotes_bipados:
-                st.session_state.pacotes_bipados.add(cod)
-                # TOCA O BIP
-                components.html("<script>playBeep();</script>", height=0)
-            
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{mapa_rotas[cod]}</div><div>📍 {cod}</div></div>', unsafe_allow_html=True)
-        else:
-            st.error("❌ Código não encontrado!")
+        achou = False
+        for endereco, lista in mapa_rotas.items():
+            if cod in lista:
+                if cod not in st.session_state.pacotes_bipados:
+                    st.session_state.pacotes_bipados.add(cod)
+                    components.html("<script>playBeep();</script>", height=0)
+                
+                num_p = stop_correspondente.get(cod, "?")
+                st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
+                achou = True; break
+        if not achou: st.error("❌ Código não encontrado!")
 else:
-    st.info("Envie o PDF na barra lateral para começar.")
+    st.markdown(f'<div class="welcome-card"><img src="{URL_DO_LOGO}" class="welcome-logo"><div class="welcome-title">{NOME_DO_APP}</div></div>', unsafe_allow_html=True)
     
