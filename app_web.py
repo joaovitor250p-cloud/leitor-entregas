@@ -8,7 +8,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
 # ==========================================
-# 🔑 CONFIGURAÇÃO DE LOGIN (ALTERE AQUI)
+# 🔑 CONFIGURAÇÃO DE LOGIN
 # ==========================================
 USUARIO_CORRETO = "admin"
 SENHA_CORRETA = "1234"
@@ -83,17 +83,24 @@ iframe { width: 100%; height: 380px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
+# LÓGICA DE EXTRAÇÃO POR ENDEREÇO REAL
+def extrair_endereco_limpo(texto):
+    match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
+    if match:
+        return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
+    return None
+
 # ==========================================
 # 🔒 TELA DE LOGIN
 # ==========================================
 if not st.session_state.logged_in:
     st.markdown("""
-    <div class="welcome-card">
-        <div class="welcome-icon">📦</div>
-        <div class="welcome-title">PACOTE É MATO</div>
-        <div class="welcome-subtitle">Acesso Restrito ao Sistema</div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="welcome-card">
+    <div class="welcome-icon">📦</div>
+    <div class="welcome-title">PACOTE É MATO</div>
+    <div class="welcome-subtitle">Acesso Restrito ao Sistema</div>
+</div>
+""", unsafe_allow_html=True)
     
     with st.form("form_login"):
         user_input = st.text_input("👤 Usuário")
@@ -114,33 +121,33 @@ if not st.session_state.logged_in:
 else:
     # SCRIPT: MIRA LIMPA + BOTÃO FLASH
     components.html("""<script>
-        function aplicarMelhorias() {
-            var iframes = window.parent.document.querySelectorAll('iframe');
-            iframes.forEach(function(frame) {
-                try {
-                    var doc = frame.contentDocument || frame.contentWindow.document;
-                    if (doc && doc.querySelector('video')) {
-                        var s = doc.createElement('style');
-                        s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
-                        doc.head.appendChild(s);
-                        if (!doc.getElementById('btn-flash')) {
-                            var btn = doc.createElement('button');
-                            btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
-                            btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
-                            btn.onclick = async () => {
-                                var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                                var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({advanced: [{torch: !on}]});
-                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                            };
-                            doc.body.appendChild(btn);
-                        }
+    function aplicarMelhorias() {
+        var iframes = window.parent.document.querySelectorAll('iframe');
+        iframes.forEach(function(frame) {
+            try {
+                var doc = frame.contentDocument || frame.contentWindow.document;
+                if (doc && doc.querySelector('video')) {
+                    var s = doc.createElement('style');
+                    s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                    doc.head.appendChild(s);
+                    if (!doc.getElementById('btn-flash')) {
+                        var btn = doc.createElement('button');
+                        btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
+                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                        btn.onclick = async () => {
+                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                            var on = btn.innerHTML.includes('ON');
+                            await track.applyConstraints({advanced: [{torch: !on}]});
+                            btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                        };
+                        doc.body.appendChild(btn);
                     }
-                } catch(e) {}
-            });
-        }
-        setInterval(aplicarMelhorias, 300);
-    </script>""", height=0)
+                }
+            } catch(e) {}
+        });
+    }
+    setInterval(aplicarMelhorias, 300);
+</script>""", height=0)
 
     # MENU LATERAL
     with st.sidebar:
@@ -165,13 +172,6 @@ else:
         if st.button("🚪 Sair do Sistema"):
             st.session_state.logged_in = False
             st.rerun()
-
-    # LÓGICA DE EXTRAÇÃO POR ENDEREÇO REAL
-    def extrair_endereco_limpo(texto):
-        match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
-        if match:
-            return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
-        return None
 
     mapa_rotas, stop_correspondente, nome_exibicao, todos_pacotes = {}, {}, {}, set()
 
@@ -237,6 +237,56 @@ else:
                             pitch_val = 1.8
                             rate_val = 1.45
                         else:
+                            fala_texto = f"Parada {num_p}"
+                            if len(lista) > 1:
+                                fala_texto += f". Atenção, {len(lista)} pacotes!"
+
+                            if "Masculina" in tipo_voz:
+                                pitch_val = 0.6
+                                rate_val = 0.95
+                            elif "Rápida" in tipo_voz:
+                                pitch_val = 1.1
+                                rate_val = 1.35
+
+                        components.html(f"""<script>
+                            window.speechSynthesis.cancel();
+                            var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                            msg.lang = 'pt-BR';
+                            msg.pitch = {pitch_val};
+                            msg.rate = {rate_val};
+                            
+                            var voices = window.speechSynthesis.getVoices();
+                            var ptVoices = voices.filter(function(v) {{ return v.lang.includes('pt'); }});
+                            if (ptVoices.length > 0) {{
+                                var tipo = '{tipo_voz}';
+                                if (tipo.includes('Masculina')) {{
+                                    var vM = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('felipe') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('ricardo'); }});
+                                    if (vM) msg.voice = vM;
+                                }} else {{
+                                    var vF = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('francisca'); }});
+                                    if (vF) msg.voice = vF;
+                                }}
+                            }}
+                            window.speechSynthesis.speak(msg);
+                        </script>""", height=0)
+
+                    achou = True; break
+            if not achou: st.error("❌ Código não encontrado!")
+    else:
+        # TELA DE INSTRUÇÕES DA ROTA
+        st.markdown("""
+<div class="welcome-card">
+    <div class="welcome-icon">📦</div>
+    <div class="welcome-title">BEM-VINDO!</div>
+    <div class="welcome-subtitle">SISTEMA PRONTO PARA USO</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra o menu lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+                   else:
                             fala_texto = f"Parada {num_p}"
                             if len(lista) > 1:
                                 fala_texto += f". Atenção, {len(lista)} pacotes!"
