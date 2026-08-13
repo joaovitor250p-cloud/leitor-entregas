@@ -7,7 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Dark / App Pro + CÂMERA SUPER AMPLIADA
+# Estilo Visual Dark / App Pro + CÂMERA ENCAIXADA PERFEITAMENTE
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
@@ -19,23 +19,20 @@ st.markdown("""
         margin-bottom: 15px; 
     }
     
-    /* Câmera com altura de 480px e Zoom de leitura ampliado */
+    /* Moldura ajustada para o tamanho exato do vídeo do celular */
     iframe { 
         width: 100% !important; 
-        height: 480px !important; 
-        border-radius: 18px !important; 
+        height: 320px !important; 
+        border-radius: 16px !important; 
         border: 3px solid #FF9500 !important; 
-        background-color: transparent !important; 
-        transform: scale(1.15);
+        background-color: #000000 !important;
     }
     
     div[data-testid="stCustomComponentV1"] {
         width: 100% !important;
         display: flex;
         justify-content: center;
-        overflow: hidden;
-        border-radius: 18px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -92,7 +89,6 @@ if arquivo_pdf:
         stop_atual = 1
         
         for linha in linhas:
-            # Captura número da parada
             match_stop = re.search(r'^\s*(\d{1,3})\b', linha)
             if match_stop: 
                 stop_atual = int(match_stop.group(1))
@@ -107,7 +103,6 @@ if arquivo_pdf:
                 
                 if chave_end not in mapa_rotas:
                     mapa_rotas[chave_end] = []
-                    # Guarda a linha original limpa para exibir bonito na tela
                     nome_exibicao[chave_end] = re.sub(r'BR[A-Za-z0-9]+', '', linha).strip()
                 
                 for c in codigos:
@@ -177,4 +172,3 @@ if arquivo_pdf:
         
         if not achou:
             st.error("❌ Código não encontrado nesta rota!")
-        
