@@ -11,14 +11,46 @@ st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="center
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# Estilo Visual Dark / App Pro
+# Estilo Visual Dark / App Pro com Topo Ajustado
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
     
+    /* Espaçamento superior corrigido para não cortar no celular */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 3rem !important;
         padding-bottom: 1rem !important;
+    }
+
+    /* Card personalizado de Progresso */
+    .stat-banner {
+        background-color: #1E1E1E;
+        border-radius: 12px;
+        padding: 12px 15px;
+        border: 1px solid #333333;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .stat-box {
+        text-align: center;
+    }
+    .stat-label {
+        font-size: 0.72rem;
+        color: #888888;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    .stat-value-orange {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #FF9500;
     }
 
     .custom-card { 
@@ -88,7 +120,7 @@ components.html("""
     </script>
 """, height=0)
 
-# MENU LATERAL (PDF, ÁUDIO E ZERAR)
+# MENU LATERAL
 with st.sidebar:
     st.title("📦 PACOTE É MATO")
     st.write("---")
@@ -145,21 +177,29 @@ if arquivo_pdf:
 if not arquivo_pdf:
     st.info("👈 **Abra o menu lateral (seta no topo) para carregar o PDF da rota.**")
 
-# 1. PAINEL DE PROGRESSO (EX: 30 / 100 | FALTAM 70)
+# 1. PAINEL DE PROGRESSO REFEITO (SEM CORTAR NO TOPO)
 if arquivo_pdf and len(todos_os_pacotes) > 0:
     total_pacotes = len(todos_os_pacotes)
     qtd_bipados = len(st.session_state.pacotes_bipados)
     qtd_faltam = total_pacotes - qtd_bipados
     
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("BIPADOS / TOTAL", f"{qtd_bipados} / {total_pacotes}")
-    with c2:
-        st.metric("FALTAM", f"{qtd_faltam} pcts")
+    st.markdown(f"""
+        <div class="stat-banner">
+            <div class="stat-box">
+                <div class="stat-label">BIPADOS / TOTAL</div>
+                <div class="stat-value">{qtd_bipados} / {total_pacotes}</div>
+            </div>
+            <div style="border-left: 1px solid #333; height: 30px;"></div>
+            <div class="stat-box">
+                <div class="stat-label">FALTAM</div>
+                <div class="stat-value-orange">{qtd_faltam} pcts</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.progress(qtd_bipados / total_pacotes)
 
-    # 2. ABA DE ANÁLISE PROATIVA (PACOTES DUPLOS/TRIPLOS ANTES DE BIPAR)
+    # 2. ANÁLISE DE DUPLOS/TRIPLOS
     with st.expander("🤖 Ver Pacotes Duplos e Triplos da Rota", expanded=False):
         multiplos_encontrados = 0
         for chave, pacotes in mapa_rotas.items():
@@ -175,7 +215,7 @@ if arquivo_pdf and len(todos_os_pacotes) > 0:
 # 3. CÂMERA
 codigo_camera = qrcode_scanner(key="scanner")
 
-# 4. ENTRADA MANUAL DISCRETA
+# 4. ENTRADA MANUAL
 codigo_manual = st.text_input("", placeholder="Ou digite o código BR aqui...", label_visibility="collapsed")
 codigo_final = codigo_camera or codigo_manual
 
