@@ -7,15 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração da Página
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# ==========================================
-# 🔑 CONFIGURAÇÃO DE LOGIN
-# ==========================================
-USUARIO_CORRETO = "admin"
-SENHA_CORRETA = "1234"
-
 # Inicialização de Memória
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -29,7 +21,7 @@ st.markdown("""
     padding-bottom: 2rem !important;
 }
 
-/* Tela de Login e Boas-Vindas */
+/* Tela de Boas-Vindas */
 .welcome-card {
     background-color: #1E1E1E;
     padding: 24px;
@@ -83,6 +75,56 @@ iframe { width: 100%; height: 380px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
+# SCRIPT: MIRA LIMPA + BOTÃO FLASH
+components.html("""<script>
+function aplicarMelhorias() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(frame) {
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            if (doc && doc.querySelector('video')) {
+                var s = doc.createElement('style');
+                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                doc.head.appendChild(s);
+                if (!doc.getElementById('btn-flash')) {
+                    var btn = doc.createElement('button');
+                    btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                    btn.onclick = async () => {
+                        var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                        var on = btn.innerHTML.includes('ON');
+                        await track.applyConstraints({advanced: [{torch: !on}]});
+                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                    };
+                    doc.body.appendChild(btn);
+                }
+            }
+        } catch(e) {}
+    });
+}
+setInterval(aplicarMelhorias, 300);
+</script>""", height=0)
+
+# MENU LATERAL
+with st.sidebar:
+    st.title("📦 PACOTE É MATO")
+    st.caption("Sistema Inteligente de Logística")
+    st.write("---")
+    arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
+    usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
+    
+    tipo_voz = "Feminina / Normal"
+    if usar_audio:
+        tipo_voz = st.selectbox(
+            "🎙️ Estilo da Voz", 
+            ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil", "Pica-Pau 🪶"]
+        )
+        
+    st.write("---")
+    if st.button("🔄 Zerar Rota Atual"):
+        st.session_state.pacotes_bipados = set()
+        st.rerun()
+
 # LÓGICA DE EXTRAÇÃO POR ENDEREÇO REAL
 def extrair_endereco_limpo(texto):
     match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
@@ -90,156 +132,120 @@ def extrair_endereco_limpo(texto):
         return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
     return None
 
-# ==========================================
-# 🔒 TELA DE LOGIN
-# ==========================================
-if not st.session_state.logged_in:
+mapa_rotas, stop_correspondente, nome_exibicao, todos_pacotes = {}, {}, {}, set()
+
+if arquivo_pdf:
+    leitor = PdfReader(arquivo_pdf)
+    texto = "".join([p.extract_text() + "\n" for p in leitor.pages])
+    linhas = texto.split('\n')
+    stop_atual = 0
+    for linha in linhas:
+        m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
+        if m_stop: stop_atual = int(m_stop.group(1))
+        
+        cods = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
+        if cods:
+            endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
+            if endereco not in mapa_rotas: mapa_rotas[endereco] = []
+            for c in cods:
+                c_u = c.upper()
+                todos_pacotes.add(c_u)
+                if c_u not in mapa_rotas[endereco]:
+                    mapa_rotas[endereco].append(c_u)
+                    stop_correspondente[c_u] = stop_atual
+                    nome_exibicao[endereco] = linha[:50]
+
+# TELA PRINCIPAL
+if arquivo_pdf:
+    bipados = len(st.session_state.pacotes_bipados)
+    total = len(todos_pacotes)
+    st.markdown(f'<div class="stat-banner"><div class="stat-value">{bipados} / {total} Bipados</div><div class="stat-value-orange">{total-bipados} Faltam</div></div>', unsafe_allow_html=True)
+    
+    with st.expander("🤖 Ver Pacotes no mesmo endereço"):
+        encontrou_duplo = False
+        for end, pacotes in mapa_rotas.items():
+            if len(pacotes) > 1:
+                encontrou_duplo = True
+                st.markdown(f"🚨 **{end.title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
+        if not encontrou_duplo: st.info("Nenhum endereço com múltiplos pacotes.")
+
+    code = qrcode_scanner(key="s1") or st.text_input("Digitar:", placeholder="BR...")
+    
+    if code:
+        cod = code.upper().strip()
+        achou = False
+        for endereco, lista in mapa_rotas.items():
+            if cod in lista:
+                st.session_state.pacotes_bipados.add(cod)
+                num_p = stop_correspondente.get(cod, "?")
+                
+                st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
+                
+                if len(lista) > 1: 
+                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
+
+                # ÁUDIO
+                if usar_audio:
+                    pitch_val = 1.0
+                    rate_val = 1.0
+                    
+                    if "Pica-Pau" in tipo_voz:
+                        fala_texto = f"He-he-he-he! Parada {num_p}!"
+                        if len(lista) > 1:
+                            fala_texto += f" Atenção, {len(lista)} pacotes!"
+                        pitch_val = 1.8
+                        rate_val = 1.45
+                    else:
+                        fala_texto = f"Parada {num_p}"
+                        if len(lista) > 1:
+                            fala_texto += f". Atenção, {len(lista)} pacotes!"
+
+                        if "Masculina" in tipo_voz:
+                            pitch_val = 0.6
+                            rate_val = 0.95
+                        elif "Rápida" in tipo_voz:
+                            pitch_val = 1.1
+                            rate_val = 1.35
+
+                    components.html(f"""<script>
+                        window.speechSynthesis.cancel();
+                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                        msg.lang = 'pt-BR';
+                        msg.pitch = {pitch_val};
+                        msg.rate = {rate_val};
+                        
+                        var voices = window.speechSynthesis.getVoices();
+                        var ptVoices = voices.filter(function(v) {{ return v.lang.includes('pt'); }});
+                        if (ptVoices.length > 0) {{
+                            var tipo = '{tipo_voz}';
+                            if (tipo.includes('Masculina')) {{
+                                var vM = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('felipe') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('ricardo'); }});
+                                if (vM) msg.voice = vM;
+                            }} else {{
+                                var vF = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('francisca'); }});
+                                if (vF) msg.voice = vF;
+                            }}
+                        }}
+                        window.speechSynthesis.speak(msg);
+                    </script>""", height=0)
+
+                achou = True; break
+        if not achou: st.error("❌ Código não encontrado!")
+else:
+    # TELA DE INSTRUÇÕES
     st.markdown("""
 <div class="welcome-card">
     <div class="welcome-icon">📦</div>
     <div class="welcome-title">PACOTE É MATO</div>
-    <div class="welcome-subtitle">Acesso Restrito ao Sistema</div>
+    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
-    
-    with st.form("form_login"):
-        user_input = st.text_input("👤 Usuário")
-        pass_input = st.text_input("🔑 Senha", type="password")
-        submit_button = st.form_submit_button("🔓 Entrar no Sistema", use_container_width=True)
-        
-        if submit_button:
-            if user_input.strip() == USUARIO_CORRETO and pass_input.strip() == SENHA_CORRETA:
-                st.session_state.logged_in = True
-                st.success("Login realizado com sucesso!")
-                st.rerun()
-            else:
-                st.error("❌ Usuário ou senha incorretos.")
-
-# ==========================================
-# 🚀 APLICATIVO PRINCIPAL (PÓS-LOGIN)
-# ==========================================
-else:
-    # SCRIPT: MIRA LIMPA + BOTÃO FLASH
-    components.html("""<script>
-    function aplicarMelhorias() {
-        var iframes = window.parent.document.querySelectorAll('iframe');
-        iframes.forEach(function(frame) {
-            try {
-                var doc = frame.contentDocument || frame.contentWindow.document;
-                if (doc && doc.querySelector('video')) {
-                    var s = doc.createElement('style');
-                    s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
-                    doc.head.appendChild(s);
-                    if (!doc.getElementById('btn-flash')) {
-                        var btn = doc.createElement('button');
-                        btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
-                        btn.onclick = async () => {
-                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                            var on = btn.innerHTML.includes('ON');
-                            await track.applyConstraints({advanced: [{torch: !on}]});
-                            btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                        };
-                        doc.body.appendChild(btn);
-                    }
-                }
-            } catch(e) {}
-        });
-    }
-    setInterval(aplicarMelhorias, 300);
-</script>""", height=0)
-
-    # MENU LATERAL
-    with st.sidebar:
-        st.title("📦 PACOTE É MATO")
-        st.caption("Sistema Inteligente de Logística")
-        st.write("---")
-        arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
-        usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
-        
-        tipo_voz = "Feminina / Normal"
-        if usar_audio:
-            tipo_voz = st.selectbox(
-                "🎙️ Estilo da Voz", 
-                ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil", "Pica-Pau 🪶"]
-            )
-            
-        st.write("---")
-        if st.button("🔄 Zerar Rota Atual"):
-            st.session_state.pacotes_bipados = set()
-            st.rerun()
-            
-        if st.button("🚪 Sair do Sistema"):
-            st.session_state.logged_in = False
-            st.rerun()
-
-    mapa_rotas, stop_correspondente, nome_exibicao, todos_pacotes = {}, {}, {}, set()
-
-    if arquivo_pdf:
-        leitor = PdfReader(arquivo_pdf)
-        texto = "".join([p.extract_text() + "\n" for p in leitor.pages])
-        linhas = texto.split('\n')
-        stop_atual = 0
-        for linha in linhas:
-            m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
-            if m_stop: stop_atual = int(m_stop.group(1))
-            
-            cods = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
-            if cods:
-                endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
-                if endereco not in mapa_rotas: mapa_rotas[endereco] = []
-                for c in cods:
-                    c_u = c.upper()
-                    todos_pacotes.add(c_u)
-                    if c_u not in mapa_rotas[endereco]:
-                        mapa_rotas[endereco].append(c_u)
-                        stop_correspondente[c_u] = stop_atual
-                        nome_exibicao[endereco] = linha[:50]
-
-    # TELA PRINCIPAL
-    if arquivo_pdf:
-        bipados = len(st.session_state.pacotes_bipados)
-        total = len(todos_pacotes)
-        st.markdown(f'<div class="stat-banner"><div class="stat-value">{bipados} / {total} Bipados</div><div class="stat-value-orange">{total-bipados} Faltam</div></div>', unsafe_allow_html=True)
-        
-        with st.expander("🤖 Ver Pacotes no mesmo endereço"):
-            encontrou_duplo = False
-            for end, pacotes in mapa_rotas.items():
-                if len(pacotes) > 1:
-                    encontrou_duplo = True
-                    st.markdown(f"🚨 **{end.title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
-            if not encontrou_duplo: st.info("Nenhum endereço com múltiplos pacotes.")
-
-        code = qrcode_scanner(key="s1") or st.text_input("Digitar:", placeholder="BR...")
-        
-        if code:
-            cod = code.upper().strip()
-            achou = False
-            for endereco, lista in mapa_rotas.items():
-                if cod in lista:
-                    st.session_state.pacotes_bipados.add(cod)
-                    num_p = stop_correspondente.get(cod, "?")
-                    
-                    st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
-                    
-                    if len(lista) > 1: 
-                        st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
-
-                    # ÁUDIO
-                    if usar_audio:
-                        pitch_val = 1.0
-                        rate_val = 1.0
-                        
-                        if "Pica-Pau" in tipo_voz:
-                            fala_texto = f"He-he-he-he! Parada {num_p}!"
-                            if len(lista) > 1:
-                                fala_texto += f" Atenção, {len(lista)} pacotes!"
-                            pitch_val = 1.8
-                            rate_val = 1.45
-                        else:
-                            fala_texto = f"Parada {num_p}"
-                            if len(lista) > 1:
-                                fala_texto += f". Atenção, {len(lista)} pacotes!"
+xto += f". Atenção, {len(lista)} pacotes!"
 
                             if "Masculina" in tipo_voz:
                                 pitch_val = 0.6
