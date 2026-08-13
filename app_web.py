@@ -4,52 +4,60 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-# Configuração da Página
+# Configuração de App
 st.set_page_config(page_title="RotaFácil", page_icon="⚡", layout="centered")
 
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
     .custom-card { background-color: #1E1E1E; padding: 18px; border-radius: 14px; border-left: 5px solid #FF9500; margin-bottom: 15px; }
-    iframe { width: 100% !important; height: 350px !important; border-radius: 14px !important; border: 3px solid #FF9500 !important; }
+    iframe { width: 100% !important; height: 380px !important; border-radius: 16px !important; border: 3px solid #FF9500 !important; background-color: transparent !important; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📦 PacoteMato")
+with st.sidebar:
+    st.title("⚡ Pacote é Mato")
+    usar_audio = st.toggle("🔊 Feedback por Voz", value=True)
 
-# Carregamento do PDF
-arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
+st.title("📦 RotaFácil")
+
+arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota (Circuit)", type=["pdf"])
 
 if arquivo_pdf:
-    with st.spinner('Mapeando pacotes por endereço...'):
+    with st.spinner('Mapeando endereços...'):
         leitor = PdfReader(arquivo_pdf)
         texto = ""
         for p in leitor.pages: texto += p.extract_text() + "\n"
+
+        # Dicionário: { "rua genival 1790": ["BR1", "BR2"] }
+        mapa_enderecos = {}
+        stop_correspondente = {} # { "BR1": 1 }
         
-        # Estrutura: { parada_numero: [lista_de_codigos] }
-        mapa_rotas = {}
+        linhas = [l.strip() for l in texto.split('\n') if l.strip()]
         stop_atual = 1
         
-        # Regex para encontrar números de parada (ex: "1", "01", "Parada 1") e códigos BR
-        linhas = texto.split('\n')
-        
         for linha in linhas:
-            # Tenta achar se a linha começa com um número de parada (ex: "1 BR...")
-            match_stop = re.match(r'^\s*(\d{1,3})\.?\s*', linha.strip())
-            if match_stop:
-                stop_atual = int(match_stop.group(1))
+            # Detecta Parada
+            match_stop = re.match(r'^\s*(\d+)', linha)
+            if match_stop: stop_atual = int(match_stop.group(1))
             
-            # Pega todos os códigos BR na linha
+            # Extrai Nome da Rua + Número (ignora AP, casa, etc)
+            # Procura por: [Nome da Rua] [Numero]
+            match_endereco = re.search(r'(Rua|Av|Estrada|Trav)\s+[a-zA-Z]+\s+(\d+)', linha, re.IGNORECASE)
+            
             codigos = re.findall(r'BR[A-Za-z0-9]+', linha)
-            if codigos:
-                if stop_atual not in mapa_rotas: mapa_rotas[stop_atual] = []
+            
+            if match_endereco and codigos:
+                key = match_endereco.group(0).lower() # Ex: "rua genival 1790"
+                if key not in mapa_rotas: mapa_rotas[key] = []
+                
                 for c in codigos:
-                    if c not in mapa_rotas[stop_atual]:
-                        mapa_rotas[stop_atual].append(c)
+                    if c not in mapa_rotas[key]:
+                        mapa_rotas[key].append(c)
+                        stop_correspondente[c] = stop_atual
 
-    st.success(f"✅ Rota mapeada com sucesso!")
+    st.success(f"✅ Rota mapeada por endereços!")
 
-    # SCANNER
     st.subheader("📷 Scanner")
     codigo_camera = qrcode_scanner(key="scanner")
     codigo_manual = st.text_input("Ou digite o código:", placeholder="Ex: BR...")
@@ -59,31 +67,31 @@ if arquivo_pdf:
         cod = codigo_final.strip()
         achou = False
         
-        # Busca em qual parada esse código está
-        for stop, lista_pacotes in mapa_rotas.items():
+        # Procura em qual endereço esse pacote está
+        for end, lista_pacotes in mapa_rotas.items():
             if cod in lista_pacotes:
-                st.markdown(f'<div class="custom-card" style="border-left-color: #28a745;">', unsafe_allow_html=True)
-                st.metric("PARADA Nº", stop)
+                num_parada = stop_correspondente.get(cod, "?")
                 
-                # Feedback de Múltiplos
+                st.markdown('<div class="custom-card" style="border-left-color: #28a745;">', unsafe_allow_html=True)
+                st.metric("PARADA Nº", num_parada)
+                st.write(f"📍 **Endereço:** {end.title()}")
+                
+                # Feedback de Múltiplos no MESMO endereço
                 if len(lista_pacotes) > 1:
-                    st.warning(f"⚠️ **ATENÇÃO: {len(lista_pacotes)} pacotes neste local!**")
+                    st.warning(f"⚠️ **ATENÇÃO: {len(lista_pacotes)} pacotes para este endereço!**")
                     for idx, p in enumerate(lista_pacotes, 1):
-                        st.write(f"{idx}. `{'👈 VOCÊ BIPOU' if p==cod else p}`")
-                else:
-                    st.info("ℹ️ Apenas 1 pacote neste local.")
-                
-                st.markdown('</div>', unsafe_allow_html=True)
+                        st.markdown(f"* {idx}. `{'👈 VOCÊ BIPOU' if p==cod else p}`")
                 
                 # Áudio
-                components.html(f"""<script>
-                    var msg = new SpeechSynthesisUtterance('Parada {stop}. {len(lista_pacotes)} pacotes.');
-                    msg.lang = 'pt-BR'; window.speechSynthesis.speak(msg);
-                </script>""", height=0)
+                if usar_audio:
+                    texto_fala = f"Parada {num_parada}. {len(lista_pacotes)} pacotes no endereço."
+                    components.html(f"""<script>
+                        var msg = new SpeechSynthesisUtterance('{texto_fala}');
+                        msg.lang = 'pt-BR'; window.speechSynthesis.speak(msg);
+                    </script>""", height=0)
                 
                 achou = True
                 break
         
         if not achou:
-            st.error("❌ Código não encontrado nesta rota!")
-            
+            st.error("❌ Código não encontrado!")
