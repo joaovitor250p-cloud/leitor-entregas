@@ -7,7 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Dark / App Pro + CÂMERA ENCAIXADA PERFEITAMENTE
+# Estilo Visual Dark / App Pro + MIRA DO LEITOR AMPLIADA (ZOOM NA MIRA)
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
@@ -19,20 +19,27 @@ st.markdown("""
         margin-bottom: 15px; 
     }
     
-    /* Moldura ajustada para o tamanho exato do vídeo do celular */
-    iframe { 
-        width: 100% !important; 
-        height: 320px !important; 
-        border-radius: 16px !important; 
-        border: 3px solid #FF9500 !important; 
-        background-color: #000000 !important;
-    }
-    
+    /* Container que segura a câmera sem vazar */
     div[data-testid="stCustomComponentV1"] {
         width: 100% !important;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 15px;
+        height: 290px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        overflow: hidden !important;
+        border-radius: 16px !important;
+        border: 3px solid #FF9500 !important;
+        background-color: #000000 !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Amplia a mira branca central para ocupar o quadrado todo */
+    iframe { 
+        width: 100% !important; 
+        height: 380px !important; 
+        border: none !important;
+        transform: scale(1.4) !important;
+        transform-origin: center center !important;
     }
     </style>
 """, unsafe_allow_html=True)
