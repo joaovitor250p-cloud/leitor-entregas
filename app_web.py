@@ -12,110 +12,65 @@ if "pacotes_bipados" not in st.session_state: st.session_state.pacotes_bipados =
 
 # ESTILO VISUAL PROFISSIONAL (DARK APP PRO)
 st.markdown("""
-    <style>
-    .stApp { background-color: #121212; color: #FFFFFF; }
-    
-    .block-container { 
-        padding-top: 2.5rem !important; 
-        padding-bottom: 2rem !important;
-    }
+<style>
+.stApp { background-color: #121212; color: #FFFFFF; }
 
-    /* Tela de Boas-Vindas / Onboarding Profissional */
-    .welcome-card {
-        background-color: #1E1E1E;
-        padding: 24px;
-        border-radius: 18px;
-        border: 1px solid #333333;
-        text-align: center;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        margin-top: 10px;
-    }
+.block-container { 
+    padding-top: 2.5rem !important; 
+    padding-bottom: 2rem !important;
+}
 
-    .welcome-icon {
-        font-size: 3.5rem;
-        margin-bottom: 5px;
-    }
+/* Tela de Boas-Vindas */
+.welcome-card {
+    background-color: #1E1E1E;
+    padding: 24px;
+    border-radius: 18px;
+    border: 1px solid #333333;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    margin-top: 10px;
+}
 
-    .welcome-title {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #FF9500;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-    }
+.welcome-icon { font-size: 3.5rem; margin-bottom: 5px; }
+.welcome-title { font-size: 1.5rem; font-weight: 800; color: #FF9500; letter-spacing: 0.5px; margin-bottom: 2px; }
+.welcome-subtitle { font-size: 0.8rem; color: #888888; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 18px; }
 
-    .welcome-subtitle {
-        font-size: 0.8rem;
-        color: #888888;
-        font-weight: 600;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-bottom: 18px;
-    }
+.instruction-box {
+    background-color: #141414;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #2A2A2A;
+    text-align: left;
+    margin-top: 15px;
+}
 
-    .instruction-box {
-        background-color: #141414;
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid #2A2A2A;
-        text-align: left;
-        margin-top: 15px;
-    }
+.instruction-step { font-size: 0.88rem; color: #DDDDDD; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 
-    .instruction-step {
-        font-size: 0.88rem;
-        color: #DDDDDD;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+/* Painéis de Estatísticas */
+.stat-banner { background-color: #1E1E1E; border-radius: 12px; padding: 12px; border: 1px solid #333; display: flex; justify-content: space-around; margin-bottom: 15px; }
+.stat-value { font-size: 1.3rem; font-weight: bold; color: #28a745; }
+.stat-value-orange { font-size: 1.3rem; font-weight: bold; color: #FF9500; }
 
-    /* Painéis de Estatísticas */
-    .stat-banner { 
-        background-color: #1E1E1E; 
-        border-radius: 12px; 
-        padding: 12px; 
-        border: 1px solid #333; 
-        display: flex; 
-        justify-content: space-around; 
-        margin-bottom: 15px; 
-    }
-    .stat-value { font-size: 1.3rem; font-weight: bold; color: #28a745; }
-    .stat-value-orange { font-size: 1.3rem; font-weight: bold; color: #FF9500; }
-    
-    /* Cartão de Resultado da Parada */
-    .custom-card { 
-        background-color: #1E1E1E; 
-        padding: 18px; 
-        border-radius: 14px; 
-        border-left: 6px solid #28a745; 
-        margin-bottom: 15px; 
-    }
-    .stop-number-big { 
-        font-size: 3.5rem; 
-        font-weight: 900; 
-        color: #FF9500; 
-        line-height: 1; 
-        margin-bottom: 10px; 
-    }
+/* Cartão da Parada */
+.custom-card { background-color: #1E1E1E; padding: 18px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; }
+.stop-number-big { font-size: 3.5rem; font-weight: 900; color: #FF9500; line-height: 1; margin-bottom: 10px; }
 
-    /* Câmera */
-    div[data-testid="stCustomComponentV1"] { 
-        width: 100%; 
-        height: 380px; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        border-radius: 16px; 
-        border: 3px solid #FF9500; 
-        background-color: #000000; 
-        margin-bottom: 10px; 
-        overflow: hidden; 
-        position: relative; 
-    }
-    iframe { width: 100%; height: 380px; border: none; }
-    </style>
+/* Câmera */
+div[data-testid="stCustomComponentV1"] { 
+    width: 100%; 
+    height: 380px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    border-radius: 16px; 
+    border: 3px solid #FF9500; 
+    background-color: #000000; 
+    margin-bottom: 10px; 
+    overflow: hidden; 
+    position: relative; 
+}
+iframe { width: 100%; height: 380px; border: none; }
+</style>
 """, unsafe_allow_html=True)
 
 # SCRIPT: MIRA LIMPA + BOTÃO FLASH
@@ -216,23 +171,16 @@ if arquivo_pdf:
                 achou = True; break
         if not achou: st.error("❌ Código não encontrado!")
 else:
-    # TELA DE BOAS-VINDAS E INSTRUÇÕES (PROFISSIONAL)
+    # TELA DE BOAS-VINDAS E INSTRUÇÕES (CORRIGIDA)
     st.markdown("""
-        <div class="welcome-card">
-            <div class="welcome-icon">📦</div>
-            <div class="welcome-title">PACOTE É MATO</div>
-            <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
-            
-            <div class="instruction-box">
-                <div class="instruction-step">
-                    <b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b>
-                </div>
-                <div class="instruction-step">
-                    <b>2.</b> Carregue o arquivo <b>PDF da sua Rota</b>
-                </div>
-                <div class="instruction-step">
-                    <b>3.</b> Escaneie os pacotes na van ou galpão
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+<div class="welcome-card">
+    <div class="welcome-icon">📦</div>
+    <div class="welcome-title">PACOTE É MATO</div>
+    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Carregue o arquivo <b>PDF da sua Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Escaneie os pacotes na van ou galpão</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
