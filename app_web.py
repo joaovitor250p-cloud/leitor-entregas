@@ -7,12 +7,15 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Minimalista (Apenas Câmera em Destaque)
+# Inicializa o controle de memória dos pacotes bipados
+if "pacotes_bipados" not in st.session_state:
+    st.session_state.pacotes_bipados = set()
+
+# Estilo Visual Dark / App Pro
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
     
-    /* Remove padding do topo para subir a câmera */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
@@ -22,12 +25,21 @@ st.markdown("""
         background-color: #1E1E1E; 
         padding: 18px; 
         border-radius: 14px; 
-        border-left: 5px solid #28a745; 
+        border-left: 6px solid #28a745; 
         margin-top: 10px; 
         margin-bottom: 15px; 
     }
+
+    .progress-card {
+        background-color: #1E1E1E;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid #FF9500;
+        margin-bottom: 15px;
+        text-align: center;
+    }
     
-    /* Container da Câmera Gigante */
+    /* Container da Câmera */
     div[data-testid="stCustomComponentV1"] {
         width: 100% !important;
         height: 380px !important;
@@ -49,7 +61,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT QUE FORÇA A MIRA INTERNA QUADRADA (1:1)
+# Script para Mira Quadrada (1:1)
 components.html("""
     <script>
     function forcarMiraQuadrada() {
@@ -85,13 +97,16 @@ components.html("""
     </script>
 """, height=0)
 
-# MENU LATERAL (GUARDOU O PDF E AS CONFIGURAÇÕES)
+# MENU LATERAL (PDF, AUDIO E ZERAR CONTAGEM)
 with st.sidebar:
     st.title("📦 PACOTE É MATO")
     st.write("---")
     arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
     usar_audio = st.toggle("🔊 Feedback por Voz", value=True)
-    st.caption("Modo Câmera Direta")
+    
+    if st.button("🔄 Zerar Bipados da Rota"):
+        st.session_state.pacotes_bipados = set()
+        st.rerun()
 
 def extrair_chave_endereco(texto_linha):
     txt = texto_linha.lower()
@@ -109,6 +124,7 @@ def extrair_chave_endereco(texto_linha):
 mapa_rotas = {}
 stop_correspondente = {}
 nome_exibicao = {}
+todos_os_pacotes = set()
 
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
@@ -130,33 +146,36 @@ if arquivo_pdf:
                 nome_exibicao[chave_end] = re.sub(r'BR[A-Za-z0-9]+', '', linha).strip()
             
             for c in codigos:
+                todos_os_pacotes.add(c)
                 if c not in mapa_rotas[chave_end]:
                     mapa_rotas[chave_end].append(c)
                     stop_correspondente[c] = stop_atual
 
-    # Análise de pacotes múltiplos guardada na lateral
-    with st.sidebar:
-        st.write("---")
-        with st.expander("🤖 Ver Pacotes Duplos/Triplos"):
-            multiplos = 0
-            for chave, pacotes in mapa_rotas.items():
-                if len(pacotes) > 1:
-                    multiplos += 1
-                    st.markdown(f"🚨 **{nome_exibicao.get(chave, chave).title()}**: `{len(pacotes)} pcts`")
-            if multiplos == 0: st.info("Sem pacotes duplos.")
-
-# TELA PRINCIPAL (SÓ CÂMERA E RESULTADOS)
 if not arquivo_pdf:
-    st.info("👈 **Abra o menu lateral (seta no canto superior esquerdo) para enviar o PDF da rota.**")
+    st.info("👈 **Abra o menu lateral (seta no topo) para carregar o PDF da rota.**")
 
-# 1. Câmera no topo
+# 1. PAINEL DE PROGRESSO (30/100 | FALTAM 70)
+if arquivo_pdf and len(todos_os_pacotes) > 0:
+    total_pacotes = len(todos_os_pacotes)
+    qtd_bipados = len(st.session_state.pacotes_bipados)
+    qtd_faltam = total_pacotes - qtd_bipados
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("ESCANO / TOTAL", f"{qtd_bipados} / {total_pacotes}")
+    with c2:
+        st.metric("FALTAM", f"{qtd_faltam} pcts", delta_color="inverse")
+    
+    st.progress(qtd_bipados / total_pacotes)
+
+# 2. CÂMERA
 codigo_camera = qrcode_scanner(key="scanner")
 
-# 2. Entrada Manual Discreta
+# 3. ENTRADA MANUAL
 codigo_manual = st.text_input("", placeholder="Ou digite o código BR aqui...", label_visibility="collapsed")
 codigo_final = codigo_camera or codigo_manual
 
-# 3. Cartão de Resultado (Aparece logo abaixo ao bipar)
+# 4. PROCESSAMENTO DO SCANNER
 if codigo_final and arquivo_pdf:
     cod = codigo_final.strip()
     achou = False
@@ -167,24 +186,34 @@ if codigo_final and arquivo_pdf:
             end_formatado = nome_exibicao.get(chave, chave).title()
             qtd = len(lista_pacotes)
             
+            # Adiciona ao histórico de bipados
+            ja_bipado_antes = cod in st.session_state.pacotes_bipados
+            st.session_state.pacotes_bipados.add(cod)
+            
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-            st.metric("PARADA Nº", num_parada)
+            st.metric("PARADA Nº", f"P{num_parada}")
             st.write(f"📍 **Endereço:** {end_formatado}")
+            st.markdown("---")
+            
+            if ja_bipado_antes:
+                st.warning(f"⚠️ **Este pacote `{cod}` JÁ HAVIA SIDO BIPADO ANTES!**")
+            else:
+                st.success(f"✅ **Pacote Bipado:** `{cod}`")
             
             if qtd > 1:
-                st.warning(f"⚠️ **ATENÇÃO: HÁ {qtd} PACOTES PARA ESTE MESMO ENDEREÇO!**")
+                st.warning(f"⚠️ **ATENÇÃO: ESTA PARADA TEM {qtd} PACOTES NO TOTAL!**")
+                st.markdown("👇 **PEGUE TAMBÉM ESTE(S) OUTRO(S) PACOTE(S):**")
                 for idx, p in enumerate(lista_pacotes, 1):
-                    if p == cod:
-                        st.markdown(f"* **{idx}. `{p}` 👈 (Bipado)**")
-                    else:
-                        st.markdown(f"* {idx}. `{p}`")
+                    if p != cod:
+                        status_p = "✅ (Já Bipado)" if p in st.session_state.pacotes_bipados else "⏳ (Pendente)"
+                        st.markdown(f"* 📦 `{p}` {status_p}")
             else:
-                st.info("ℹ️ Apenas 1 pacote neste endereço.")
+                st.info("ℹ️ Apenas 1 pacote nesta parada.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             
-            if usar_audio:
-                texto_fala = f"Parada {num_parada}. Atenção, {qtd} pacotes para este endereço!" if qtd > 1 else f"Parada {num_parada}"
+            if usar_audio and not ja_bipado_antes:
+                texto_fala = f"Parada {num_parada}. Atenção, {qtd} pacotes!" if qtd > 1 else f"Parada {num_parada}"
                 components.html(f"""<script>
                     window.speechSynthesis.cancel();
                     var msg = new SpeechSynthesisUtterance('{texto_fala}');
