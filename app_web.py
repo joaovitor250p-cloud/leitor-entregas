@@ -11,18 +11,16 @@ st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="center
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# Estilo Visual Dark / App Pro com Topo Ajustado
+# Estilo Visual Dark / App Pro
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
     
-    /* Espaçamento superior corrigido para não cortar no celular */
     .block-container {
         padding-top: 3rem !important;
         padding-bottom: 1rem !important;
     }
 
-    /* Card personalizado de Progresso */
     .stat-banner {
         background-color: #1E1E1E;
         border-radius: 12px;
@@ -33,25 +31,10 @@ st.markdown("""
         align-items: center;
         margin-bottom: 10px;
     }
-    .stat-box {
-        text-align: center;
-    }
-    .stat-label {
-        font-size: 0.72rem;
-        color: #888888;
-        font-weight: bold;
-        letter-spacing: 0.5px;
-    }
-    .stat-value {
-        font-size: 1.3rem;
-        font-weight: bold;
-        color: #28a745;
-    }
-    .stat-value-orange {
-        font-size: 1.3rem;
-        font-weight: bold;
-        color: #FF9500;
-    }
+    .stat-box { text-align: center; }
+    .stat-label { font-size: 0.72rem; color: #888888; font-weight: bold; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.3rem; font-weight: bold; color: #28a745; }
+    .stat-value-orange { font-size: 1.3rem; font-weight: bold; color: #FF9500; }
 
     .custom-card { 
         background-color: #1E1E1E; 
@@ -74,6 +57,7 @@ st.markdown("""
         background-color: #000000 !important;
         margin-bottom: 10px !important;
         overflow: hidden !important;
+        position: relative !important;
     }
     
     iframe { 
@@ -84,16 +68,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Script para Mira Quadrada (1:1)
+# SCRIPT QUE AJUSTA A MIRA QUADRADA E INJETA O BOTÃO DE FLASH / LANTERNA
 components.html("""
     <script>
-    function forcarMiraQuadrada() {
+    function aplicarMelhoriasCamera() {
         try {
             var iframes = window.parent.document.querySelectorAll('iframe');
             iframes.forEach(function(frame) {
                 try {
                     var doc = frame.contentDocument || frame.contentWindow.document;
-                    if (doc) {
+                    if (doc && doc.querySelector('video')) {
+                        // 1. Força a Mira Quadrada (1:1)
                         var styleId = "mira-quadrada-style";
                         if (!doc.getElementById(styleId)) {
                             var css = doc.createElement('style');
@@ -111,12 +96,56 @@ components.html("""
                             `;
                             doc.head.appendChild(css);
                         }
+
+                        // 2. Injeta o Botão de Flash/Lanterna
+                        if (!doc.getElementById('btn-flash-custom')) {
+                            var btn = doc.createElement('button');
+                            btn.id = 'btn-flash-custom';
+                            btn.innerHTML = '🔦 Flash';
+                            btn.style.cssText = `
+                                position: absolute;
+                                top: 12px;
+                                right: 12px;
+                                z-index: 999999;
+                                background: rgba(0, 0, 0, 0.75);
+                                color: #FFFFFF;
+                                border: 1px solid #FF9500;
+                                padding: 8px 14px;
+                                border-radius: 20px;
+                                font-size: 0.85rem;
+                                font-weight: bold;
+                                cursor: pointer;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+                            `;
+
+                            var flashAtivo = false;
+                            btn.onclick = async function() {
+                                var video = doc.querySelector('video');
+                                if (video && video.srcObject) {
+                                    var track = video.srcObject.getVideoTracks()[0];
+                                    if (track) {
+                                        flashAtivo = !flashAtivo;
+                                        try {
+                                            await track.applyConstraints({
+                                                advanced: [{ torch: flashAtivo }]
+                                            });
+                                            btn.innerHTML = flashAtivo ? '⚡ Flash ON' : '🔦 Flash';
+                                            btn.style.background = flashAtivo ? '#FF9500' : 'rgba(0,0,0,0.75)';
+                                            btn.style.color = flashAtivo ? '#000000' : '#FFFFFF';
+                                        } catch (err) {
+                                            alert("O flash não é suportado nesta câmera ou navegador.");
+                                        }
+                                    }
+                                }
+                            };
+                            doc.body.appendChild(btn);
+                        }
                     }
                 } catch(e) {}
             });
         } catch(e) {}
     }
-    setInterval(forcarMiraQuadrada, 300);
+    setInterval(aplicarMelhoriasCamera, 400);
     </script>
 """, height=0)
 
@@ -177,7 +206,7 @@ if arquivo_pdf:
 if not arquivo_pdf:
     st.info("👈 **Abra o menu lateral (seta no topo) para carregar o PDF da rota.**")
 
-# 1. PAINEL DE PROGRESSO REFEITO (SEM CORTAR NO TOPO)
+# 1. PAINEL DE PROGRESSO
 if arquivo_pdf and len(todos_os_pacotes) > 0:
     total_pacotes = len(todos_os_pacotes)
     qtd_bipados = len(st.session_state.pacotes_bipados)
