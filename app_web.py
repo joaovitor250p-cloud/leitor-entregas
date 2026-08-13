@@ -7,7 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Dark / App Pro + QUADRADO DA MIRA COMPLETO E CENTRALIZADO
+# Estilo Visual Dark / App Pro
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
@@ -19,7 +19,7 @@ st.markdown("""
         margin-bottom: 15px; 
     }
     
-    /* Container e iframe com a mesma altura (380px) para mostrar o quadrado inteiro */
+    /* Container do Scanner */
     div[data-testid="stCustomComponentV1"] {
         width: 100% !important;
         height: 380px !important;
@@ -40,6 +40,45 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+# SCRIPT QUE FORÇA A MIRA INTERNA A FICAR QUADRADA
+components.html("""
+    <script>
+    function forcarMiraQuadrada() {
+        try {
+            var iframes = window.parent.document.querySelectorAll('iframe');
+            iframes.forEach(function(frame) {
+                try {
+                    var doc = frame.contentDocument || frame.contentWindow.document;
+                    if (doc) {
+                        var styleId = "mira-quadrada-style";
+                        if (!doc.getElementById(styleId)) {
+                            var css = doc.createElement('style');
+                            css.id = styleId;
+                            css.innerHTML = `
+                                /* Força o quadrado da mira a ficar 1:1 (quadrado perfeito) */
+                                #qr-shaded-region, div[id*="qr-shaded"], div[style*="border"] {
+                                    height: 250px !important;
+                                    width: 250px !important;
+                                    max-width: 85% !important;
+                                    max-height: 85% !important;
+                                    margin: auto !important;
+                                    box-sizing: border-box !important;
+                                }
+                                video {
+                                    object-fit: cover !important;
+                                }
+                            `;
+                            doc.head.appendChild(css);
+                        }
+                    }
+                } catch(e) {}
+            });
+        } catch(e) {}
+    }
+    setInterval(forcarMiraQuadrada, 300);
+    </script>
+""", height=0)
 
 with st.sidebar:
     st.title("⚡ PACOTE É MATO")
@@ -176,3 +215,4 @@ if arquivo_pdf:
         
         if not achou:
             st.error("❌ Código não encontrado nesta rota!")
+        
