@@ -167,48 +167,37 @@ if arquivo_pdf:
 
                 # ÁUDIO
                 if usar_audio:
-                    pitch_val = 1.0
-                    rate_val = 1.0
+                    pitch_val = "1.0"
+                    rate_val = "1.0"
                     
                     if "Pica-Pau" in tipo_voz:
                         fala_texto = f"He-he-he-he! Parada {num_p}!"
                         if len(lista) > 1:
                             fala_texto += f" Atenção, {len(lista)} pacotes!"
-                        pitch_val = 1.8
-                        rate_val = 1.45
+                        pitch_val = "1.8"
+                        rate_val = "1.45"
                     else:
                         fala_texto = f"Parada {num_p}"
                         if len(lista) > 1:
                             fala_texto += f". Atenção, {len(lista)} pacotes!"
 
                         if "Masculina" in tipo_voz:
-                            pitch_val = 0.6
-                            rate_val = 0.95
+                            pitch_val = "0.6"
+                            rate_val = "0.95"
                         elif "Rápida" in tipo_voz:
-                            pitch_val = 1.1
-                            rate_val = 1.35
+                            pitch_val = "1.1"
+                            rate_val = "1.35"
 
-                    js_audio = f"""<script>
-window.speechSynthesis.cancel();
-var msg = new SpeechSynthesisUtterance('{fala_texto}');
-msg.lang = 'pt-BR';
-msg.pitch = {pitch_val};
-msg.rate = {rate_val};
-
-var voices = window.speechSynthesis.getVoices();
-var ptVoices = voices.filter(function(v) {{ return v.lang.includes('pt'); }});
-if (ptVoices.length > 0) {{
-    var tipo = '{tipo_voz}';
-    if (tipo.includes('Masculina')) {{
-        var vM = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('felipe') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('ricardo'); }});
-        if (vM) msg.voice = vM;
-    }} else {{
-        var vF = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('francisca'); }});
-        if (vF) msg.voice = vF;
-    }}
-}}
-window.speechSynthesis.speak(msg);
-</script>"""
+                    js_audio = (
+                        "<script>"
+                        "window.speechSynthesis.cancel();"
+                        f"var msg = new SpeechSynthesisUtterance('{fala_texto}');"
+                        "msg.lang = 'pt-BR';"
+                        f"msg.pitch = {pitch_val};"
+                        f"msg.rate = {rate_val};"
+                        "window.speechSynthesis.speak(msg);"
+                        "</script>"
+                    )
                     components.html(js_audio, height=0)
 
                 achou = True
@@ -228,50 +217,4 @@ else:
     </div>
 </div>"""
     st.markdown(welcome_html, unsafe_allow_html=True)
-     if (vF) msg.voice = vF;
-                            }}
-                        }}
-                        window.speechSynthesis.speak(msg);
-                    </script>
-                    """
-                    components.html(js_audio, height=0)
-
-                achou = True
-                break
-        if not achou:
-            st.error("❌ Código não encontrado!")
-else:
-    # TELA DE INSTRUÇÕES
-    st.markdown(f"""
-<div class="welcome-card">
-    <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title">{NOME_DO_APP}</div>
-    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
-    <div class="instruction-box">
-        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
-        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
-        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-                   components.html(js_audio, height=0)
-
-                achou = True
-                break
-        if not achou:
-            st.error("❌ Código não encontrado!")
-else:
-    # TELA DE INSTRUÇÕES
-    st.markdown("""
-<div class="welcome-card">
-    <div class="welcome-icon">📦</div>
-    <div class="welcome-title">PACOTE É MATO</div>
-    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
-    <div class="instruction-box">
-        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
-        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
-        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
     
