@@ -72,12 +72,10 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                // Esconde a sombra padrão do scanner
                 var s = doc.createElement('style');
                 s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
                 doc.head.appendChild(s);
 
-                // Adiciona a mira com os 4 cantos brancos [ ]
                 if (!doc.getElementById('custom-target-overlay')) {
                     var overlay = doc.createElement('div');
                     overlay.id = 'custom-target-overlay';
@@ -91,7 +89,6 @@ function aplicarMelhorias() {
                     doc.body.appendChild(overlay);
                 }
 
-                // Botão de Flash
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
@@ -224,8 +221,10 @@ if arquivo_pdf:
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
-                if len(lista) > 1: 
-                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
+                # AVISO COM NÚMERO DA PARADA EM VEZ DO CÓDIGO BR
+                if len(lista) > 1:
+                    outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
+                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
                 # AUDIO VOICE
                 if usar_audio:
