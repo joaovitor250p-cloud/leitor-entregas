@@ -22,7 +22,7 @@ tipo_voz = "Feminina / Normal"
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# MENU LATERAL (Configurações e Cores)
+# MENU LATERAL
 with st.sidebar:
     st.title(f"🚚 {NOME_DO_APP}")
     st.caption("Sistema Inteligente de Logística")
@@ -34,7 +34,8 @@ with st.sidebar:
         ["Preto (Dark)", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
     )
     
-    arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
+    arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
+    
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     if usar_audio:
         tipo_voz = st.selectbox(
@@ -76,19 +77,46 @@ estilos_temas = {
 
 t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
 
-# ESTILO VISUAL DINÂMICO
+# ESTILO VISUAL DINÂMICO PREMIUM
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-.block-container {{ padding-top: 2rem !important; padding-bottom: 2rem !important; }}
+.block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
 
-/* Cards */
-.welcome-card {{ background-color: {t['card_bg']}; padding: 24px; border-radius: 18px; border: 1px solid {t['border']}; text-align: center; margin-bottom: 20px; }}
-.welcome-logo {{ width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }}
-.welcome-title {{ font-size: 1.5rem; font-weight: 800; color: {t['accent']}; }}
-.welcome-subtitle {{ font-size: 0.8rem; color: #888888; font-weight: 600; text-transform: uppercase; margin-bottom: 18px; }}
-.instruction-box {{ background-color: {t['bg_app']}; padding: 16px; border-radius: 12px; border: 1px solid {t['border']}; text-align: left; }}
-.instruction-step {{ font-size: 0.88rem; color: {t['text_app']}; margin-bottom: 10px; }}
+/* CARTÃO DE BOAS-VINDAS / HERO DA TELA PRINCIPAL */
+.hero-card {{
+    background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
+    padding: 28px 20px 20px 20px;
+    border-radius: 22px;
+    border: 1px solid {t['border']};
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}}
+.hero-card::before {{
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #28a745, {t['accent']});
+}}
+.welcome-logo {{ width: 85px; height: 85px; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }}
+.welcome-title {{ font-size: 1.8rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; margin-bottom: 2px; }}
+.welcome-subtitle {{ font-size: 0.8rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }}
+
+/* BANNER DE UPLOAD NA TELA INICIAL */
+.upload-card {{
+    background-color: {t['card_bg']};
+    padding: 22px;
+    border-radius: 20px;
+    border: 2px dashed {t['accent']};
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}}
+.upload-title {{ font-size: 1.2rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }}
+.upload-sub {{ font-size: 0.85rem; color: #999999; margin-bottom: 15px; }}
 
 /* Banner de Estatísticas */
 .stat-banner {{ background-color: {t['card_bg']}; border-radius: 12px; padding: 14px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
@@ -174,6 +202,29 @@ def extrair_endereco_limpo(texto):
         return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
     return None
 
+# TELA PRINCIPAL - VERIFICA SE O PDF FOI ENVIADO NA PRINCIPAL OU NO MENU
+arquivo_pdf_main = None
+if not arquivo_pdf_sidebar:
+    st.markdown(f"""
+    <div class="hero-card">
+        <img src="{URL_DO_LOGO}" class="welcome-logo">
+        <div class="welcome-title">{NOME_DO_APP}</div>
+        <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="upload-card">
+        <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
+        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    arquivo_pdf_main = st.file_uploader("Selecione o PDF da Rota", type=["pdf"], key="pdf_main", label_visibility="collapsed")
+
+# DEFINE O ARQUIVO QUE FOI ENVIADO EM QUALQUER UM DOS CAMPOS
+arquivo_pdf = arquivo_pdf_sidebar or arquivo_pdf_main
+
 mapa_rotas = {}
 stop_correspondente = {}
 nome_exibicao = {}
@@ -204,7 +255,7 @@ if arquivo_pdf:
                     stop_correspondente[c_u] = stop_atual
                     nome_exibicao[endereco] = linha[:50]
 
-# TELA PRINCIPAL
+# TELA DE EXECUÇÃO (QUANDO O PDF JÁ FOI CARREGADO)
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
@@ -311,16 +362,4 @@ if arquivo_pdf:
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
-else:
-    welcome_html = f"""<div class="welcome-card">
-    <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title">{NOME_DO_APP}</div>
-    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
-    <div class="instruction-box">
-        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
-        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
-        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
-    </div>
-</div>"""
-    st.markdown(welcome_html, unsafe_allow_html=True)
-    
+            
