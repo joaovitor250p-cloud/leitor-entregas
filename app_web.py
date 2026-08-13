@@ -244,8 +244,4 @@ else:
     </div>
 </div>"""
     st.markdown(welcome_html, unsafe_allow_html=True)
-</div>
-    </div>
-</div>"""
-    st.markdown(welcome_html, unsafe_allow_html=True)
     
