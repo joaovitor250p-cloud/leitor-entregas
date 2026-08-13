@@ -68,7 +68,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT QUE AJUSTA A MIRA QUADRADA E INJETA O BOTÃO DE FLASH / LANTERNA
+# SCRIPT QUE MANTÉM APENAS O QUADRADO ESCURO E ESCONDE AS LINHAS BRANCAS
 components.html("""
     <script>
     function aplicarMelhoriasCamera() {
@@ -78,26 +78,32 @@ components.html("""
                 try {
                     var doc = frame.contentDocument || frame.contentWindow.document;
                     if (doc && doc.querySelector('video')) {
-                        // 1. Força a Mira Quadrada (1:1)
-                        var styleId = "mira-quadrada-style";
+                        // 1. Mantém só o quadrado escuro e oculta qualquer linha/borda branca
+                        var styleId = "mira-limpa-style";
                         if (!doc.getElementById(styleId)) {
                             var css = doc.createElement('style');
                             css.id = styleId;
                             css.innerHTML = `
-                                #qr-shaded-region, div[id*="qr-shaded"], div[style*="border"] {
+                                #qr-shaded-region {
                                     height: 250px !important;
                                     width: 250px !important;
                                     max-width: 85% !important;
                                     max-height: 85% !important;
                                     margin: auto !important;
                                     box-sizing: border-box !important;
+                                    border: none !important;
+                                }
+                                /* Oculta todas as marcações e cantoneiras brancas de dentro */
+                                #qr-shaded-region * {
+                                    display: none !important;
+                                    border: none !important;
                                 }
                                 video { object-fit: cover !important; }
                             `;
                             doc.head.appendChild(css);
                         }
 
-                        // 2. Injeta o Botão de Flash/Lanterna
+                        // 2. Botão de Flash/Lanterna
                         if (!doc.getElementById('btn-flash-custom')) {
                             var btn = doc.createElement('button');
                             btn.id = 'btn-flash-custom';
@@ -145,7 +151,7 @@ components.html("""
             });
         } catch(e) {}
     }
-    setInterval(aplicarMelhoriasCamera, 400);
+    setInterval(aplicarMelhoriasCamera, 300);
     </script>
 """, height=0)
 
