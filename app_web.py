@@ -7,8 +7,9 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração da Página
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Memória de Bipados
-if "pacotes_bipados" not in st.session_state: st.session_state.pacotes_bipados = set()
+# Inicialização de Memória
+if "pacotes_bipados" not in st.session_state:
+    st.session_state.pacotes_bipados = set()
 
 # ESTILO VISUAL PROFISSIONAL (DARK APP PRO)
 st.markdown("""
@@ -29,6 +30,7 @@ st.markdown("""
     text-align: center;
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     margin-top: 10px;
+    margin-bottom: 20px;
 }
 
 .welcome-icon { font-size: 3.5rem; margin-bottom: 5px; }
@@ -75,32 +77,32 @@ iframe { width: 100%; height: 380px; border: none; }
 
 # SCRIPT: MIRA LIMPA + BOTÃO FLASH
 components.html("""<script>
-    function aplicarMelhorias() {
-        var iframes = window.parent.document.querySelectorAll('iframe');
-        iframes.forEach(function(frame) {
-            try {
-                var doc = frame.contentDocument || frame.contentWindow.document;
-                if (doc && doc.querySelector('video')) {
-                    var s = doc.createElement('style');
-                    s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
-                    doc.head.appendChild(s);
-                    if (!doc.getElementById('btn-flash')) {
-                        var btn = doc.createElement('button');
-                        btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
-                        btn.onclick = async () => {
-                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                            var on = btn.innerHTML.includes('ON');
-                            await track.applyConstraints({advanced: [{torch: !on}]});
-                            btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                        };
-                        doc.body.appendChild(btn);
-                    }
+function aplicarMelhorias() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(frame) {
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            if (doc && doc.querySelector('video')) {
+                var s = doc.createElement('style');
+                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                doc.head.appendChild(s);
+                if (!doc.getElementById('btn-flash')) {
+                    var btn = doc.createElement('button');
+                    btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                    btn.onclick = async () => {
+                        var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                        var on = btn.innerHTML.includes('ON');
+                        await track.applyConstraints({advanced: [{torch: !on}]});
+                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                    };
+                    doc.body.appendChild(btn);
                 }
-            } catch(e) {}
-        });
-    }
-    setInterval(aplicarMelhorias, 300);
+            }
+        } catch(e) {}
+    });
+}
+setInterval(aplicarMelhorias, 300);
 </script>""", height=0)
 
 # MENU LATERAL
@@ -182,7 +184,7 @@ if arquivo_pdf:
                 if len(lista) > 1: 
                     st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
 
-                # CONFIGURAÇÃO DE ÁUDIO DINÂMICA
+                # ÁUDIO
                 if usar_audio:
                     pitch_val = 1.0
                     rate_val = 1.0
@@ -191,8 +193,8 @@ if arquivo_pdf:
                         fala_texto = f"He-he-he-he! Parada {num_p}!"
                         if len(lista) > 1:
                             fala_texto += f" Atenção, {len(lista)} pacotes!"
-                        pitch_val = 1.8  # Tom super agudo
-                        rate_val = 1.45  # Rápido e animado
+                        pitch_val = 1.8
+                        rate_val = 1.45
                     else:
                         fala_texto = f"Parada {num_p}"
                         if len(lista) > 1:
@@ -226,6 +228,24 @@ if arquivo_pdf:
                         }}
                         window.speechSynthesis.speak(msg);
                     </script>""", height=0)
+
+                achou = True; break
+        if not achou: st.error("❌ Código não encontrado!")
+else:
+    # TELA DE INSTRUÇÕES
+    st.markdown("""
+<div class="welcome-card">
+    <div class="welcome-icon">📦</div>
+    <div class="welcome-title">PACOTE É MATO</div>
+    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+                  </script>""", height=0)
 
                 achou = True; break
         if not achou: st.error("❌ Código não encontrado!")
