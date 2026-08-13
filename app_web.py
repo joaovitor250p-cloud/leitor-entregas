@@ -4,20 +4,17 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-# =========================================================
-# ⚙️ CONFIGURAÇÃO EMBUTIDA (NOME E FOTO DO APP)
-# =========================================================
+# Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
-# Configuração da Página
 st.set_page_config(
-    page_title=NOME_DO_APP, 
-    page_icon=URL_DO_LOGO, 
+    page_title=NOME_DO_APP,
+    page_icon=URL_DO_LOGO,
     layout="centered"
 )
 
-# Inicialização de Memória
+# Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -53,8 +50,7 @@ iframe { width: 100%; height: 380px; border: none; }
 """, unsafe_allow_html=True)
 
 # SCRIPT: MIRA LIMPA + BOTÃO FLASH
-js_camera = """
-<script>
+js_camera = """<script>
 function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(frame) {
@@ -74,15 +70,14 @@ function aplicarMelhorias() {
                         await track.applyConstraints({advanced: [{torch: !on}]});
                         btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
                     };
-                    doc.head.appendChild(btn);
+                    doc.body.appendChild(btn);
                 }
             }
         } catch(e) {}
     });
 }
 setInterval(aplicarMelhorias, 300);
-</script>
-"""
+</script>"""
 components.html(js_camera, height=0)
 
 # MENU LATERAL
@@ -112,7 +107,10 @@ def extrair_endereco_limpo(texto):
         return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
     return None
 
-mapa_rotas, stop_correspondente, nome_exibicao, todos_pacotes = {}, {}, {}, set()
+mapa_rotas = {}
+stop_correspondente = {}
+nome_exibicao = {}
+todos_pacotes = set()
 
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
@@ -190,24 +188,47 @@ if arquivo_pdf:
                             pitch_val = 1.1
                             rate_val = 1.35
 
-                    js_audio = f"""
-                    <script>
-                        window.speechSynthesis.cancel();
-                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
-                        msg.lang = 'pt-BR';
-                        msg.pitch = {pitch_val};
-                        msg.rate = {rate_val};
-                        
-                        var voices = window.speechSynthesis.getVoices();
-                        var ptVoices = voices.filter(function(v) {{ return v.lang.includes('pt'); }});
-                        if (ptVoices.length > 0) {{
-                            var tipo = '{tipo_voz}';
-                            if (tipo.includes('Masculina')) {{
-                                var vM = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('felipe') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('ricardo'); }});
-                                if (vM) msg.voice = vM;
-                            }} else {{
-                                var vF = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('francisca'); }});
-                                if (vF) msg.voice = vF;
+                    js_audio = f"""<script>
+window.speechSynthesis.cancel();
+var msg = new SpeechSynthesisUtterance('{fala_texto}');
+msg.lang = 'pt-BR';
+msg.pitch = {pitch_val};
+msg.rate = {rate_val};
+
+var voices = window.speechSynthesis.getVoices();
+var ptVoices = voices.filter(function(v) {{ return v.lang.includes('pt'); }});
+if (ptVoices.length > 0) {{
+    var tipo = '{tipo_voz}';
+    if (tipo.includes('Masculina')) {{
+        var vM = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('felipe') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('ricardo'); }});
+        if (vM) msg.voice = vM;
+    }} else {{
+        var vF = ptVoices.find(function(v) {{ return v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('francisca'); }});
+        if (vF) msg.voice = vF;
+    }}
+}}
+window.speechSynthesis.speak(msg);
+</script>"""
+                    components.html(js_audio, height=0)
+
+                achou = True
+                break
+        if not achou:
+            st.error("❌ Código não encontrado!")
+else:
+    # TELA DE INSTRUÇÕES
+    welcome_html = f"""<div class="welcome-card">
+    <img src="{URL_DO_LOGO}" class="welcome-logo">
+    <div class="welcome-title">{NOME_DO_APP}</div>
+    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
+</div>"""
+    st.markdown(welcome_html, unsafe_allow_html=True)
+     if (vF) msg.voice = vF;
                             }}
                         }}
                         window.speechSynthesis.speak(msg);
