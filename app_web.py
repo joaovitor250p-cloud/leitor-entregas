@@ -54,11 +54,11 @@ st.markdown("""
 div[data-testid="stCustomComponentV1"] { 
     width: 100%; height: 350px; display: flex; justify-content: center; align-items: center; border-radius: 16px; border: 2px solid #222; background-color: #000000; margin-bottom: 15px; overflow: hidden; position: relative; 
 }
-iframe { width: 100%; height: 350px; border: none; }
+iframe { width: 100% !important; height: 350px !important; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA + FLASH + BIP + CORREÇÃO DA ÁREA DE LEITURA
+# SCRIPT: ENQUADRAMENTO PERFEITO DA CÂMERA + FLASH + BIP
 js_camera = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -76,16 +76,21 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                // Alinha o vídeo 100% com a matriz de leitura do scanner
+                // Ajuste de altura e layout do iframe interno
                 var s = doc.createElement('style');
-                s.innerHTML = '#qr-shaded-region { display: none !important; } video { width: 100% !important; height: 100% !important; object-fit: fill !important; }';
+                s.innerHTML = `
+                    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; background: #000 !important; }
+                    #qr-shaded-region { display: none !important; }
+                    div { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }
+                    video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+                `;
                 doc.head.appendChild(s);
 
-                // Mira visual de enquadramento
+                // Mira visual ajustada perfeitamente no container do vídeo
                 if (!doc.getElementById('custom-target-overlay')) {
                     var overlay = doc.createElement('div');
                     overlay.id = 'custom-target-overlay';
-                    overlay.style.cssText = 'position:absolute; top:12%; left:10%; right:10%; bottom:12%; pointer-events:none; z-index:90;';
+                    overlay.style.cssText = 'position:absolute; top:15%; left:12%; width:76%; height:70%; pointer-events:none; z-index:90; box-sizing:border-box;';
                     overlay.innerHTML = `
                         <div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>
                         <div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>
