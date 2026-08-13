@@ -14,7 +14,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Inicialização de Variáveis de Controle (Evita NameError)
+# Inicialização de Variáveis de Controle
 usar_audio = True
 tipo_voz = "Feminina / Normal"
 
@@ -58,7 +58,7 @@ iframe { width: 100%; height: 350px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA COM CANTOS BRANCOS + FLASH + BIP
+# SCRIPT: MIRA + FLASH + BIP + CORREÇÃO DA ÁREA DE LEITURA
 js_camera = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -76,14 +76,16 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
+                // Alinha o vídeo 100% com a matriz de leitura do scanner
                 var s = doc.createElement('style');
-                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                s.innerHTML = '#qr-shaded-region { display: none !important; } video { width: 100% !important; height: 100% !important; object-fit: fill !important; }';
                 doc.head.appendChild(s);
 
+                // Mira visual de enquadramento
                 if (!doc.getElementById('custom-target-overlay')) {
                     var overlay = doc.createElement('div');
                     overlay.id = 'custom-target-overlay';
-                    overlay.style.cssText = 'position:absolute; top:15%; left:10%; right:10%; bottom:15%; pointer-events:none; z-index:90;';
+                    overlay.style.cssText = 'position:absolute; top:12%; left:10%; right:10%; bottom:12%; pointer-events:none; z-index:90;';
                     overlay.innerHTML = `
                         <div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>
                         <div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>
@@ -93,6 +95,7 @@ function aplicarMelhorias() {
                     doc.body.appendChild(overlay);
                 }
 
+                // Botão de Flash
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
@@ -278,4 +281,4 @@ else:
     </div>
 </div>"""
     st.markdown(welcome_html, unsafe_allow_html=True)
-                
+    
