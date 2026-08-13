@@ -123,7 +123,15 @@ with st.sidebar:
     if usar_audio:
         tipo_voz = st.selectbox(
             "🎙️ Estilo da Voz", 
-            ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil", "Pica-Pau 🪶"]
+            [
+                "Feminina / Normal", 
+                "Masculina / Grave", 
+                "Rápida / Ágil", 
+                "Pica-Pau 🪶",
+                "Locutor de Rádio 🎙️",
+                "Vilão / Monstro 😈",
+                "Esquilo 🐿️"
+            ]
         )
         
     st.write("---")
@@ -249,6 +257,15 @@ if arquivo_pdf:
                     elif "Rápida" in tipo_voz:
                         pitch_val = "1.1"
                         rate_val = "1.35"
+                    elif "Locutor" in tipo_voz:
+                        pitch_val = "0.7"
+                        rate_val = "0.9"
+                    elif "Vilão" in tipo_voz:
+                        pitch_val = "0.3"
+                        rate_val = "0.8"
+                    elif "Esquilo" in tipo_voz:
+                        pitch_val = "2.0"
+                        rate_val = "1.4"
 
                     js_audio = (
                         "<script>"
