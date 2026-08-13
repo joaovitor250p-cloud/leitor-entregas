@@ -7,7 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Dark / App Pro
+# Estilo Visual Dark / App Pro + CÂMERA SUPER AMPLIADA
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
@@ -18,12 +18,24 @@ st.markdown("""
         border-left: 5px solid #FF9500; 
         margin-bottom: 15px; 
     }
+    
+    /* Câmera com altura de 480px e Zoom de leitura ampliado */
     iframe { 
         width: 100% !important; 
-        height: 380px !important; 
-        border-radius: 16px !important; 
+        height: 480px !important; 
+        border-radius: 18px !important; 
         border: 3px solid #FF9500 !important; 
         background-color: transparent !important; 
+        transform: scale(1.15);
+    }
+    
+    div[data-testid="stCustomComponentV1"] {
+        width: 100% !important;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 18px;
+        margin-bottom: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -165,3 +177,4 @@ if arquivo_pdf:
         
         if not achou:
             st.error("❌ Código não encontrado nesta rota!")
+        
