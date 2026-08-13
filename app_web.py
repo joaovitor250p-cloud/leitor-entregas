@@ -4,11 +4,7 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-
-# ============================================================
-# CONFIGURAÇÃO
-# ============================================================
-
+# Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
@@ -18,316 +14,130 @@ st.set_page_config(
     layout="centered"
 )
 
-
-# ============================================================
-# SESSION STATE
-# ============================================================
-
+# Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-if "ultimo_codigo" not in st.session_state:
-    st.session_state.ultimo_codigo = ""
-
-if "ultimo_resultado" not in st.session_state:
-    st.session_state.ultimo_resultado = None
-
-
-# ============================================================
-# CSS
-# ============================================================
-
+# ESTILO VISUAL PROFISSIONAL
 st.markdown("""
 <style>
+.stApp { background-color: #121212; color: #FFFFFF; }
+.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
-.stApp {
-    background-color: #121212;
-    color: #FFFFFF;
+/* Cards */
+.welcome-card { background-color: #1E1E1E; padding: 24px; border-radius: 18px; border: 1px solid #333333; text-align: center; margin-bottom: 20px; }
+.welcome-logo { width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }
+.welcome-title { font-size: 1.5rem; font-weight: 800; color: #FF9500; }
+.welcome-subtitle { font-size: 0.8rem; color: #888888; font-weight: 600; text-transform: uppercase; margin-bottom: 18px; }
+.instruction-box { background-color: #141414; padding: 16px; border-radius: 12px; border: 1px solid #2A2A2A; text-align: left; }
+.instruction-step { font-size: 0.88rem; color: #DDDDDD; margin-bottom: 10px; }
+
+/* Banner de Estatísticas */
+.stat-banner { background-color: #1E1E1E; border-radius: 12px; padding: 14px; border: 1px solid #333; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }
+.stat-value-green { font-size: 1.5rem; font-weight: bold; color: #28a745; }
+.stat-value-orange { font-size: 1.5rem; font-weight: bold; color: #FF9500; }
+.stat-label { font-size: 0.75rem; color: #AAAAAA; font-weight: bold; letter-spacing: 0.5px; }
+
+/* Cartão da Parada */
+.custom-card { background-color: #1E1E1E; padding: 18px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; }
+.stop-number-big { font-size: 3.5rem; font-weight: 900; color: #FF9500; line-height: 1; margin-bottom: 10px; }
+
+/* Seções de Câmera e Digitação */
+.camera-header { text-align: center; margin-top: 10px; margin-bottom: 5px; }
+.camera-title { font-size: 1.1rem; font-weight: 800; color: #FF9500; text-transform: uppercase; }
+.camera-sub { font-size: 0.8rem; color: #888888; margin-bottom: 10px; }
+
+div[data-testid="stCustomComponentV1"] { 
+    width: 100%; height: 350px; display: flex; justify-content: center; align-items: center; border-radius: 16px; border: 2px solid #222; background-color: #000000; margin-bottom: 15px; overflow: hidden; position: relative; 
 }
-
-.block-container {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-}
-
-/* =========================
-   BOAS VINDAS
-========================= */
-
-.welcome-card {
-    background-color: #1E1E1E;
-    padding: 24px;
-    border-radius: 18px;
-    border: 1px solid #333333;
-    text-align: center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    margin-top: 10px;
-    margin-bottom: 20px;
-}
-
-.welcome-logo {
-    width: 90px;
-    height: 90px;
-    object-fit: contain;
-    margin-bottom: 10px;
-}
-
-.welcome-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #FF9500;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-}
-
-.welcome-subtitle {
-    font-size: 0.8rem;
-    color: #888888;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 18px;
-}
-
-.instruction-box {
-    background-color: #141414;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #2A2A2A;
-    text-align: left;
-    margin-top: 15px;
-}
-
-.instruction-step {
-    font-size: 0.88rem;
-    color: #DDDDDD;
-    margin-bottom: 10px;
-}
-
-
-/* =========================
-   ESTATÍSTICAS
-========================= */
-
-.stat-banner {
-    background-color: #1E1E1E;
-    border-radius: 12px;
-    padding: 12px;
-    border: 1px solid #333;
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 15px;
-}
-
-.stat-value {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #28a745;
-}
-
-.stat-value-orange {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #FF9500;
-}
-
-
-/* =========================
-   CARTÃO DA PARADA
-========================= */
-
-.custom-card {
-    background-color: #1E1E1E;
-    padding: 18px;
-    border-radius: 14px;
-    border-left: 6px solid #28a745;
-    margin-bottom: 15px;
-}
-
-.stop-number-big {
-    font-size: 3.5rem;
-    font-weight: 900;
-    color: #FF9500;
-    line-height: 1;
-    margin-bottom: 10px;
-}
-
-
-/* =========================
-   SCANNER
-========================= */
-
-.scanner-title {
-    text-align: center;
-    color: #FF9500;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-top: 10px;
-    margin-bottom: 8px;
-}
-
-.scanner-help {
-    text-align: center;
-    color: #888888;
-    font-size: 0.8rem;
-    margin-bottom: 12px;
-}
-
-/* Área do componente do scanner */
-div[data-testid="stCustomComponentV1"] {
-    width: 100% !important;
-    border-radius: 16px !important;
-    border: 2px solid #FF9500 !important;
-    background-color: #000000 !important;
-    overflow: hidden !important;
-    margin-bottom: 12px !important;
-}
-
-/* Vídeo da câmera */
-div[data-testid="stCustomComponentV1"] video {
-    width: 100% !important;
-    height: auto !important;
-    object-fit: cover !important;
-}
-
-
-/* =========================
-   INPUT MANUAL
-========================= */
-
-div[data-testid="stTextInput"] input {
-    background-color: #1E1E1E !important;
-    color: white !important;
-    border: 1px solid #444 !important;
-}
-
-
-/* =========================
-   BOTÕES
-========================= */
-
-.stButton button {
-    border-radius: 10px;
-    font-weight: 700;
-}
-
+iframe { width: 100%; height: 350px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
+# SCRIPT: MIRA COM CANTOS BRANCOS + FLASH + BIP
+js_camera = """<script>
+function playBeep() {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+}
 
-# ============================================================
-# SIDEBAR
-# ============================================================
+function aplicarMelhorias() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(frame) {
+        try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            if (doc && doc.querySelector('video')) {
+                // Esconde a sombra padrão do scanner
+                var s = doc.createElement('style');
+                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                doc.head.appendChild(s);
 
+                // Adiciona a mira com os 4 cantos brancos [ ]
+                if (!doc.getElementById('custom-target-overlay')) {
+                    var overlay = doc.createElement('div');
+                    overlay.id = 'custom-target-overlay';
+                    overlay.style.cssText = 'position:absolute; top:15%; left:10%; right:10%; bottom:15%; pointer-events:none; z-index:90;';
+                    overlay.innerHTML = `
+                        <div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>
+                        <div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>
+                        <div style="position:absolute; bottom:0; left:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-bottom-left-radius:4px;"></div>
+                        <div style="position:absolute; bottom:0; right:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-bottom-right-radius:4px;"></div>
+                    `;
+                    doc.body.appendChild(overlay);
+                }
+
+                // Botão de Flash
+                if (!doc.getElementById('btn-flash')) {
+                    var btn = doc.createElement('button');
+                    btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid #FF9500; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                    btn.onclick = async () => {
+                        var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                        var on = btn.innerHTML.includes('ON');
+                        await track.applyConstraints({advanced: [{torch: !on}]});
+                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                    };
+                    doc.body.appendChild(btn);
+                }
+            }
+        } catch(e) {}
+    });
+}
+setInterval(aplicarMelhorias, 300);
+</script>"""
+components.html(js_camera, height=0)
+
+# MENU LATERAL
 with st.sidebar:
-
     st.title(f"🚚 {NOME_DO_APP}")
     st.caption("Sistema Inteligente de Logística")
-
     st.write("---")
-
-    arquivo_pdf = st.file_uploader(
-        "📂 Enviar PDF da Rota",
-        type=["pdf"]
-    )
-
-    usar_audio = st.toggle(
-        "🔊 Falar Número da Parada",
-        value=True
-    )
-
+    arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
+    usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
+    
     tipo_voz = "Feminina / Normal"
-
     if usar_audio:
-
         tipo_voz = st.selectbox(
-            "🎙️ Estilo da Voz",
-            [
-                "Feminina / Normal",
-                "Masculina / Grave",
-                "Rápida / Ágil",
-                "Pica-Pau 🪶"
-            ]
+            "🎙️ Estilo da Voz", 
+            ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil", "Pica-Pau 🪶"]
         )
-
+        
     st.write("---")
-
-    if st.button(
-        "🔄 Zerar Rota Atual",
-        use_container_width=True
-    ):
+    if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.ultimo_codigo = ""
-        st.session_state.ultimo_resultado = None
         st.rerun()
 
-
-# ============================================================
-# EXTRAÇÃO DE ENDEREÇO
-# ============================================================
-
+# LÓGICA DE EXTRAÇÃO POR ENDEREÇO REAL
 def extrair_endereco_limpo(texto):
-
-    padrao = (
-        r'\b'
-        r'(rua|r\.|av\.?|avenida|al\.?|alameda|'
-        r'estrada|tv\.?|travessa)'
-        r'\s+'
-        r'([a-záàâãéèêíïóôõöúçñ0-9\s\.\-]+?)'
-        r'\s*,?\s*'
-        r'(\d+)'
-        r'\b'
-    )
-
-    match = re.search(
-        padrao,
-        texto,
-        re.IGNORECASE
-    )
-
+    match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
     if match:
-
-        logradouro = match.group(1)
-        nome = match.group(2)
-        numero = match.group(3)
-
-        return (
-            f"{logradouro} {nome} {numero}"
-            .lower()
-            .strip()
-        )
-
+        return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
     return None
-
-
-# ============================================================
-# NORMALIZAÇÃO DO CÓDIGO
-# ============================================================
-
-def normalizar_codigo(codigo):
-
-    if not codigo:
-        return None
-
-    codigo = str(codigo).upper().strip()
-
-    # Remove espaços, quebras e caracteres estranhos
-    codigo = re.sub(r'[^A-Z0-9]', '', codigo)
-
-    # Código de rastreio precisa começar com BR
-    if not codigo.startswith("BR"):
-        return None
-
-    # Mantém somente códigos de tamanho plausível
-    if not (12 <= len(codigo) <= 16):
-        return None
-
-    return codigo
-
-
-# ============================================================
-# LEITURA DO PDF
-# ============================================================
 
 mapa_rotas = {}
 stop_correspondente = {}
@@ -335,441 +145,137 @@ nome_exibicao = {}
 todos_pacotes = set()
 
 if arquivo_pdf:
-
     leitor = PdfReader(arquivo_pdf)
-
-    paginas = []
-
-    for pagina in leitor.pages:
-
-        texto_pagina = pagina.extract_text() or ""
-        paginas.append(texto_pagina)
-
-    texto = "\n".join(paginas)
-
-    linhas = texto.splitlines()
-
+    texto = "".join([p.extract_text() + "\n" for p in leitor.pages])
+    linhas = texto.split('\n')
     stop_atual = 0
-
     for linha in linhas:
-
-        # Procura número da parada
-        m_stop = re.match(
-            r'^\s*(\d{1,3})\b',
-            linha
-        )
-
+        m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
         if m_stop:
             stop_atual = int(m_stop.group(1))
+        
+        cods_candidatos = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
+        cods = [c for c in cods_candidatos if 12 <= len(c) <= 16]
+        
+        if cods:
+            endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
+            if endereco not in mapa_rotas:
+                mapa_rotas[endereco] = []
+            for c in cods:
+                c_u = c.upper()
+                todos_pacotes.add(c_u)
+                if c_u not in mapa_rotas[endereco]:
+                    mapa_rotas[endereco].append(c_u)
+                    stop_correspondente[c_u] = stop_atual
+                    nome_exibicao[endereco] = linha[:50]
 
-        # Procura possíveis códigos BR
-        candidatos = re.findall(
-            r'\bBR[A-Z0-9]{10,14}\b',
-            linha.upper()
-        )
-
-        cods = []
-
-        for candidato in candidatos:
-
-            codigo = normalizar_codigo(candidato)
-
-            if codigo and codigo not in cods:
-                cods.append(codigo)
-
-        if not cods:
-            continue
-
-        endereco = (
-            extrair_endereco_limpo(linha)
-            or f"desconhecido_{stop_atual}"
-        )
-
-        if endereco not in mapa_rotas:
-            mapa_rotas[endereco] = []
-
-        for codigo in cods:
-
-            todos_pacotes.add(codigo)
-
-            if codigo not in mapa_rotas[endereco]:
-
-                mapa_rotas[endereco].append(codigo)
-
-                stop_correspondente[codigo] = stop_atual
-
-                nome_exibicao[endereco] = linha[:80]
-
-
-# ============================================================
-# FUNÇÃO DE ÁUDIO
-# ============================================================
-
-def falar_parada(num_p, quantidade):
-
-    if not usar_audio:
-        return
-
-    pitch_val = 1.0
-    rate_val = 1.0
-
-    if "Pica-Pau" in tipo_voz:
-
-        fala_texto = f"He-he-he-he! Parada {num_p}!"
-
-        if quantidade > 1:
-            fala_texto += f" Atenção, {quantidade} pacotes!"
-
-        pitch_val = 1.8
-        rate_val = 1.45
-
-    else:
-
-        fala_texto = f"Parada {num_p}"
-
-        if quantidade > 1:
-            fala_texto += f". Atenção, {quantidade} pacotes!"
-
-        if "Masculina" in tipo_voz:
-            pitch_val = 0.6
-            rate_val = 0.95
-
-        elif "Rápida" in tipo_voz:
-            pitch_val = 1.1
-            rate_val = 1.35
-
-    # Evita problemas com aspas no texto
-    fala_segura = (
-        fala_texto
-        .replace("\\", "\\\\")
-        .replace("'", "\\'")
-    )
-
-    js_audio = f"""
-    <script>
-        window.speechSynthesis.cancel();
-
-        var msg = new SpeechSynthesisUtterance('{fala_segura}');
-
-        msg.lang = 'pt-BR';
-        msg.pitch = {pitch_val};
-        msg.rate = {rate_val};
-
-        window.speechSynthesis.speak(msg);
-    </script>
-    """
-
-    components.html(
-        js_audio,
-        height=0
-    )
-
-
-# ============================================================
-# PROCESSAMENTO DO CÓDIGO
-# ============================================================
-
-def processar_codigo(codigo):
-
-    codigo = normalizar_codigo(codigo)
-
-    if not codigo:
-        st.session_state.ultimo_resultado = {
-            "tipo": "erro",
-            "mensagem": "❌ Código inválido."
-        }
-        return
-
-    # Evita o scanner processar o mesmo QR várias vezes
-    if codigo == st.session_state.ultimo_codigo:
-        return
-
-    st.session_state.ultimo_codigo = codigo
-
-    # Procura o pacote
-    encontrou = False
-
-    for endereco, lista in mapa_rotas.items():
-
-        if codigo not in lista:
-            continue
-
-        encontrou = True
-
-        # Marca como bipado
-        st.session_state.pacotes_bipados.add(codigo)
-
-        num_p = stop_correspondente.get(
-            codigo,
-            "?"
-        )
-
-        outros = [
-            pacote
-            for pacote in lista
-            if pacote != codigo
-            and pacote not in st.session_state.pacotes_bipados
-        ]
-
-        st.session_state.ultimo_resultado = {
-            "tipo": "sucesso",
-            "codigo": codigo,
-            "parada": num_p,
-            "endereco": endereco,
-            "outros": outros,
-            "quantidade": len(lista)
-        }
-
-        return
-
-    if not encontrou:
-
-        st.session_state.ultimo_resultado = {
-            "tipo": "nao_encontrado",
-            "codigo": codigo
-        }
-
-
-# ============================================================
 # TELA PRINCIPAL
-# ============================================================
-
 if arquivo_pdf:
-
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
-
-    faltam = max(0, total - bipados)
-
-    st.markdown(
-        f"""
-        <div class="stat-banner">
-            <div>
-                <div class="stat-value">
-                    {bipados} / {total}
-                </div>
-                <small>BIPADOS</small>
-            </div>
-
-            <div>
-                <div class="stat-value-orange">
-                    {faltam}
-                </div>
-                <small>FALTAM</small>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    # ========================================================
-    # DUPLOS
-    # ========================================================
-
-    with st.expander(
-        "🤖 Ver pacotes no mesmo endereço / duplos"
-    ):
-
-        encontrou_duplo = False
-
-        for endereco, pacotes in mapa_rotas.items():
-
-            if len(pacotes) > 1:
-
-                encontrou_duplo = True
-
-                parada = stop_correspondente.get(
-                    pacotes[0],
-                    "?"
-                )
-
-                st.markdown(
-                    f"""
-                    🚨 **{endereco.title()}**
-
-                    `{len(pacotes)} pacotes`
-
-                    Parada **P{parada}**
-                    """
-                )
-
-                for pacote in pacotes:
-                    st.code(pacote)
-
-        if not encontrou_duplo:
-            st.info(
-                "Nenhum endereço com múltiplos pacotes nesta rota."
-            )
-
-
-    # ========================================================
-    # SCANNER
-    # ========================================================
-
-    st.markdown(
-        '<div class="scanner-title">📷 BIPAR PACOTE</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        '<div class="scanner-help">'
-        'Aponte a câmera para o QR Code do pacote'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-
-    # Scanner principal
-    codigo_camera = qrcode_scanner(
-        key="scanner_pacotes"
-    )
-
-
-    # Processa somente quando realmente recebeu algo
-    if codigo_camera:
-
-        processar_codigo(codigo_camera)
-
-
-    # ========================================================
-    # DIGITAÇÃO MANUAL
-    # ========================================================
-
-    st.markdown(
-        "##### ⌨️ Digitar código manualmente"
-    )
-
-    codigo_manual = st.text_input(
-        "Código",
-        placeholder="BR123456789012",
-        label_visibility="collapsed"
-    )
-
-    if codigo_manual:
-
-        processar_codigo(codigo_manual)
-
-        # Limpa o campo no próximo rerun
-        st.rerun()
-
-
-    # ========================================================
-    # RESULTADO
-    # ========================================================
-
-    resultado = st.session_state.ultimo_resultado
-
-    if resultado:
-
-        if resultado["tipo"] == "sucesso":
-
-            codigo = resultado["codigo"]
-            parada = resultado["parada"]
-            outros = resultado["outros"]
-            quantidade = resultado["quantidade"]
-
-            st.markdown(
-                f"""
-                <div class="custom-card">
-                    <div class="stop-number-big">
-                        P{parada}
-                    </div>
-
-                    <div>
-                        📦 <b>{codigo}</b>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            if outros:
-
-                st.warning(
-                    "⚠️ **MESMO ENDEREÇO!** "
-                    "Pegue também: "
-                    + ", ".join(outros)
-                )
-
-            elif quantidade > 1:
-
-                st.info(
-                    "ℹ️ Os outros pacotes desse endereço "
-                    "já foram bipados."
-                )
-
-            falar_parada(
-                parada,
-                quantidade
-            )
-
-        elif resultado["tipo"] == "nao_encontrado":
-
-            st.error(
-                f"❌ Código **{resultado['codigo']}** "
-                "não encontrado na rota."
-            )
-
-        elif resultado["tipo"] == "erro":
-
-            st.error(
-                resultado["mensagem"]
-            )
-
-
-else:
-
-    # ========================================================
-    # TELA INICIAL
-    # ========================================================
-
-    welcome_html = f"""
-    <div class="welcome-card">
-
-        <img
-            src="{URL_DO_LOGO}"
-            class="welcome-logo"
-        >
-
-        <div class="welcome-title">
-            {NOME_DO_APP}
-        </div>
-
-        <div class="welcome-subtitle">
-            Bipagem & Gestão de Rota
-        </div>
-
-        <div class="instruction-box">
-
-            <div class="instruction-step">
-                <b>1.</b>
-                Abra a barra lateral no topo
-                <b>( ❯❯ )</b>
-            </div>
-
-            <div class="instruction-step">
-                <b>2.</b>
-                Envie o arquivo
-                <b>PDF da Rota</b>
-            </div>
-
-            <div class="instruction-step">
-                <b>3.</b>
-                Permita o acesso à câmera
-            </div>
-
-            <div class="instruction-step">
-                <b>4.</b>
-                Aponte para o QR Code
-            </div>
-
-        </div>
-
+    faltam = total - bipados
+    
+    # BANNER PLACAR
+    banner_html = f"""<div class="stat-banner">
+    <div>
+        <div class="stat-value-green">{bipados} / {total}</div>
+        <div class="stat-label">BIPADOS</div>
     </div>
-    """
+    <div>
+        <div class="stat-value-orange">{faltam}</div>
+        <div class="stat-label">FALTAM</div>
+    </div>
+</div>"""
+    st.markdown(banner_html, unsafe_allow_html=True)
+    
+    # PAINEL DE PACOTES DUPLOS/TRIPLOS
+    with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
+        encontrou_duplo = False
+        for end, pacotes in mapa_rotas.items():
+            if len(pacotes) > 1:
+                encontrou_duplo = True
+                st.markdown(f"🚨 **{end.title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
+        if not encontrou_duplo:
+            st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    st.markdown(
-        welcome_html,
-        unsafe_allow_html=True
-    )
+    # TITULO DA CÂMERA
+    st.markdown("""<div class="camera-header">
+    <div class="camera-title">📸 BIPAR PACOTE</div>
+    <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
+</div>""", unsafe_allow_html=True)
+
+    code = qrcode_scanner(key="s1")
+    
+    st.markdown("#### ⌨️ Digitar código manualmente")
+    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
+    
+    final_code = code or input_code
+    
+    if final_code:
+        cod = final_code.upper().strip()
+        achou = False
+        for endereco, lista in mapa_rotas.items():
+            if cod in lista:
+                st.session_state.pacotes_bipados.add(cod)
+                num_p = stop_correspondente.get(cod, "?")
+                
+                # SOUND BEEP
+                components.html("<script>playBeep();</script>", height=0)
+                
+                st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
+                
+                if len(lista) > 1: 
+                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join([p for p in lista if p != cod]))
+
+                # AUDIO VOICE
+                if usar_audio:
+                    pitch_val = "1.0"
+                    rate_val = "1.0"
+                    
+                    if "Pica-Pau" in tipo_voz:
+                        fala_texto = f"He-he-he-he! Parada {num_p}!"
+                        if len(lista) > 1:
+                            fala_texto += f" Atenção, {len(lista)} pacotes!"
+                        pitch_val = "1.8"
+                        rate_val = "1.45"
+                    else:
+                        fala_texto = f"Parada {num_p}"
+                        if len(lista) > 1:
+                            fala_texto += f". Atenção, {len(lista)} pacotes!"
+
+                        if "Masculina" in tipo_voz:
+                            pitch_val = "0.6"
+                            rate_val = "0.95"
+                        elif "Rápida" in tipo_voz:
+                            pitch_val = "1.1"
+                            rate_val = "1.35"
+
+                    js_audio = (
+                        "<script>"
+                        "window.speechSynthesis.cancel();"
+                        f"var msg = new SpeechSynthesisUtterance('{fala_texto}');"
+                        "msg.lang = 'pt-BR';"
+                        f"msg.pitch = {pitch_val};"
+                        f"msg.rate = {rate_val};"
+                        "window.speechSynthesis.speak(msg);"
+                        "</script>"
+                    )
+                    components.html(js_audio, height=0)
+
+                achou = True
+                break
+        if not achou:
+            st.error("❌ Código não encontrado!")
+else:
+    welcome_html = f"""<div class="welcome-card">
+    <img src="{URL_DO_LOGO}" class="welcome-logo">
+    <div class="welcome-title">{NOME_DO_APP}</div>
+    <div class="welcome-subtitle">Bipagem & Gestão de Rota</div>
+    <div class="instruction-box">
+        <div class="instruction-step"><b>1.</b> Abra a barra lateral no topo <b>( ❯❯ )</b></div>
+        <div class="instruction-step"><b>2.</b> Envie o arquivo <b>PDF da Rota</b></div>
+        <div class="instruction-step"><b>3.</b> Comece a escanear os pacotes</div>
+    </div>
+</div>"""
+    st.markdown(welcome_html, unsafe_allow_html=True)
+    
