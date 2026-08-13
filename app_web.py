@@ -7,7 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Inicializa o controle de memória dos pacotes bipados
+# Inicializa memória de pacotes bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -28,15 +28,6 @@ st.markdown("""
         border-left: 6px solid #28a745; 
         margin-top: 10px; 
         margin-bottom: 15px; 
-    }
-
-    .progress-card {
-        background-color: #1E1E1E;
-        padding: 14px;
-        border-radius: 12px;
-        border: 1px solid #FF9500;
-        margin-bottom: 15px;
-        text-align: center;
     }
     
     /* Container da Câmera */
@@ -97,13 +88,13 @@ components.html("""
     </script>
 """, height=0)
 
-# MENU LATERAL (PDF, AUDIO E ZERAR CONTAGEM)
+# MENU LATERAL (PDF, ÁUDIO E ZERAR)
 with st.sidebar:
     st.title("📦 PACOTE É MATO")
     st.write("---")
     arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
     usar_audio = st.toggle("🔊 Feedback por Voz", value=True)
-    
+    st.write("---")
     if st.button("🔄 Zerar Bipados da Rota"):
         st.session_state.pacotes_bipados = set()
         st.rerun()
@@ -154,7 +145,7 @@ if arquivo_pdf:
 if not arquivo_pdf:
     st.info("👈 **Abra o menu lateral (seta no topo) para carregar o PDF da rota.**")
 
-# 1. PAINEL DE PROGRESSO (30/100 | FALTAM 70)
+# 1. PAINEL DE PROGRESSO (EX: 30 / 100 | FALTAM 70)
 if arquivo_pdf and len(todos_os_pacotes) > 0:
     total_pacotes = len(todos_os_pacotes)
     qtd_bipados = len(st.session_state.pacotes_bipados)
@@ -162,20 +153,33 @@ if arquivo_pdf and len(todos_os_pacotes) > 0:
     
     c1, c2 = st.columns(2)
     with c1:
-        st.metric("ESCANO / TOTAL", f"{qtd_bipados} / {total_pacotes}")
+        st.metric("BIPADOS / TOTAL", f"{qtd_bipados} / {total_pacotes}")
     with c2:
-        st.metric("FALTAM", f"{qtd_faltam} pcts", delta_color="inverse")
+        st.metric("FALTAM", f"{qtd_faltam} pcts")
     
     st.progress(qtd_bipados / total_pacotes)
 
-# 2. CÂMERA
+    # 2. ABA DE ANÁLISE PROATIVA (PACOTES DUPLOS/TRIPLOS ANTES DE BIPAR)
+    with st.expander("🤖 Ver Pacotes Duplos e Triplos da Rota", expanded=False):
+        multiplos_encontrados = 0
+        for chave, pacotes in mapa_rotas.items():
+            if len(pacotes) > 1:
+                multiplos_encontrados += 1
+                end_nome = nome_exibicao.get(chave, chave).title()
+                st.markdown(f"🚨 **{end_nome}**: `{len(pacotes)} PACOTES`")
+                for p in pacotes:
+                    st.caption(f"└─ `{p}` (Parada aprox: P{stop_correspondente.get(p, '?')})")
+        if multiplos_encontrados == 0:
+            st.info("Nenhum endereço com múltiplos pacotes identificado.")
+
+# 3. CÂMERA
 codigo_camera = qrcode_scanner(key="scanner")
 
-# 3. ENTRADA MANUAL
+# 4. ENTRADA MANUAL DISCRETA
 codigo_manual = st.text_input("", placeholder="Ou digite o código BR aqui...", label_visibility="collapsed")
 codigo_final = codigo_camera or codigo_manual
 
-# 4. PROCESSAMENTO DO SCANNER
+# 5. CARTÃO DE RESULTADO
 if codigo_final and arquivo_pdf:
     cod = codigo_final.strip()
     achou = False
@@ -186,7 +190,6 @@ if codigo_final and arquivo_pdf:
             end_formatado = nome_exibicao.get(chave, chave).title()
             qtd = len(lista_pacotes)
             
-            # Adiciona ao histórico de bipados
             ja_bipado_antes = cod in st.session_state.pacotes_bipados
             st.session_state.pacotes_bipados.add(cod)
             
@@ -196,7 +199,7 @@ if codigo_final and arquivo_pdf:
             st.markdown("---")
             
             if ja_bipado_antes:
-                st.warning(f"⚠️ **Este pacote `{cod}` JÁ HAVIA SIDO BIPADO ANTES!**")
+                st.warning(f"⚠️ **Este pacote `{cod}` JÁ HAVIA SIDO BIPADO!**")
             else:
                 st.success(f"✅ **Pacote Bipado:** `{cod}`")
             
