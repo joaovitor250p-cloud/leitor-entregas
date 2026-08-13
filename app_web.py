@@ -131,7 +131,10 @@ if arquivo_pdf:
         if m_stop:
             stop_atual = int(m_stop.group(1))
         
-        cods = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
+        # FILTRO EXATO DE TAMANHO DE RASTREIO (Pega apenas BR com 10 a 14 caracteres numéricos após)
+        cods_candidatos = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
+        cods = [c for c in cods_candidatos if 12 <= len(c) <= 16]
+        
         if cods:
             endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
             if endereco not in mapa_rotas:
