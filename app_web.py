@@ -16,7 +16,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.title("⚡ Pacote é Mato")
+    st.title("⚡ RotaFácil")
     usar_audio = st.toggle("🔊 Feedback por Voz", value=True)
 
 st.title("📦 RotaFácil")
