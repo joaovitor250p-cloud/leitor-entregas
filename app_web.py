@@ -7,19 +7,27 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração do App
 st.set_page_config(page_title="PACOTE É MATO", page_icon="📦", layout="centered")
 
-# Estilo Visual Dark / App Pro
+# Estilo Visual Minimalista (Apenas Câmera em Destaque)
 st.markdown("""
     <style>
     .stApp { background-color: #121212; color: #FFFFFF; }
+    
+    /* Remove padding do topo para subir a câmera */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
     .custom-card { 
         background-color: #1E1E1E; 
         padding: 18px; 
         border-radius: 14px; 
-        border-left: 5px solid #FF9500; 
+        border-left: 5px solid #28a745; 
+        margin-top: 10px; 
         margin-bottom: 15px; 
     }
     
-    /* Container do Scanner */
+    /* Container da Câmera Gigante */
     div[data-testid="stCustomComponentV1"] {
         width: 100% !important;
         height: 380px !important;
@@ -29,7 +37,7 @@ st.markdown("""
         border-radius: 16px !important;
         border: 3px solid #FF9500 !important;
         background-color: #000000 !important;
-        margin-bottom: 15px !important;
+        margin-bottom: 10px !important;
         overflow: hidden !important;
     }
     
@@ -41,7 +49,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT QUE FORÇA A MIRA INTERNA A FICAR QUADRADA
+# SCRIPT QUE FORÇA A MIRA INTERNA QUADRADA (1:1)
 components.html("""
     <script>
     function forcarMiraQuadrada() {
@@ -56,7 +64,6 @@ components.html("""
                             var css = doc.createElement('style');
                             css.id = styleId;
                             css.innerHTML = `
-                                /* Força o quadrado da mira a ficar 1:1 (quadrado perfeito) */
                                 #qr-shaded-region, div[id*="qr-shaded"], div[style*="border"] {
                                     height: 250px !important;
                                     width: 250px !important;
@@ -65,9 +72,7 @@ components.html("""
                                     margin: auto !important;
                                     box-sizing: border-box !important;
                                 }
-                                video {
-                                    object-fit: cover !important;
-                                }
+                                video { object-fit: cover !important; }
                             `;
                             doc.head.appendChild(css);
                         }
@@ -80,139 +85,114 @@ components.html("""
     </script>
 """, height=0)
 
+# MENU LATERAL (GUARDOU O PDF E AS CONFIGURAÇÕES)
 with st.sidebar:
-    st.title("⚡ PACOTE É MATO")
+    st.title("📦 PACOTE É MATO")
     st.write("---")
+    arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
     usar_audio = st.toggle("🔊 Feedback por Voz", value=True)
-    st.caption("IA de Mapeamento Ultrassensível")
-
-st.title("📦 PACOTE É MATO")
-st.caption("Logística inteligente e sem falhas")
-
-arquivo_pdf = st.file_uploader("📂 Enviar PDF da Rota (Circuit)", type=["pdf"])
+    st.caption("Modo Câmera Direta")
 
 def extrair_chave_endereco(texto_linha):
     txt = texto_linha.lower()
-    
-    # 1. Limpa códigos de rastreio e marcas
     txt = re.sub(r'br[a-za-z0-9]+', '', txt)
-    
-    # 2. Remove número da parada no início (ex: "1.", "1 -", "#1")
     txt = re.sub(r'^\s*#?\d{1,3}\b[\.\-\:]?', '', txt)
-    
-    # 3. Remove complementos (AP, APTO, CASA, BLOCO, SOBRADO, FUNDOS, etc.)
     txt = re.sub(r'\b(ap|apto|apartamento|bl|bloco|casa|fundos|fd|sala|sl|sobrado|lote|qd|quadra|kitnet|andar)\b.*$', '', txt)
-    
-    # 4. Remove prefixos de logradouro comuns para padronizar
     txt = re.sub(r'\b(rua|r|av|avenida|al|alameda|estrada|estr|est|tv|travessa|rod|rodovia|praça|prc)\b\.?', '', txt)
-    
-    # 5. Captura a combinação do Nome + Número principal (Ex: "genival 1790")
     match = re.search(r'([a-z0-9áàâãéèêíïóôõöúçñ\s]+?\d+)', txt)
     if match:
         chave = " ".join(match.group(1).strip().split())
-        if len(chave) > 3:
-            return chave
-            
-    # Fallback se não tiver número
+        if len(chave) > 3: return chave
     txt_limpo = re.sub(r'[^\w\s]', '', txt)
     return " ".join(txt_limpo.split())
 
+mapa_rotas = {}
+stop_correspondente = {}
+nome_exibicao = {}
+
 if arquivo_pdf:
-    with st.spinner('Mapeando pacotes duplos e triplos...'):
-        leitor = PdfReader(arquivo_pdf)
-        texto_completo = ""
-        for p in leitor.pages: 
-            texto_completo += p.extract_text() + "\n"
-
-        mapa_rotas = {}           # { "genival 1790": ["BR1", "BR2"] }
-        stop_correspondente = {}  # { "BR1": 1 }
-        nome_exibicao = {}        # { "genival 1790": "Rua Genival 1790" }
+    leitor = PdfReader(arquivo_pdf)
+    texto_completo = "".join([p.extract_text() + "\n" for p in leitor.pages])
+    linhas = [l.strip() for l in texto_completo.split('\n') if l.strip()]
+    stop_atual = 1
+    
+    for linha in linhas:
+        match_stop = re.search(r'^\s*(\d{1,3})\b', linha)
+        if match_stop: stop_atual = int(match_stop.group(1))
         
-        linhas = [l.strip() for l in texto_completo.split('\n') if l.strip()]
-        stop_atual = 1
-        
-        for linha in linhas:
-            match_stop = re.search(r'^\s*(\d{1,3})\b', linha)
-            if match_stop: 
-                stop_atual = int(match_stop.group(1))
+        codigos = re.findall(r'BR[A-Za-z0-9]+', linha)
+        if codigos:
+            chave_end = extrair_chave_endereco(linha)
+            if not chave_end or len(chave_end) < 3: chave_end = f"parada_{stop_atual}"
             
-            codigos = re.findall(r'BR[A-Za-z0-9]+', linha)
+            if chave_end not in mapa_rotas:
+                mapa_rotas[chave_end] = []
+                nome_exibicao[chave_end] = re.sub(r'BR[A-Za-z0-9]+', '', linha).strip()
             
-            if codigos:
-                chave_end = extrair_chave_endereco(linha)
-                
-                if not chave_end or len(chave_end) < 3:
-                    chave_end = f"parada_{stop_atual}"
-                
-                if chave_end not in mapa_rotas:
-                    mapa_rotas[chave_end] = []
-                    nome_exibicao[chave_end] = re.sub(r'BR[A-Za-z0-9]+', '', linha).strip()
-                
-                for c in codigos:
-                    if c not in mapa_rotas[chave_end]:
-                        mapa_rotas[chave_end].append(c)
-                        stop_correspondente[c] = stop_atual
+            for c in codigos:
+                if c not in mapa_rotas[chave_end]:
+                    mapa_rotas[chave_end].append(c)
+                    stop_correspondente[c] = stop_atual
 
-    st.success("✅ Rota processada com sucesso!")
+    # Análise de pacotes múltiplos guardada na lateral
+    with st.sidebar:
+        st.write("---")
+        with st.expander("🤖 Ver Pacotes Duplos/Triplos"):
+            multiplos = 0
+            for chave, pacotes in mapa_rotas.items():
+                if len(pacotes) > 1:
+                    multiplos += 1
+                    st.markdown(f"🚨 **{nome_exibicao.get(chave, chave).title()}**: `{len(pacotes)} pcts`")
+            if multiplos == 0: st.info("Sem pacotes duplos.")
 
-    # --- ABA DE ANÁLISE PROATIVA DE MÚLTIPLOS PACOTES ---
-    with st.expander("🤖 Análise Inteligente de Endereços (Pacotes Duplos/Triplos)", expanded=True):
-        multiplos_encontrados = 0
-        for chave, pacotes in mapa_rotas.items():
-            if len(pacotes) > 1:
-                multiplos_encontrados += 1
-                endereco_mostra = nome_exibicao.get(chave, chave).title()
-                st.markdown(f"🚨 **{endereco_mostra}**: `{len(pacotes)} PACOTES`")
-                for p in pacotes:
-                    st.caption(f"└─ Pacote: `{p}` (Parada aprox: #{stop_correspondente.get(p, '?')})")
-        
-        if multiplos_encontrados == 0:
-            st.info("Nenhum endereço duplicado foi identificado nesta rota.")
+# TELA PRINCIPAL (SÓ CÂMERA E RESULTADOS)
+if not arquivo_pdf:
+    st.info("👈 **Abra o menu lateral (seta no canto superior esquerdo) para enviar o PDF da rota.**")
 
-    st.markdown("---")
-    st.subheader("📷 Scanner")
-    codigo_camera = qrcode_scanner(key="scanner")
-    codigo_manual = st.text_input("Ou digite o código:", placeholder="Ex: BR...")
-    codigo_final = codigo_camera or codigo_manual
+# 1. Câmera no topo
+codigo_camera = qrcode_scanner(key="scanner")
 
-    if codigo_final:
-        cod = codigo_final.strip()
-        achou = False
-        
-        for chave, lista_pacotes in mapa_rotas.items():
-            if cod in lista_pacotes:
-                num_parada = stop_correspondente.get(cod, "?")
-                end_formatado = nome_exibicao.get(chave, chave).title()
-                qtd = len(lista_pacotes)
-                
-                st.markdown('<div class="custom-card" style="border-left-color: #28a745;">', unsafe_allow_html=True)
-                st.metric("PARADA Nº", num_parada)
-                st.write(f"📍 **Endereço:** {end_formatado}")
-                
-                if qtd > 1:
-                    st.warning(f"⚠️ **ATENÇÃO: HÁ {qtd} PACOTES PARA ESTE MESMO ENDEREÇO!**")
-                    for idx, p in enumerate(lista_pacotes, 1):
-                        if p == cod:
-                            st.markdown(f"* **{idx}. `{p}` 👈 (Este que você bipou)**")
-                        else:
-                            st.markdown(f"* {idx}. `{p}`")
-                else:
-                    st.info("ℹ️ Apenas 1 pacote neste endereço.")
-                
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Áudio em voz alta
-                if usar_audio:
-                    texto_fala = f"Parada {num_parada}. Atenção, {qtd} pacotes para este endereço!" if qtd > 1 else f"Parada {num_parada}"
-                    components.html(f"""<script>
-                        window.speechSynthesis.cancel();
-                        var msg = new SpeechSynthesisUtterance('{texto_fala}');
-                        msg.lang = 'pt-BR'; window.speechSynthesis.speak(msg);
-                    </script>""", height=0)
-                
-                achou = True
-                break
-        
-        if not achou:
-            st.error("❌ Código não encontrado nesta rota!")
-        
+# 2. Entrada Manual Discreta
+codigo_manual = st.text_input("", placeholder="Ou digite o código BR aqui...", label_visibility="collapsed")
+codigo_final = codigo_camera or codigo_manual
+
+# 3. Cartão de Resultado (Aparece logo abaixo ao bipar)
+if codigo_final and arquivo_pdf:
+    cod = codigo_final.strip()
+    achou = False
+    
+    for chave, lista_pacotes in mapa_rotas.items():
+        if cod in lista_pacotes:
+            num_parada = stop_correspondente.get(cod, "?")
+            end_formatado = nome_exibicao.get(chave, chave).title()
+            qtd = len(lista_pacotes)
+            
+            st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+            st.metric("PARADA Nº", num_parada)
+            st.write(f"📍 **Endereço:** {end_formatado}")
+            
+            if qtd > 1:
+                st.warning(f"⚠️ **ATENÇÃO: HÁ {qtd} PACOTES PARA ESTE MESMO ENDEREÇO!**")
+                for idx, p in enumerate(lista_pacotes, 1):
+                    if p == cod:
+                        st.markdown(f"* **{idx}. `{p}` 👈 (Bipado)**")
+                    else:
+                        st.markdown(f"* {idx}. `{p}`")
+            else:
+                st.info("ℹ️ Apenas 1 pacote neste endereço.")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if usar_audio:
+                texto_fala = f"Parada {num_parada}. Atenção, {qtd} pacotes para este endereço!" if qtd > 1 else f"Parada {num_parada}"
+                components.html(f"""<script>
+                    window.speechSynthesis.cancel();
+                    var msg = new SpeechSynthesisUtterance('{texto_fala}');
+                    msg.lang = 'pt-BR'; window.speechSynthesis.speak(msg);
+                </script>""", height=0)
+            
+            achou = True
+            break
+    
+    if not achou:
+        st.error("❌ Código não encontrado nesta rota!")
