@@ -1,73 +1,44 @@
-import csv
-import hashlib
-import html
 import io
-import json
 import re
-import time
-from dataclasses import dataclass
-from typing import Dict, List, Set
-
+import hashlib
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-
-# =========================================================
+# =========================
 # CONFIGURAÇÃO
-# =========================================================
+# =========================
 
-NOME_DO_APP = "PACOTE É MATO"
-URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
+APP = "PACOTE É MATO"
+LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
 st.set_page_config(
-    page_title=NOME_DO_APP,
-    page_icon=URL_DO_LOGO,
-    layout="centered",
+    page_title=APP,
+    page_icon="📦",
+    layout="centered"
 )
 
+# =========================
+# MEMÓRIA
+# =========================
 
-# =========================================================
-# ESTADO DA SESSÃO
-# =========================================================
+for key, default in {
+    "bipados": set(),
+    "rota_id": None,
+    "ultimo_qr": "",
+    "ultimo_resultado": None,
+}.items():
 
-def init_state():
-    defaults = {
-        "pacotes_bipados": set(),
-        "rota_id": None,
-        "ultimo_codigo_scanner": "",
-        "ultimo_resultado": None,
-        "ultimo_evento": "",
-        "ultimo_evento_ts": 0.0,
-    }
-
-    for chave, valor in defaults.items():
-        if chave not in st.session_state:
-            st.session_state[chave] = valor
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 
-init_state()
+# =========================
+# FUNÇÕES
+# =========================
 
-
-# =========================================================
-# MODELO DA ROTA
-# =========================================================
-
-@dataclass
-class RouteData:
-    mapa_rotas: Dict[str, List[str]]
-    pacote_para_endereco: Dict[str, str]
-    stop_correspondente: Dict[str, int]
-    todos_pacotes: Set[str]
-    avisos: List[str]
-
-
-# =========================================================
-# FUNÇÕES DE TEXTO
-# =========================================================
-
-def normalizar_espacos(texto: str) -> str:
+def limpar(texto):
     return re.sub(
         r"\s+",
         " ",
@@ -75,1189 +46,915 @@ def normalizar_espacos(texto: str) -> str:
     ).strip()
 
 
-def extrair_stop(linha: str):
-    linha = normalizar_espacos(linha)
+def extrair_parada(linha, atual):
 
     padroes = [
-        r"\b(?:parada|stop)\s*[:#\-]?\s*(\d{1,3})\b",
-        r"\bP\s*[:#\-]?\s*(\d{1,3})\b",
-        r"^\s*(\d{1,3})(?=\s|[-–—])",
+        r"\b(?:parada|stop)\s*[:#-]?\s*(\d{1,3})\b",
+        r"\bP\s*[:#-]?\s*(\d{1,3})\b",
+        r"^\s*(\d{1,3})\b",
     ]
 
     for padrao in padroes:
-        match = re.search(
+
+        m = re.search(
             padrao,
             linha,
-            re.IGNORECASE
+            re.I
         )
 
-        if match:
-            valor = int(match.group(1))
+        if m:
+            return int(
+                m.group(1)
+            )
 
-            if 0 < valor < 1000:
-                return valor
-
-    return None
+    return atual
 
 
-def extrair_endereco_limpo(texto: str):
-    texto = normalizar_espacos(texto)
+def extrair_endereco(texto):
 
-    tipo = (
-        r"rua|r\.?|"
-        r"av\.?|avenida|"
-        r"al\.?|alameda|"
-        r"estrada|est\.?|"
-        r"tv\.?|travessa|"
-        r"rodovia|rod\.?|"
-        r"praça|praca|"
-        r"viela|via"
-    )
-
-    padrao = (
-        rf"\b({tipo})\s+"
-        rf"([^,;\n]{{2,80}}?)"
-        rf"\s*,?\s*"
-        rf"(?:n[º°o]?\.?\s*)?"
-        rf"(\d+[A-Za-z]?)\b"
-    )
-
-    match = re.search(
-        padrao,
+    m = re.search(
+        r"\b(rua|r\.?|avenida|av\.?|travessa|tv\.?|alameda|estrada|rodovia|praça|praca)"
+        r"\s+([^,\n]{2,70}?)\s*,?\s*(?:n[º°o]?\s*)?(\d+[A-Za-z]?)\b",
         texto,
-        re.IGNORECASE
+        re.I,
     )
 
-    if not match:
+    if not m:
         return None
 
-    endereco = (
-        f"{match.group(1)} "
-        f"{match.group(2)} "
-        f"{match.group(3)}"
-    )
-
-    return normalizar_espacos(
-        endereco
+    return limpar(
+        f"{m.group(1)} {m.group(2)} {m.group(3)}"
     ).lower()
 
 
-def extrair_codigos(texto: str) -> List[str]:
-    candidatos = re.findall(
-        r"\bBR[A-Za-z0-9]{10,14}\b",
-        texto or "",
-        re.IGNORECASE,
+def ler_pdf(pdf_bytes):
+
+    reader = PdfReader(
+        io.BytesIO(pdf_bytes)
     )
 
-    resultado = []
-    vistos = set()
+    linhas = []
 
-    for codigo in candidatos:
-        codigo = codigo.upper().strip()
+    for page in reader.pages:
 
-        if codigo not in vistos:
-            vistos.add(codigo)
-            resultado.append(codigo)
-
-    return resultado
-
-
-def normalizar_resultado_scanner(valor) -> str:
-    if not valor:
-        return ""
-
-    if isinstance(valor, str):
-        return valor.upper().strip()
-
-    if isinstance(valor, dict):
-        for chave in (
-            "data",
-            "text",
-            "value",
-            "result"
-        ):
-            if chave in valor and valor[chave]:
-                return str(
-                    valor[chave]
-                ).upper().strip()
-
-    return str(valor).upper().strip()
-
-
-# =========================================================
-# LEITURA DO PDF
-# =========================================================
-
-@st.cache_data(show_spinner=False)
-def ler_rota_pdf(pdf_bytes: bytes) -> RouteData:
-
-    mapa_rotas = {}
-    pacote_para_endereco = {}
-    stop_correspondente = {}
-    todos_pacotes = set()
-    avisos = []
-
-    try:
-        leitor = PdfReader(
-            io.BytesIO(pdf_bytes)
+        texto = (
+            page.extract_text()
+            or ""
         )
 
-    except Exception as exc:
-        raise ValueError(
-            f"Não foi possível abrir o PDF: {exc}"
+        linhas.extend(
+            texto.splitlines()
         )
 
-    paginas = []
+    pacotes = {}
+    grupos = {}
 
-    for numero, pagina in enumerate(
-        leitor.pages,
-        start=1
-    ):
-        try:
-            texto_pagina = (
-                pagina.extract_text()
-                or ""
-            )
-
-            paginas.append(
-                texto_pagina
-            )
-
-            if not texto_pagina.strip():
-                avisos.append(
-                    f"Página {numero} sem texto extraível. "
-                    "Se ela for imagem, pode ser necessário OCR."
-                )
-
-        except Exception:
-            paginas.append("")
-
-            avisos.append(
-                f"Não foi possível extrair o texto da página {numero}."
-            )
-
-    linhas = "\n".join(
-        paginas
-    ).splitlines()
-
-    stop_atual = None
+    parada = 0
 
     for i, linha in enumerate(linhas):
 
-        stop_detectado = extrair_stop(
-            linha
+        parada = extrair_parada(
+            linha,
+            parada
         )
 
-        if stop_detectado is not None:
-            stop_atual = stop_detectado
-
-        codigos = extrair_codigos(
-            linha
+        codigos = re.findall(
+            r"\bBR[A-Za-z0-9]{10,14}\b",
+            linha,
+            re.I
         )
 
         if not codigos:
             continue
 
-        inicio = max(
-            0,
-            i - 2
-        )
-
-        fim = min(
-            len(linhas),
-            i + 3
-        )
-
         contexto = " ".join(
-            normalizar_espacos(x)
-            for x in linhas[inicio:fim]
-            if x.strip()
+            linhas[
+                max(0, i - 2):
+                min(len(linhas), i + 3)
+            ]
         )
 
-        endereco = extrair_endereco_limpo(
-            contexto
-        )
-
-        if not endereco:
-            endereco = (
-                "endereco_nao_identificado_"
-                f"p{stop_atual or 0}_{i}"
-            )
-
-        mapa_rotas.setdefault(
-            endereco,
-            []
+        endereco = (
+            extrair_endereco(contexto)
+            or
+            f"parada_{parada}_{i}"
         )
 
         for codigo in codigos:
 
-            if codigo in todos_pacotes:
+            codigo = codigo.upper()
+
+            if codigo in pacotes:
                 continue
 
-            todos_pacotes.add(
+            pacotes[codigo] = {
+                "parada": parada,
+                "endereco": endereco
+            }
+
+            grupos.setdefault(
+                endereco,
+                []
+            ).append(
                 codigo
             )
 
-            mapa_rotas[
-                endereco
-            ].append(
-                codigo
-            )
-
-            pacote_para_endereco[
-                codigo
-            ] = endereco
-
-            stop_correspondente[
-                codigo
-            ] = stop_atual or 0
-
-    if not todos_pacotes:
-        avisos.append(
-            "Nenhum código BR foi encontrado no PDF. "
-            "Confira se o arquivo possui texto selecionável."
-        )
-
-    return RouteData(
-        mapa_rotas=mapa_rotas,
-        pacote_para_endereco=pacote_para_endereco,
-        stop_correspondente=stop_correspondente,
-        todos_pacotes=todos_pacotes,
-        avisos=avisos,
-    )
+    return pacotes, grupos
 
 
-# =========================================================
-# CONFIGURAÇÃO DA VOZ
-# =========================================================
+# =========================
+# VOZ
+# =========================
 
-def configuracao_voz(
-    tipo_voz: str,
-    numero_parada,
-    mesmo_endereco: bool
+def falar(
+    parada,
+    mesmo_endereco
 ):
 
-    fala = str(
-        numero_parada
+    texto = str(
+        parada
     )
 
-    pitch = 1.0
-    rate = 1.0
-
     if mesmo_endereco:
-        fala += (
+
+        texto += (
             ". Atenção, mesmo endereço."
         )
 
-    if "Pica-Pau" in tipo_voz:
-
-        fala = (
-            f"He he he! {numero_parada}!"
-        )
-
-        if mesmo_endereco:
-            fala += " Atenção!"
-
-        pitch = 1.8
-        rate = 1.45
-
-    elif "Masculina" in tipo_voz:
-        pitch = 0.65
-        rate = 0.95
-
-    elif "Rápida" in tipo_voz:
-        pitch = 1.1
-        rate = 1.35
-
-    elif "Locutor" in tipo_voz:
-        pitch = 0.75
-        rate = 0.90
-
-    elif "Vilão" in tipo_voz:
-        pitch = 0.40
-        rate = 0.82
-
-    elif "Esquilo" in tipo_voz:
-        pitch = 1.90
-        rate = 1.35
-
-    return (
-        fala,
-        pitch,
-        rate
-    )
-
-
-# =========================================================
-# BIP + VOZ
-# =========================================================
-
-def tocar_bip_e_falar(
-    fala: str,
-    pitch: float,
-    rate: float,
-    usar_audio: bool
-):
-
-    fala_js = json.dumps(
-        fala,
-        ensure_ascii=False
-    )
-
-    parte_voz = ""
-
-    if usar_audio:
-
-        parte_voz = (
-            "try {"
-            "window.speechSynthesis.cancel();"
-            "const msg = new SpeechSynthesisUtterance("
-            + fala_js +
-            ");"
-            "msg.lang = 'pt-BR';"
-            "msg.pitch = "
-            + str(float(pitch)) +
-            ";"
-            "msg.rate = "
-            + str(float(rate)) +
-            ";"
-            "window.speechSynthesis.speak(msg);"
-            "} catch (e) {}"
-        )
-
-    audio_js = """
+    js = """
     <script>
 
-    (function() {
+    try {
 
-        try {
+        window.speechSynthesis.cancel();
 
-            const AudioCtx =
-                window.AudioContext ||
-                window.webkitAudioContext;
+        const msg =
+            new SpeechSynthesisUtterance(
+                __TEXT__
+            );
 
-            if (AudioCtx) {
+        msg.lang =
+            'pt-BR';
 
-                const ctx =
-                    new AudioCtx();
+        msg.rate =
+            1.0;
 
-                const osc =
-                    ctx.createOscillator();
+        window.speechSynthesis.speak(
+            msg
+        );
 
-                const gain =
-                    ctx.createGain();
+    }
 
-                osc.type =
-                    "sine";
-
-                osc.frequency.setValueAtTime(
-                    880,
-                    ctx.currentTime
-                );
-
-                gain.gain.setValueAtTime(
-                    0.15,
-                    ctx.currentTime
-                );
-
-                osc.connect(
-                    gain
-                );
-
-                gain.connect(
-                    ctx.destination
-                );
-
-                osc.start();
-
-                osc.stop(
-                    ctx.currentTime
-                    +
-                    0.10
-                );
-
-            }
-
-        }
-
-        catch (e) {}
-
-        __VOICE__
-
-    })();
+    catch(e) {}
 
     </script>
-    """.replace(
-        "__VOICE__",
-        parte_voz
+    """
+
+    js = js.replace(
+        "__TEXT__",
+        repr(texto)
     )
 
     components.html(
-        audio_js,
+        js,
         height=0
     )
 
 
-# =========================================================
-# PROCESSAR PACOTE
-# =========================================================
-
-def processar_codigo(
-    codigo: str,
-    rota: RouteData
-):
-
-    codigo = (
-        codigo or ""
-    ).upper().strip()
-
-    if not codigo:
-        return {
-            "status": "vazio"
-        }
-
-    if codigo not in rota.todos_pacotes:
-
-        return {
-            "status":
-                "nao_encontrado",
-
-            "codigo":
-                codigo,
-        }
-
-    endereco = (
-        rota.pacote_para_endereco[
-            codigo
-        ]
-    )
-
-    parada = (
-        rota.stop_correspondente.get(
-            codigo,
-            0
-        )
-    )
-
-    pacotes_mesmo_endereco = (
-        rota.mapa_rotas.get(
-            endereco,
-            []
-        )
-    )
-
-    ja_bipado = (
-        codigo
-        in
-        st.session_state.pacotes_bipados
-    )
-
-    st.session_state.pacotes_bipados.add(
-        codigo
-    )
-
-    return {
-        "status":
-            "repetido"
-            if ja_bipado
-            else "ok",
-
-        "codigo":
-            codigo,
-
-        "endereco":
-            endereco,
-
-        "parada":
-            parada,
-
-        "pacotes_mesmo_endereco":
-            pacotes_mesmo_endereco,
-    }
-
-
-# =========================================================
+# =========================
 # MENU LATERAL
-# =========================================================
+# =========================
 
 with st.sidebar:
 
     st.title(
-        f"🚚 {NOME_DO_APP}"
+        "🚚 " + APP
     )
 
-    st.caption(
-        "Sistema Inteligente de Logística"
-    )
-
-    st.divider()
-
-    tema_cor = st.selectbox(
-        "🎨 Cor do Tema",
+    tema = st.selectbox(
+        "🎨 Tema",
         [
-            "Preto (Dark)",
-            "RGB Gamer 🌈",
-            "Branco (Light)",
-            "Cinza",
+            "Escuro",
+            "Claro",
             "Azul",
-            "Vermelho",
-        ],
-    )
-
-    arquivo_pdf_sidebar = (
-        st.file_uploader(
-            "📂 Enviar PDF da Rota",
-            type=["pdf"],
-            key="pdf_sidebar",
-        )
+            "Vermelho"
+        ]
     )
 
     usar_audio = st.toggle(
-        "🔊 Falar Número da Parada",
-        value=True,
+        "🔊 Falar parada",
+        value=True
     )
 
-    tipo_voz = (
-        "Feminina / Normal"
-    )
-
-    if usar_audio:
-
-        tipo_voz = st.selectbox(
-            "🎙️ Estilo da Voz",
-            [
-                "Feminina / Normal",
-                "Masculina / Grave",
-                "Rápida / Ágil",
-                "Pica-Pau 🪶",
-                "Locutor de Rádio 🎙️",
-                "Vilão / Monstro 😈",
-                "Esquilo 🐿️",
-            ],
+    arquivo_sidebar = (
+        st.file_uploader(
+            "📂 PDF da rota",
+            type=["pdf"],
+            key="pdf_sidebar"
         )
-
-    st.divider()
+    )
 
     if st.button(
-        "🔄 Zerar Rota Atual",
+        "🔄 Zerar rota",
         use_container_width=True
     ):
 
-        st.session_state.pacotes_bipados = (
-            set()
-        )
+        st.session_state.bipados = set()
 
-        st.session_state.ultimo_codigo_scanner = (
-            ""
-        )
+        st.session_state.ultimo_qr = ""
 
-        st.session_state.ultimo_resultado = (
-            None
-        )
-
-        st.session_state.ultimo_evento = (
-            ""
-        )
-
-        st.session_state.ultimo_evento_ts = (
-            0.0
-        )
+        st.session_state.ultimo_resultado = None
 
         st.rerun()
 
 
-# =========================================================
-# TEMAS
-# =========================================================
+# =========================
+# CORES
+# =========================
 
-estilos_temas = {
+cores = {
 
-    "Preto (Dark)": {
-        "bg_app": "#121212",
-        "text_app": "#FFFFFF",
-        "card_bg": "#1E1E1E",
-        "border": "#333333",
-        "accent": "#FF9500",
-    },
+    "Escuro": (
+        "#111111",
+        "#1d1d1d",
+        "#ffffff",
+        "#ff9500"
+    ),
 
-    "RGB Gamer 🌈": {
-        "bg_app": "#0D0D11",
-        "text_app": "#FFFFFF",
-        "card_bg": "#16161D",
-        "border": "#222230",
-        "accent": "#00FFCC",
-    },
+    "Claro": (
+        "#f5f5f5",
+        "#ffffff",
+        "#111111",
+        "#007aff"
+    ),
 
-    "Branco (Light)": {
-        "bg_app": "#F5F5F7",
-        "text_app": "#1D1D1F",
-        "card_bg": "#FFFFFF",
-        "border": "#E5E5EA",
-        "accent": "#007AFF",
-    },
+    "Azul": (
+        "#081a2b",
+        "#123455",
+        "#ffffff",
+        "#38bdf8"
+    ),
 
-    "Cinza": {
-        "bg_app": "#2C2C2E",
-        "text_app": "#F2F2F7",
-        "card_bg": "#3A3A3C",
-        "border": "#48484A",
-        "accent": "#FF9500",
-    },
-
-    "Azul": {
-        "bg_app": "#0B192C",
-        "text_app": "#E0F2FE",
-        "card_bg": "#1E3E62",
-        "border": "#0087D1",
-        "accent": "#38BDF8",
-    },
-
-    "Vermelho": {
-        "bg_app": "#1A0000",
-        "text_app": "#FFE5E5",
-        "card_bg": "#330000",
-        "border": "#800000",
-        "accent": "#FF4D4D",
-    },
+    "Vermelho": (
+        "#1d0505",
+        "#330909",
+        "#ffffff",
+        "#ff4d4d"
+    ),
 }
 
 
-t = estilos_temas.get(
-    tema_cor,
-    estilos_temas[
-        "Preto (Dark)"
-    ]
+bg, card, text, accent = (
+    cores[tema]
 )
 
 
-# =========================================================
-# RGB
-# =========================================================
+# =========================
+# CSS
+# =========================
 
-css_rgb_anim = ""
-
-if tema_cor == "RGB Gamer 🌈":
-
-    css_rgb_anim = """
-
-    @keyframes rgbGlow {
-
-        0% {
-            border-color:#FF0000;
-            color:#FF0000;
-            box-shadow:
-            0 0 12px rgba(255,0,0,.45);
-        }
-
-        20% {
-            border-color:#FF8800;
-            color:#FF8800;
-            box-shadow:
-            0 0 12px rgba(255,136,0,.45);
-        }
-
-        40% {
-            border-color:#FFFF00;
-            color:#FFFF00;
-            box-shadow:
-            0 0 12px rgba(255,255,0,.45);
-        }
-
-        60% {
-            border-color:#00FF66;
-            color:#00FF66;
-            box-shadow:
-            0 0 12px rgba(0,255,102,.45);
-        }
-
-        80% {
-            border-color:#00CCFF;
-            color:#00CCFF;
-            box-shadow:
-            0 0 12px rgba(0,204,255,.45);
-        }
-
-        100% {
-            border-color:#FF0000;
-            color:#FF0000;
-            box-shadow:
-            0 0 12px rgba(255,0,0,.45);
-        }
-
-    }
-
-
-    .welcome-title,
-    .camera-title,
-    .stop-number-big,
-    .stat-value-orange,
-    .upload-title {
-
-        animation:
-        rgbGlow
-        6s
-        infinite
-        linear !important;
-
-    }
-
-    .upload-card {
-
-        animation:
-        rgbGlow
-        6s
-        infinite
-        linear !important;
-
-    }
-
-    """
-
-
-# =========================================================
-# CSS PRINCIPAL
-# =========================================================
-
-css_principal = """
-
+css = """
 <style>
 
 .stApp {
-    background-color: __BG__;
+    background: __BG__;
     color: __TEXT__;
 }
 
-
 .block-container {
-    padding-top: 1.2rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 780px;
+    max-width: 760px;
+    padding-top: 1rem;
 }
 
-
-/* HOME */
-
-.hero-card {
-
-    background:
-    linear-gradient(
-        145deg,
-        __CARD__,
-        __BG__
-    );
-
-    padding:
-    28px
-    20px
-    20px;
-
-    border-radius:
-    22px;
-
-    border:
-    1px solid
-    __BORDER__;
-
-    text-align:
-    center;
-
-    box-shadow:
-    0 10px 30px
-    rgba(0,0,0,.35);
-
-    margin-bottom:
-    20px;
-
-    position:
-    relative;
-
-    overflow:
-    hidden;
+.hero {
+    background: __CARD__;
+    border: 1px solid __ACCENT__;
+    border-radius: 18px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
 }
 
-
-.hero-card::before {
-
-    content:'';
-
-    position:
-    absolute;
-
-    top:0;
-    left:0;
-    right:0;
-
-    height:
-    4px;
-
-    background:
-    linear-gradient(
-        90deg,
-        #28a745,
-        __ACCENT__
-    );
+.hero img {
+    width: 72px;
 }
 
-
-.welcome-logo {
-
-    width:
-    85px;
-
-    height:
-    85px;
-
-    object-fit:
-    contain;
-
-    margin-bottom:
-    12px;
-
-    filter:
-    drop-shadow(
-        0
-        4px
-        10px
-        rgba(0,0,0,.5)
-    );
+.hero h1 {
+    color: __ACCENT__;
+    margin: 6px 0 0 0;
+    font-size: 1.8rem;
 }
 
-
-.welcome-title {
-
-    font-size:
-    1.8rem;
-
-    font-weight:
-    900;
-
-    color:
-    __ACCENT__;
-
-    letter-spacing:
-    1px;
-
-    margin-bottom:
-    2px;
+.stats {
+    background: __CARD__;
+    border: 1px solid __ACCENT__;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-bottom: 12px;
 }
 
-
-.welcome-subtitle {
-
-    font-size:
-    .8rem;
-
-    color:
-    #888;
-
-    font-weight:
-    700;
-
-    letter-spacing:
-    1.5px;
-
-    text-transform:
-    uppercase;
+.big {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: __ACCENT__;
 }
 
-
-/* UPLOAD */
-
-.upload-card {
-
-    background-color:
-    __CARD__;
-
-    padding:
-    22px;
-
-    border-radius:
-    20px;
-
-    border:
-    2px dashed
-    __ACCENT__;
-
-    text-align:
-    center;
-
-    margin-bottom:
-    18px;
-
-    box-shadow:
-    0 8px 25px
-    rgba(0,0,0,.25);
+.parada {
+    background: __CARD__;
+    border-left: 6px solid __ACCENT__;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
 }
 
-
-.upload-title {
-
-    font-size:
-    1.2rem;
-
-    font-weight:
-    800;
-
-    color:
-    __TEXT__;
-
-    margin-bottom:
-    6px;
+.parada-num {
+    font-size: 3rem;
+    font-weight: 900;
+    color: __ACCENT__;
 }
-
-
-.upload-sub {
-
-    font-size:
-    .85rem;
-
-    color:
-    #999;
-}
-
-
-/* PLACAR */
-
-.stat-banner {
-
-    background-color:
-    __CARD__;
-
-    border-radius:
-    14px;
-
-    padding:
-    14px;
-
-    border:
-    1px solid
-    __BORDER__;
-
-    display:
-    flex;
-
-    justify-content:
-    space-around;
-
-    text-align:
-    center;
-
-    margin-bottom:
-    10px;
-}
-
-
-.stat-value-green {
-
-    font-size:
-    1.5rem;
-
-    font-weight:
-    800;
-
-    color:
-    #28a745;
-}
-
-
-.stat-value-orange {
-
-    font-size:
-    1.5rem;
-
-    font-weight:
-    800;
-
-    color:
-    __ACCENT__;
-}
-
-
-.stat-label {
-
-    font-size:
-    .72rem;
-
-    color:
-    #AAA;
-
-    font-weight:
-    800;
-
-    letter-spacing:
-    .7px;
-}
-
-
-/* PARADA */
-
-.custom-card {
-
-    background-color:
-    __CARD__;
-
-    padding:
-    18px;
-
-    border-radius:
-    14px;
-
-    border-left:
-    6px solid
-    #28a745;
-
-    margin:
-    14px 0;
-
-    border-top:
-    1px solid
-    __BORDER__;
-
-    border-right:
-    1px solid
-    __BORDER__;
-
-    border-bottom:
-    1px solid
-    __BORDER__;
-}
-
-
-.custom-card.duplicate {
-
-    border-left-color:
-    #FF9500;
-}
-
-
-.stop-number-big {
-
-    font-size:
-    3.5rem;
-
-    font-weight:
-    900;
-
-    color:
-    __ACCENT__;
-
-    line-height:
-    1;
-
-    margin-bottom:
-    10px;
-}
-
-
-.package-code {
-
-    font-weight:
-    800;
-
-    word-break:
-    break-all;
-}
-
-
-.address-text {
-
-    font-size:
-    .9rem;
-
-    opacity:
-    .85;
-
-    margin-top:
-    5px;
-}
-
-
-/* CÂMERA */
-
-.camera-header {
-
-    text-align:
-    center;
-
-    margin-top:
-    12px;
-
-    margin-bottom:
-    5px;
-}
-
-
-.camera-title {
-
-    font-size:
-    1.1rem;
-
-    font-weight:
-    800;
-
-    color:
-    __ACCENT__;
-
-    text-transform:
-    uppercase;
-}
-
-
-.camera-sub {
-
-    font-size:
-    .8rem;
-
-    color:
-    #888;
-
-    margin-bottom:
-    10px;
-}
-
-
-__RGB__
 
 </style>
-
 """
 
-
-css_principal = (
-    css_principal
-
+css = (
+    css
     .replace(
         "__BG__",
-        t["bg_app"]
+        bg
     )
-
-    .replace(
-        "__TEXT__",
-        t["text_app"]
-    )
-
     .replace(
         "__CARD__",
-        t["card_bg"]
+        card
     )
-
     .replace(
-        "__BORDER__",
-        t["border"]
+        "__TEXT__",
+        text
     )
-
     .replace(
         "__ACCENT__",
-        t["accent"]
+        accent
+    )
+)
+
+st.markdown(
+    css,
+    unsafe_allow_html=True
+)
+
+
+# =========================
+# TELA INICIAL
+# =========================
+
+arquivo_main = None
+
+if not arquivo_sidebar:
+
+    hero = """
+    <div class="hero">
+
+        <img src="__LOGO__">
+
+        <h1>
+            __APP__
+        </h1>
+
+        <div>
+            Sistema inteligente de logística
+        </div>
+
+    </div>
+    """
+
+    hero = (
+        hero
+        .replace(
+            "__LOGO__",
+            LOGO
+        )
+        .replace(
+            "__APP__",
+            APP
+        )
     )
 
-    .replace(
-        "__RGB__",
-        css_rgb_anim
+    st.markdown(
+        hero,
+        unsafe_allow_html=True
     )
+
+    arquivo_main = (
+        st.file_uploader(
+            "📄 Carregar PDF da rota",
+            type=["pdf"],
+            key="pdf_main"
+        )
+    )
+
+
+arquivo = (
+    arquivo_sidebar
+    or
+    arquivo_main
+)
+
+
+if not arquivo:
+
+    st.info(
+        "Envie o PDF da rota para começar."
+    )
+
+    st.stop()
+
+
+# =========================
+# CARREGA ROTA
+# =========================
+
+pdf_bytes = (
+    arquivo.getvalue()
+)
+
+rota_id = (
+    hashlib
+    .sha256(pdf_bytes)
+    .hexdigest()[:12]
+)
+
+
+if (
+    st.session_state.rota_id
+    !=
+    rota_id
+):
+
+    st.session_state.rota_id = (
+        rota_id
+    )
+
+    st.session_state.bipados = set()
+
+    st.session_state.ultimo_qr = ""
+
+    st.session_state.ultimo_resultado = None
+
+
+try:
+
+    pacotes, grupos = (
+        ler_pdf(pdf_bytes)
+    )
+
+except Exception as e:
+
+    st.error(
+        f"Erro ao ler PDF: {e}"
+    )
+
+    st.stop()
+
+
+if not pacotes:
+
+    st.error(
+        "Nenhum código BR foi encontrado no PDF."
+    )
+
+    st.stop()
+
+
+# =========================
+# PLACAR
+# =========================
+
+total = len(
+    pacotes
+)
+
+bipados = len(
+    st.session_state.bipados
+)
+
+faltam = (
+    total - bipados
 )
 
 
 st.markdown(
-    css_principal,
-    unsafe_allow_html
+    f"""
+    <div class="stats">
+
+        <div>
+
+            <div class="big">
+                {bipados}/{total}
+            </div>
+
+            <div>
+                BIPADOS
+            </div>
+
+        </div>
+
+        <div>
+
+            <div class="big">
+                {faltam}
+            </div>
+
+            <div>
+                FALTAM
+            </div>
+
+        </div>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+st.progress(
+    bipados / total
+)
+
+
+if faltam == 0:
+
+    st.success(
+        "🏁 Rota concluída!"
+    )
+
+
+# =========================
+# MESMO ENDEREÇO
+# =========================
+
+with st.expander(
+    "🤖 Pacotes no mesmo endereço"
+):
+
+    encontrou = False
+
+    for endereco, lista in grupos.items():
+
+        if len(lista) > 1:
+
+            encontrou = True
+
+            paradas = sorted({
+                pacotes[c]["parada"]
+                for c in lista
+            })
+
+            st.write(
+                f"🚨 {endereco.title()} "
+                f"— {len(lista)} pacotes "
+                f"— "
+                +
+                ", ".join(
+                    f"P{x}"
+                    for x in paradas
+                )
+            )
+
+    if not encontrou:
+
+        st.info(
+            "Nenhum endereço com mais de um pacote."
+        )
+
+
+# =========================
+# SCANNER
+# =========================
+
+st.subheader(
+    "📸 Bipar pacote"
+)
+
+codigo_scanner = (
+    qrcode_scanner(
+        key="scanner"
+    )
+)
+
+
+# =========================
+# DIGITAÇÃO MANUAL
+# =========================
+
+st.caption(
+    "Ou digite o código manualmente:"
+)
+
+
+col1, col2 = st.columns(
+    [3, 1]
+)
+
+
+with col1:
+
+    codigo_manual = (
+        st.text_input(
+            "Código",
+            placeholder="BR123456789012",
+            label_visibility="collapsed"
+        )
+    )
+
+
+with col2:
+
+    buscar = st.button(
+        "Buscar",
+        use_container_width=True
+    )
+
+
+# =========================
+# DEFINE O CÓDIGO
+# =========================
+
+codigo = ""
+
+
+if codigo_scanner:
+
+    qr = (
+        str(codigo_scanner)
+        .upper()
+        .strip()
+    )
+
+    if (
+        qr
+        !=
+        st.session_state.ultimo_qr
+    ):
+
+        codigo = qr
+
+        st.session_state.ultimo_qr = (
+            qr
+        )
+
+
+elif buscar and codigo_manual:
+
+    codigo = (
+        codigo_manual
+        .upper()
+        .strip()
+    )
+
+
+# =========================
+# PROCESSA
+# =========================
+
+if codigo:
+
+    if codigo not in pacotes:
+
+        st.session_state.ultimo_resultado = {
+            "tipo":
+                "erro",
+
+            "codigo":
+                codigo
+        }
+
+    else:
+
+        ja_bipado = (
+            codigo
+            in
+            st.session_state.bipados
+        )
+
+        st.session_state.bipados.add(
+            codigo
+        )
+
+        info = (
+            pacotes[codigo]
+        )
+
+        mesmo_endereco = (
+            len(
+                grupos[
+                    info["endereco"]
+                ]
+            )
+            >
+            1
+        )
+
+        st.session_state.ultimo_resultado = {
+
+            "tipo":
+                "repetido"
+                if ja_bipado
+                else
+                "ok",
+
+            "codigo":
+                codigo,
+
+            "parada":
+                info["parada"],
+
+            "endereco":
+                info["endereco"],
+        }
+
+
+        if (
+            usar_audio
+            and
+            not ja_bipado
+        ):
+
+            falar(
+                info["parada"],
+                mesmo_endereco
+            )
+
+
+# =========================
+# RESULTADO
+# =========================
+
+r = (
+    st.session_state.ultimo_resultado
+)
+
+
+if r:
+
+    if r["tipo"] == "erro":
+
+        st.error(
+            "❌ Código não encontrado: "
+            +
+            r["codigo"]
+        )
+
+    else:
+
+        endereco_txt = (
+            r["endereco"]
+        )
+
+        if endereco_txt.startswith(
+            "parada_"
+        ):
+
+            endereco_txt = (
+                "Endereço não identificado"
+            )
+
+
+        card_html = """
+        <div class="parada">
+
+            <div class="parada-num">
+                __PARADA__
+            </div>
+
+            <div>
+                📦 __CODIGO__
+            </div>
+
+            <div>
+                📍 __ENDERECO__
+            </div>
+
+        </div>
+        """
+
+
+        card_html = (
+            card_html
+            .replace(
+                "__PARADA__",
+                f"P{r['parada']}"
+            )
+            .replace(
+                "__CODIGO__",
+                r["codigo"]
+            )
+            .replace(
+                "__ENDERECO__",
+                endereco_txt.title()
+            )
+        )
+
+
+        st.markdown(
+            card_html,
+            unsafe_allow_html=True
+        )
+
+
+        if (
+            r["tipo"]
+            ==
+            "repetido"
+        ):
+
+            st.warning(
+                "⚠️ Esse pacote já foi bipado."
+            )
+
+
+        lista = (
+            grupos[
+                r["endereco"]
+            ]
+        )
+
+
+        pendentes_mesmo_endereco = [
+
+            c
+
+            for c in lista
+
+            if c
+            not in
+            st.session_state.bipados
+        ]
+
+
+        if (
+            len(lista) > 1
+            and
+            pendentes_mesmo_endereco
+        ):
+
+            st.warning(
+
+                "⚠️ Mesmo endereço! "
+                "Ainda falta: "
+
+                +
+
+                ", ".join(
+
+                    f"{c} "
+                    f"(P{pacotes[c]['parada']})"
+
+                    for c
+                    in pendentes_mesmo_endereco
+                )
+
+            )
+
+
+# =========================
+# PENDENTES
+# =========================
+
+with st.expander(
+    "📋 Ver pacotes pendentes"
+):
+
+    pendentes = [
+
+        c
+
+        for c in pacotes
+
+        if c
+        not in
+        st.session_state.bipados
+    ]
+
+
+    if not pendentes:
+
+        st.success(
+            "Nenhum pacote pendente."
+        )
+
+    else:
+
+        for c in sorted(
+
+            pendentes,
+
+            key=lambda x:
+                pacotes[x]["parada"]
+
+        ):
+
+            st.write(
+                f"P{pacotes[c]['parada']} — {c}"
+    )
