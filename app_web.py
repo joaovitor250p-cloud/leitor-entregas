@@ -100,67 +100,73 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO
+# ESTILO VISUAL DINÂMICO COM CÂMERA AJUSTADA
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-.block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
+.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
 
 .hero-card {{
     background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
-    padding: 28px 20px 20px 20px;
-    border-radius: 22px;
+    padding: 24px 18px;
+    border-radius: 20px;
     border: 1px solid {t['border']};
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
+    margin-bottom: 18px;
 }}
-.hero-card::before {{
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 4px;
-    background: linear-gradient(90deg, #28a745, {t['accent']});
-}}
-.welcome-logo {{ width: 85px; height: 85px; object-fit: contain; margin-bottom: 12px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }}
-.welcome-title {{ font-size: 1.8rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; margin-bottom: 2px; }}
-.welcome-subtitle {{ font-size: 0.8rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }}
+.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
+.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
+.welcome-subtitle {{ font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
 .upload-card {{
     background-color: {t['card_bg']};
-    padding: 22px;
-    border-radius: 20px;
+    padding: 20px;
+    border-radius: 18px;
     border: 2px dashed {t['accent']};
     text-align: center;
-    margin-bottom: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
 }}
-.upload-title {{ font-size: 1.2rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }}
-.upload-sub {{ font-size: 0.85rem; color: #999999; margin-bottom: 15px; }}
+.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
+.upload-sub {{ font-size: 0.8rem; color: #999999; }}
 
-.stat-banner {{ background-color: {t['card_bg']}; border-radius: 12px; padding: 14px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
-.stat-value-green {{ font-size: 1.5rem; font-weight: bold; color: #28a745; }}
-.stat-value-orange {{ font-size: 1.5rem; font-weight: bold; color: {t['accent']}; }}
-.stat-label {{ font-size: 0.75rem; color: #AAAAAA; font-weight: bold; letter-spacing: 0.5px; }}
+.stat-banner {{ background-color: {t['card_bg']}; border-radius: 14px; padding: 12px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
+.stat-value-green {{ font-size: 1.4rem; font-weight: bold; color: #28a745; }}
+.stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
+.stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
 
-.custom-card {{ background-color: {t['card_bg']}; padding: 18px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; }}
-.stop-number-big {{ font-size: 3.5rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 10px; }}
+.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
+.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
-.camera-header {{ text-align: center; margin-top: 10px; margin-bottom: 5px; }}
-.camera-title {{ font-size: 1.1rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.8rem; color: #888888; margin-bottom: 10px; }}
+.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
+.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
+.camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
+/* AJUSTE DO CONTAINER DO SCANNER */
 div[data-testid="stCustomComponentV1"] {{ 
-    width: 100%; height: 350px; display: flex; justify-content: center; align-items: center; border-radius: 16px; border: 2px solid {t['accent']}; background-color: #000000; margin-bottom: 15px; overflow: hidden; position: relative; 
+    width: 100% !important;
+    height: 380px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 18px;
+    border: 2px solid {t['accent']};
+    background-color: #000000;
+    margin-bottom: 15px;
+    overflow: hidden;
+    position: relative;
 }}
-iframe {{ width: 100%; height: 350px; border: none; }}
+iframe {{ 
+    width: 100% !important; 
+    height: 100% !important; 
+    border: none; 
+}}
 
 {css_rgb_anim}
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA + FLASH + BIP
+# SCRIPT: CORREÇÃO DE FOCO + MIRA PROPORCIONAL + BOTÃO FLASH
 js_camera = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -179,29 +185,46 @@ function aplicarMelhorias() {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
                 var s = doc.createElement('style');
-                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
+                s.innerHTML = `
+                    #qr-shaded-region { display: none !important; }
+                    #reader__scan_region { display: flex !important; align-items: center !important; justify-content: center !important; }
+                    video { 
+                        width: 100% !important; 
+                        height: 100% !important; 
+                        object-fit: contain !important; 
+                        background-color: #000;
+                    }
+                `;
                 doc.head.appendChild(s);
 
                 if (!doc.getElementById('custom-target-overlay')) {
                     var overlay = doc.createElement('div');
                     overlay.id = 'custom-target-overlay';
-                    overlay.style.cssText = 'position:absolute; top:15%; left:10%; right:10%; bottom:15%; pointer-events:none; z-index:90;';
-                    overlay.innerHTML = '<div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>' +
-                                        '<div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>' +
-                                        '<div style="position:absolute; bottom:0; left:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-bottom-left-radius:4px;"></div>' +
-                                        '<div style="position:absolute; bottom:0; right:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-bottom-right-radius:4px;"></div>';
+                    overlay.style.cssText = 'position:absolute; top:50%; left:50%; width:220px; height:220px; transform:translate(-50%, -50%); pointer-events:none; z-index:90; box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4); border-radius: 12px;';
+                    overlay.innerHTML = `
+                        <div style="position:absolute; top:0; left:0; width:30px; height:30px; border-top:4px solid #FFFFFF; border-left:4px solid #FFFFFF; border-top-left-radius:8px;"></div>
+                        <div style="position:absolute; top:0; right:0; width:30px; height:30px; border-top:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-top-right-radius:8px;"></div>
+                        <div style="position:absolute; bottom:0; left:0; width:30px; height:30px; border-bottom:4px solid #FFFFFF; border-left:4px solid #FFFFFF; border-bottom-left-radius:8px;"></div>
+                        <div style="position:absolute; bottom:0; right:0; width:30px; height:30px; border-bottom:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-bottom-right-radius:8px;"></div>
+                    `;
                     doc.body.appendChild(overlay);
                 }
 
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
-                    btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                    btn.id = 'btn-flash'; 
+                    btn.innerHTML = '🔦 Flash';
+                    btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
                     btn.onclick = async function() {
-                        var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                        var on = btn.innerHTML.includes('ON');
-                        await track.applyConstraints({advanced: [{torch: !on}]});
-                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                        try {
+                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                            if (capabilities.torch) {
+                                var on = btn.innerHTML.includes('ON');
+                                await track.applyConstraints({advanced: [{torch: !on}]});
+                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                            }
+                        } catch(err) {}
                     };
                     doc.body.appendChild(btn);
                 }
@@ -214,15 +237,13 @@ setInterval(aplicarMelhorias, 300);
 </script>"""
 components.html(js_camera, height=0)
 
-# LÓGICA DE LIMPEZA DE ENDEREÇO
+# LÓGICA DE NORMALIZAÇÃO DE ENDEREÇO
 def normalizar_endereco(texto):
     if not texto:
         return ""
-    # Pega tipo de logradouro + nome + número
     m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
     if m:
         return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
-    # Fallback: pega os primeiros 30 caracteres alfanuméricos
     limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
     return limpo
 
@@ -253,7 +274,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSADOR ESPECÍFICO PARA O FORMATO CIRCUIT
+# PROCESSAMENTO ESPECÍFICO DO CIRCUIT
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -266,26 +287,21 @@ if arquivo_pdf:
         if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str:
             continue
             
-        # 1. Procura códigos BR
         cods = re.findall(r'BR[A-Za-z0-9]{10,16}', linha_str, re.IGNORECASE)
         
         if cods:
             seq_stop_auto += 1
             
-            # Tenta pegar o número (#) da parada no início da linha
-            # Ex: "1 Avenida do Oratório..." ou "15 Rua Barlavento..."
             m_num = re.match(r'^(\d{1,3})\b', linha_str)
             if m_num:
                 stop_num = int(m_num.group(1))
             else:
-                # Se o número ficou na linha de cima (às vezes tabelas quebram assim)
                 m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
                 if m_num_ant:
                     stop_num = int(m_num_ant.group(1))
                 else:
                     stop_num = seq_stop_auto
             
-            # Extrai endereço para agrupar múltiplos pacotes no mesmo local
             end_key = normalizar_endereco(linha_str)
             if not end_key or len(end_key) < 3:
                 end_key = f"pacote_isolado_{cods[0]}"
@@ -402,4 +418,3 @@ if arquivo_pdf:
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
-    
