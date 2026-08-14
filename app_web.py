@@ -493,12 +493,7 @@ def configuracao_voz(
 # BIP + VOZ
 # =========================================================
 
-def tocar_bip_e_falar(
-    fala,
-    pitch,
-    rate,
-    usar_audio
-):
+def tocar_bip_e_falar(fala, pitch, rate, usar_audio):
 
     fala_js = json.dumps(
         fala,
@@ -509,48 +504,29 @@ def tocar_bip_e_falar(
 
     if usar_audio:
 
-        parte_voz = f"""
+        parte_voz = (
+            "try {"
+            "window.speechSynthesis.cancel();"
+            "const msg = new SpeechSynthesisUtterance(" + fala_js + ");"
+            "msg.lang = 'pt-BR';"
+            "msg.pitch = " + str(float(pitch)) + ";"
+            "msg.rate = " + str(float(rate)) + ";"
+            "window.speechSynthesis.speak(msg);"
+            "} catch (e) {}"
+        )
 
-        try {{
-
-            window.speechSynthesis.cancel();
-
-            const msg =
-                new SpeechSynthesisUtterance(
-                    {fala_js}
-                );
-
-            msg.lang = "pt-BR";
-
-            msg.pitch = {pitch};
-
-            msg.rate = {rate};
-
-            window.speechSynthesis.speak(
-                msg
-            );
-
-        }} catch (e) {{}}
-
-        """
-
-    audio_js = f"""
-
+    audio_js = """
     <script>
 
-    (function() {{
+    (function() {
 
-        /* =====================
-           BIP
-        ====================== */
-
-        try {{
+        try {
 
             const AudioCtx =
                 window.AudioContext ||
                 window.webkitAudioContext;
 
-            if (AudioCtx) {{
+            if (AudioCtx) {
 
                 const ctx =
                     new AudioCtx();
@@ -561,7 +537,7 @@ def tocar_bip_e_falar(
                 const gain =
                     ctx.createGain();
 
-                osc.type = "sine";
+                osc.type = 'sine';
 
                 osc.frequency.setValueAtTime(
                     880,
@@ -585,23 +561,19 @@ def tocar_bip_e_falar(
                     ctx.currentTime + 0.10
                 );
 
-            }}
+            }
 
-        }} catch (e) {{}}
+        } catch (e) {}
 
+        __VOICE__
 
-        /* =====================
-           VOZ
-        ====================== */
-
-        {parte_voz}
-
-
-    }})();
+    })();
 
     </script>
-
-    """
+    """.replace(
+        "__VOICE__",
+        parte_voz
+    )
 
     components.html(
         audio_js,
