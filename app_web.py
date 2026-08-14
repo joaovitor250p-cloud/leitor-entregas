@@ -18,7 +18,7 @@ st.set_page_config(
 usar_audio = True
 tipo_voz = "Feminina / Normal"
 
-# Memória de Bipados
+# Memória de Bipados (Set garante contagem única)
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -142,7 +142,6 @@ st.markdown(f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
-/* CONTAINER DO SCANNER LIMPO E RESPONSIVO */
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
     border-radius: 16px;
@@ -156,7 +155,7 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: ÁUDIO, FLASH E MIRA LIMPA
+# SCRIPT: BIP SONORO + FLASH
 js_camera = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -174,7 +173,6 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                // Adiciona o botão de Flash caso o aparelho suporte
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
@@ -202,7 +200,7 @@ setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
 
-# LÓGICA DE NORMALIZAÇÃO DE ENDEREÇO
+# NORMALIZAÇÃO DE ENDEREÇO
 def normalizar_endereco(texto):
     if not texto:
         return ""
@@ -239,7 +237,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO ESPECÍFICO DO CIRCUIT
+# PROCESSAMENTO CIRCUIT
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -286,12 +284,12 @@ if arquivo_pdf:
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
-    faltam = total - bipados
+    faltam = max(0, total - bipados)
     
     banner_html = f"""<div class="stat-banner">
     <div>
         <div class="stat-value-green">{bipados} / {total}</div>
-        <div class="stat-label">BIPADOS</div>
+        <div class="stat-label">BIPADOS ÚNICOS</div>
     </div>
     <div>
         <div class="stat-value-orange">{faltam}</div>
@@ -314,7 +312,6 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
 </div>""", unsafe_allow_html=True)
 
-    # Scanner nativo com dimensionamento automático
     code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
@@ -384,3 +381,4 @@ if arquivo_pdf:
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
+            
