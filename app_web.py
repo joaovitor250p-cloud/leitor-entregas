@@ -1,4 +1,5 @@
 import re
+import time
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -18,7 +19,7 @@ st.set_page_config(
 usar_audio = True
 tipo_voz = "Feminina / Normal"
 
-# Memória de Bipados (Set garante contagem única)
+# Memória de Bipados (Set garante contagem única de pacotes)
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -155,32 +156,58 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: BIP SONORO + FLASH
+# SCRIPT: SCAN RÁPIDO (FOCO CONTÍNUO + LEITURA FULLSCREEN + FLASH)
 js_camera = """<script>
-function playBeep() {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-}
-
-function aplicarMelhorias() {
+function aplicarModoRapido() {
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(frame) {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
+                var video = doc.querySelector('video');
+                
+                // Remove qualquer máscara de corte do scanner para ler na tela toda
+                var s = doc.createElement('style');
+                s.innerHTML = `
+                    #qr-shaded-region { display: none !important; }
+                    #reader__scan_region { width: 100% !important; min-height: 100% !important; }
+                    #reader__dashboard { display: none !important; }
+                    video { 
+                        width: 100% !important; 
+                        object-fit: cover !important; 
+                        border-radius: 14px;
+                    }
+                `;
+                doc.head.appendChild(s);
+
+                // Força o sensor da câmera para foco contínuo ultra-rápido
+                if (video.srcObject && !video.dataset.focusApplied) {
+                    var track = video.srcObject.getVideoTracks()[0];
+                    if (track && track.getCapabilities) {
+                        var cap = track.getCapabilities();
+                        var constr = { advanced: [] };
+                        if (cap.focusMode && cap.focusMode.includes('continuous')) {
+                            constr.advanced.push({ focusMode: 'continuous' });
+                        }
+                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) {
+                            constr.advanced.push({ exposureMode: 'continuous' });
+                        }
+                        if (constr.advanced.length > 0) {
+                            track.applyConstraints(constr).catch(function(){});
+                        }
+                        video.dataset.focusApplied = "true";
+                    }
+                }
+
+                // Botão de Flash rápido
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
+                    btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:7px 14px; border-radius:20px; font-weight:bold; font-size:12px; cursor:pointer;';
                     btn.onclick = async function() {
                         try {
-                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
+                            var track = video.srcObject.getVideoTracks()[0];
                             var capabilities = track.getCapabilities ? track.getCapabilities() : {};
                             if (capabilities.torch) {
                                 var on = btn.innerHTML.includes('ON');
@@ -196,7 +223,7 @@ function aplicarMelhorias() {
     });
 }
 var ACCENT_COLOR = '""" + cor_accent + """';
-setInterval(aplicarMelhorias, 400);
+setInterval(aplicarModoRapido, 350);
 </script>"""
 components.html(js_camera, height=0)
 
@@ -224,7 +251,7 @@ if not arquivo_pdf_sidebar:
     st.markdown("""
     <div class="upload-card">
         <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
+        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem rápida</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -308,8 +335,8 @@ if arquivo_pdf:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
     st.markdown("""<div class="camera-header">
-    <div class="camera-title">📸 BIPAR PACOTE</div>
-    <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
+    <div class="camera-title">⚡ BIPAGEM ULTRA-RÁPIDA</div>
+    <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
     code = qrcode_scanner(key="s1")
@@ -326,8 +353,7 @@ if arquivo_pdf:
             if cod in lista:
                 st.session_state.pacotes_bipados.add(cod)
                 num_p = stop_correspondente.get(cod, "?")
-                
-                components.html("<script>playBeep();</script>", height=0)
+                timestamp_agora = time.time()
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
@@ -335,47 +361,62 @@ if arquivo_pdf:
                     outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
                     st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
-                if usar_audio:
-                    fala_texto = f"{num_p}"
+                fala_texto = f"{num_p}"
+                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                    fala_texto += " Atenção!"
+                    
+                pitch_val = "1.0"
+                rate_val = "1.0"
+                
+                if "Pica-Pau" in tipo_voz:
+                    fala_texto = f"He-he-he-he! {num_p}!"
                     if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                         fala_texto += " Atenção!"
-                        
-                    pitch_val = "1.0"
-                    rate_val = "1.0"
-                    
-                    if "Pica-Pau" in tipo_voz:
-                        fala_texto = f"He-he-he-he! {num_p}!"
-                        if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
-                            fala_texto += " Atenção!"
-                        pitch_val = "1.8"
-                        rate_val = "1.45"
-                    elif "Masculina" in tipo_voz:
-                        pitch_val = "0.6"
-                        rate_val = "0.95"
-                    elif "Rápida" in tipo_voz:
-                        pitch_val = "1.1"
-                        rate_val = "1.35"
-                    elif "Locutor" in tipo_voz:
-                        pitch_val = "0.7"
-                        rate_val = "0.9"
-                    elif "Vilão" in tipo_voz:
-                        pitch_val = "0.3"
-                        rate_val = "0.8"
-                    elif "Esquilo" in tipo_voz:
-                        pitch_val = "2.0"
-                        rate_val = "1.4"
+                    pitch_val = "1.8"
+                    rate_val = "1.45"
+                elif "Masculina" in tipo_voz:
+                    pitch_val = "0.6"
+                    rate_val = "0.95"
+                elif "Rápida" in tipo_voz:
+                    pitch_val = "1.1"
+                    rate_val = "1.35"
+                elif "Locutor" in tipo_voz:
+                    pitch_val = "0.7"
+                    rate_val = "0.9"
+                elif "Vilão" in tipo_voz:
+                    pitch_val = "0.3"
+                    rate_val = "0.8"
+                elif "Esquilo" in tipo_voz:
+                    pitch_val = "2.0"
+                    rate_val = "1.4"
 
-                    js_audio = (
-                        "<script>"
-                        "window.speechSynthesis.cancel();"
-                        f"var msg = new SpeechSynthesisUtterance('{fala_texto}');"
-                        "msg.lang = 'pt-BR';"
-                        f"msg.pitch = {pitch_val};"
-                        f"msg.rate = {rate_val};"
-                        "window.speechSynthesis.speak(msg);"
-                        "</script>"
-                    )
-                    components.html(js_audio, height=0)
+                js_exec = f"""
+                <script>
+                (function() {{
+                    try {{{{
+                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        var osc = ctx.createOscillator();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, ctx.currentTime);
+                        osc.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.08);
+                    }}}} catch(e) {{{{}}}}
+
+                    if ({str(usar_audio).lower()}) {{{{
+                        try {{{{
+                            window.speechSynthesis.cancel();
+                            var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                            msg.lang = 'pt-BR';
+                            msg.pitch = {pitch_val};
+                            msg.rate = {rate_val};
+                            window.speechSynthesis.speak(msg);
+                        }}}} catch(e) {{{{}}}}
+                    }}}}
+                }})();
+                </script>
+                """
+                components.html(js_exec, height=0)
 
                 achou = True
                 break
