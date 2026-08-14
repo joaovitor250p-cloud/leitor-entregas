@@ -28,7 +28,6 @@ with st.sidebar:
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
     
-    # SELEÇÃO DE TEMA / COR DO APP (INCLUINDO RGB)
     tema_cor = st.selectbox(
         "🎨 Cor do Tema",
         ["Preto (Dark)", "RGB Gamer 🌈", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
@@ -79,8 +78,9 @@ estilos_temas = {
 }
 
 t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
+cor_accent = t["accent"]
 
-# ANIMAÇÃO CSS RGB SE O TEMA FOR "RGB Gamer 🌈"
+# ANIMAÇÃO CSS RGB
 css_rgb_anim = ""
 if tema_cor == "RGB Gamer 🌈":
     css_rgb_anim = """
@@ -106,7 +106,6 @@ st.markdown(f"""
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
 .block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
 
-/* CARTÃO DE BOAS-VINDAS / HERO DA TELA PRINCIPAL */
 .hero-card {{
     background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
     padding: 28px 20px 20px 20px;
@@ -128,7 +127,6 @@ st.markdown(f"""
 .welcome-title {{ font-size: 1.8rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; margin-bottom: 2px; }}
 .welcome-subtitle {{ font-size: 0.8rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }}
 
-/* BANNER DE UPLOAD NA TELA INICIAL */
 .upload-card {{
     background-color: {t['card_bg']};
     padding: 22px;
@@ -141,17 +139,14 @@ st.markdown(f"""
 .upload-title {{ font-size: 1.2rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }}
 .upload-sub {{ font-size: 0.85rem; color: #999999; margin-bottom: 15px; }}
 
-/* Banner de Estatísticas */
 .stat-banner {{ background-color: {t['card_bg']}; border-radius: 12px; padding: 14px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
 .stat-value-green {{ font-size: 1.5rem; font-weight: bold; color: #28a745; }}
 .stat-value-orange {{ font-size: 1.5rem; font-weight: bold; color: {t['accent']}; }}
 .stat-label {{ font-size: 0.75rem; color: #AAAAAA; font-weight: bold; letter-spacing: 0.5px; }}
 
-/* Cartão da Parada */
 .custom-card {{ background-color: {t['card_bg']}; padding: 18px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; }}
 .stop-number-big {{ font-size: 3.5rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 10px; }}
 
-/* Seções de Câmera e Digitação */
 .camera-header {{ text-align: center; margin-top: 10px; margin-bottom: 5px; }}
 .camera-title {{ font-size: 1.1rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.8rem; color: #888888; margin-bottom: 10px; }}
@@ -165,9 +160,9 @@ iframe {{ width: 100%; height: 350px; border: none; }}
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA COM CANTOS BRANCOS + FLASH + BIP
-js_camera = f"""<script>
-function playBeep() {{
+# SCRIPT: MIRA + FLASH + BIP
+js_camera = """<script>
+function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();
     osc.type = 'sine';
@@ -175,59 +170,63 @@ function playBeep() {{
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.1);
-}}
+}
 
-function aplicarMelhorias() {{
+function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {{
-        try {{
+    iframes.forEach(function(frame) {
+        try {
             var doc = frame.contentDocument || frame.contentWindow.document;
-            if (doc && doc.querySelector('video')) {{
+            if (doc && doc.querySelector('video')) {
                 var s = doc.createElement('style');
-                s.innerHTML = '#qr-shaded-region {{ border: none !important; }} #qr-shaded-region * {{ display: none !important; }} video {{ object-fit: cover !important; }}';
+                s.innerHTML = '#qr-shaded-region { border: none !important; } #qr-shaded-region * { display: none !important; } video { object-fit: cover !important; }';
                 doc.head.appendChild(s);
 
-                if (!doc.getElementById('custom-target-overlay')) {{
+                if (!doc.getElementById('custom-target-overlay')) {
                     var overlay = doc.createElement('div');
                     overlay.id = 'custom-target-overlay';
                     overlay.style.cssText = 'position:absolute; top:15%; left:10%; right:10%; bottom:15%; pointer-events:none; z-index:90;';
-                    overlay.innerHTML = `
-                        <div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>
-                        <div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>
-                        <div style="position:absolute; bottom:0; left:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-bottom-left-radius:4px;"></div>
-                        <div style="position:absolute; bottom:0; right:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-bottom-right-radius:4px;"></div>
-                    `;
+                    overlay.innerHTML = '<div style="position:absolute; top:0; left:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-top-left-radius:4px;"></div>' +
+                                        '<div style="position:absolute; top:0; right:0; width:35px; height:35px; border-top:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-top-right-radius:4px;"></div>' +
+                                        '<div style="position:absolute; bottom:0; left:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-left:5px solid #FFFFFF; border-bottom-left-radius:4px;"></div>' +
+                                        '<div style="position:absolute; bottom:0; right:0; width:35px; height:35px; border-bottom:5px solid #FFFFFF; border-right:5px solid #FFFFFF; border-bottom-right-radius:4px;"></div>';
                     doc.body.appendChild(overlay);
-                }}
+                }
 
-                if (!doc.getElementById('btn-flash')) {{
+                if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid {t["accent"]}; padding:5px 10px; border-radius:15px; font-weight:bold;';
-                    btn.onclick = async () => {{
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:999; background:rgba(0,0,0,0.7); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:5px 10px; border-radius:15px; font-weight:bold;';
+                    btn.onclick = async function() {
                         var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
                         var on = btn.innerHTML.includes('ON');
-                        await track.applyConstraints({{advanced: [{{torch: !on}}]}});
+                        await track.applyConstraints({advanced: [{torch: !on}]});
                         btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                    }};
+                    };
                     doc.body.appendChild(btn);
-                }}
-            }}
-        }} catch(e) {{}}
-    }});
-}}
+                }
+            }
+        } catch(e) {}
+    });
+}
+var ACCENT_COLOR = '""" + cor_accent + """';
 setInterval(aplicarMelhorias, 300);
 </script>"""
 components.html(js_camera, height=0)
 
-# LÓGICA DE EXTRAÇÃO POR ENDEREÇO REAL
-def extrair_endereco_limpo(texto):
-    match = re.search(r'(rua|av|avenida|al|alameda|estrada|tv|travessa)\s+([a-záàâãéèêíïóôõöúçñ\s]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
-    if match:
-        return f"{match.group(1)} {match.group(2)} {match.group(3)}".lower().strip()
-    return None
+# LÓGICA DE LIMPEZA DE ENDEREÇO
+def normalizar_endereco(texto):
+    if not texto:
+        return ""
+    # Pega tipo de logradouro + nome + número
+    m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
+    if m:
+        return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
+    # Fallback: pega os primeiros 30 caracteres alfanuméricos
+    limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
+    return limpo
 
-# TELA PRINCIPAL - VERIFICA SE O PDF FOI ENVIADO NA PRINCIPAL OU NO MENU
+# TELA PRINCIPAL
 arquivo_pdf_main = None
 if not arquivo_pdf_sidebar:
     st.markdown(f"""
@@ -247,7 +246,6 @@ if not arquivo_pdf_sidebar:
     
     arquivo_pdf_main = st.file_uploader("Selecione o PDF da Rota", type=["pdf"], key="pdf_main", label_visibility="collapsed")
 
-# DEFINE O ARQUIVO QUE FOI ENVIADO EM QUALQUER UM DOS CAMPOS
 arquivo_pdf = arquivo_pdf_sidebar or arquivo_pdf_main
 
 mapa_rotas = {}
@@ -255,38 +253,60 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
+# PROCESSADOR ESPECÍFICO PARA O FORMATO CIRCUIT
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
-    texto = "".join([p.extract_text() + "\n" for p in leitor.pages])
+    texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
     linhas = texto.split('\n')
-    stop_atual = 0
-    for linha in linhas:
-        m_stop = re.search(r'^\s*(\d{1,3})\b', linha)
-        if m_stop:
-            stop_atual = int(m_stop.group(1))
-        
-        cods_candidatos = re.findall(r'BR[A-Za-z0-9]+', linha, re.IGNORECASE)
-        cods = [c for c in cods_candidatos if 12 <= len(c) <= 16]
+    
+    seq_stop_auto = 0
+    
+    for idx, linha in enumerate(linhas):
+        linha_str = linha.strip()
+        if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str:
+            continue
+            
+        # 1. Procura códigos BR
+        cods = re.findall(r'BR[A-Za-z0-9]{10,16}', linha_str, re.IGNORECASE)
         
         if cods:
-            endereco = extrair_endereco_limpo(linha) or f"desconhecido_{stop_atual}"
-            if endereco not in mapa_rotas:
-                mapa_rotas[endereco] = []
+            seq_stop_auto += 1
+            
+            # Tenta pegar o número (#) da parada no início da linha
+            # Ex: "1 Avenida do Oratório..." ou "15 Rua Barlavento..."
+            m_num = re.match(r'^(\d{1,3})\b', linha_str)
+            if m_num:
+                stop_num = int(m_num.group(1))
+            else:
+                # Se o número ficou na linha de cima (às vezes tabelas quebram assim)
+                m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
+                if m_num_ant:
+                    stop_num = int(m_num_ant.group(1))
+                else:
+                    stop_num = seq_stop_auto
+            
+            # Extrai endereço para agrupar múltiplos pacotes no mesmo local
+            end_key = normalizar_endereco(linha_str)
+            if not end_key or len(end_key) < 3:
+                end_key = f"pacote_isolado_{cods[0]}"
+                
+            if end_key not in mapa_rotas:
+                mapa_rotas[end_key] = []
+                
             for c in cods:
                 c_u = c.upper()
                 todos_pacotes.add(c_u)
-                if c_u not in mapa_rotas[endereco]:
-                    mapa_rotas[endereco].append(c_u)
-                    stop_correspondente[c_u] = stop_atual
-                    nome_exibicao[endereco] = linha[:50]
+                if c_u not in mapa_rotas[end_key]:
+                    mapa_rotas[end_key].append(c_u)
+                    stop_correspondente[c_u] = stop_num
+                    nome_exibicao[end_key] = linha_str[:45]
 
-# TELA DE EXECUÇÃO (QUANDO O PDF JÁ FOI CARREGADO)
+# TELA DE EXECUÇÃO
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
     faltam = total - bipados
     
-    # BANNER PLACAR
     banner_html = f"""<div class="stat-banner">
     <div>
         <div class="stat-value-green">{bipados} / {total}</div>
@@ -299,17 +319,15 @@ if arquivo_pdf:
 </div>"""
     st.markdown(banner_html, unsafe_allow_html=True)
     
-    # PAINEL DE PACOTES DUPLOS/TRIPLOS
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
         for end, pacotes in mapa_rotas.items():
-            if len(pacotes) > 1:
+            if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
-                st.markdown(f"🚨 **{end.title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
+                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    # TITULO DA CÂMERA
     st.markdown("""<div class="camera-header">
     <div class="camera-title">📸 BIPAR PACOTE</div>
     <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
@@ -330,20 +348,17 @@ if arquivo_pdf:
                 st.session_state.pacotes_bipados.add(cod)
                 num_p = stop_correspondente.get(cod, "?")
                 
-                # SOUND BEEP
                 components.html("<script>playBeep();</script>", height=0)
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
-                # AVISO COM NÚMERO DA PARADA
-                if len(lista) > 1:
+                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                     outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
                     st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
-                # AUDIO VOICE
                 if usar_audio:
                     fala_texto = f"{num_p}"
-                    if len(lista) > 1:
+                    if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                         fala_texto += " Atenção!"
                         
                     pitch_val = "1.0"
@@ -351,7 +366,7 @@ if arquivo_pdf:
                     
                     if "Pica-Pau" in tipo_voz:
                         fala_texto = f"He-he-he-he! {num_p}!"
-                        if len(lista) > 1:
+                        if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                             fala_texto += " Atenção!"
                         pitch_val = "1.8"
                         rate_val = "1.45"
@@ -387,4 +402,4 @@ if arquivo_pdf:
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
-            
+    
