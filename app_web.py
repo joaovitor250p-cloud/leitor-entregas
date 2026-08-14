@@ -100,7 +100,7 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO COM CÂMERA AJUSTADA
+# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
@@ -142,31 +142,21 @@ st.markdown(f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
-/* AJUSTE DO CONTAINER DO SCANNER */
+/* CONTAINER DO SCANNER LIMPO E RESPONSIVO */
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
-    height: 380px !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 18px;
+    border-radius: 16px;
     border: 2px solid {t['accent']};
     background-color: #000000;
     margin-bottom: 15px;
     overflow: hidden;
-    position: relative;
-}}
-iframe {{ 
-    width: 100% !important; 
-    height: 100% !important; 
-    border: none; 
 }}
 
 {css_rgb_anim}
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: CORREÇÃO DE FOCO + MIRA PROPORCIONAL + BOTÃO FLASH
+# SCRIPT: ÁUDIO, FLASH E MIRA LIMPA
 js_camera = """<script>
 function playBeep() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -184,37 +174,12 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                var s = doc.createElement('style');
-                s.innerHTML = `
-                    #qr-shaded-region { display: none !important; }
-                    #reader__scan_region { display: flex !important; align-items: center !important; justify-content: center !important; }
-                    video { 
-                        width: 100% !important; 
-                        height: 100% !important; 
-                        object-fit: contain !important; 
-                        background-color: #000;
-                    }
-                `;
-                doc.head.appendChild(s);
-
-                if (!doc.getElementById('custom-target-overlay')) {
-                    var overlay = doc.createElement('div');
-                    overlay.id = 'custom-target-overlay';
-                    overlay.style.cssText = 'position:absolute; top:50%; left:50%; width:220px; height:220px; transform:translate(-50%, -50%); pointer-events:none; z-index:90; box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4); border-radius: 12px;';
-                    overlay.innerHTML = `
-                        <div style="position:absolute; top:0; left:0; width:30px; height:30px; border-top:4px solid #FFFFFF; border-left:4px solid #FFFFFF; border-top-left-radius:8px;"></div>
-                        <div style="position:absolute; top:0; right:0; width:30px; height:30px; border-top:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-top-right-radius:8px;"></div>
-                        <div style="position:absolute; bottom:0; left:0; width:30px; height:30px; border-bottom:4px solid #FFFFFF; border-left:4px solid #FFFFFF; border-bottom-left-radius:8px;"></div>
-                        <div style="position:absolute; bottom:0; right:0; width:30px; height:30px; border-bottom:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-bottom-right-radius:8px;"></div>
-                    `;
-                    doc.body.appendChild(overlay);
-                }
-
+                // Adiciona o botão de Flash caso o aparelho suporte
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
                     btn.onclick = async function() {
                         try {
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
@@ -233,7 +198,7 @@ function aplicarMelhorias() {
     });
 }
 var ACCENT_COLOR = '""" + cor_accent + """';
-setInterval(aplicarMelhorias, 300);
+setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
 
@@ -349,6 +314,7 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
 </div>""", unsafe_allow_html=True)
 
+    # Scanner nativo com dimensionamento automático
     code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
