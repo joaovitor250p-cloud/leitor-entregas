@@ -23,8 +23,8 @@ tipo_voz = "Feminina / Normal"
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-if "bip_counter" not in st.session_state:
-    st.session_state.bip_counter = 0
+if "contador_leituras" not in st.session_state:
+    st.session_state.contador_leituras = 0
 
 # MENU LATERAL
 with st.sidebar:
@@ -57,7 +57,7 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.bip_counter = 0
+        st.session_state.contador_leituras = 0
         st.rerun()
 
 # DEFINIÇÃO DAS PALETAS DE CORES
@@ -140,7 +140,7 @@ st.markdown(f"""
 .stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
 .stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
 
-.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
+.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 10px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
 .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
 .camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
@@ -160,7 +160,7 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH DA CÂMERA
+# SCRIPT: FLASH + CONTROLE DE CÂMERA
 js_camera = """<script>
 function aplicarModoRapido() {
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -190,9 +190,6 @@ function aplicarModoRapido() {
                         var constr = { advanced: [] };
                         if (cap.focusMode && cap.focusMode.includes('continuous')) {
                             constr.advanced.push({ focusMode: 'continuous' });
-                        }
-                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) {
-                            constr.advanced.push({ exposureMode: 'continuous' });
                         }
                         if (constr.advanced.length > 0) {
                             track.applyConstraints(constr).catch(function(){});
@@ -340,10 +337,11 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
-    code = qrcode_scanner(key="s1")
+    # Scanner com chave dinâmica para resetar na hora
+    code = qrcode_scanner(key=f"scanner_{st.session_state.contador_leituras}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
-    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
+    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed", key="input_manual")
     
     final_code = code or input_code
     
@@ -353,7 +351,6 @@ if arquivo_pdf:
         for endereco, lista in mapa_rotas.items():
             if cod in lista:
                 st.session_state.pacotes_bipados.add(cod)
-                st.session_state.bip_counter += 1
                 num_p = stop_correspondente.get(cod, "?")
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
@@ -391,28 +388,43 @@ if arquivo_pdf:
                     pitch_val = "2.0"
                     rate_val = "1.4"
 
-                # Áudio e som sem erro de sintaxe
+                # ÁUDIO DIRETO E RESISTENTE A BLOQUEIO NO ANDROID
+                ts = time.time()
                 js_exec = f"""
                 <script>
                 (function() {{
+                    // 1. Toca o BIP sonoro
                     try {{
-                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        var osc = ctx.createOscillator();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(880, ctx.currentTime);
-                        osc.connect(ctx.destination);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.08);
+                        var AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) {{
+                            var ctx = new AudioContext();
+                            if (ctx.state === 'suspended') ctx.resume();
+                            var osc = ctx.createOscillator();
+                            var gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(880, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.09);
+                        }}
                     }} catch(e) {{}}
 
+                    // 2. Executa a voz desbloqueando o sintetizador no Chrome
                     if ({str(usar_audio).lower()}) {{
                         try {{
-                            window.speechSynthesis.cancel();
-                            var msg = new SpeechSynthesisUtterance("{fala_texto}");
-                            msg.lang = "pt-BR";
-                            msg.pitch = {pitch_val};
-                            msg.rate = {rate_val};
-                            window.speechSynthesis.speak(msg);
+                            if ('speechSynthesis' in window) {{
+                                window.speechSynthesis.cancel();
+                                window.speechSynthesis.resume();
+                                setTimeout(function() {{
+                                    var msg = new SpeechSynthesisUtterance("{fala_texto}");
+                                    msg.lang = "pt-BR";
+                                    msg.pitch = {pitch_val};
+                                    msg.rate = {rate_val};
+                                    window.speechSynthesis.speak(msg);
+                                }}, 60);
+                            }}
                         }} catch(e) {{}}
                     }}
                 }})();
@@ -420,7 +432,18 @@ if arquivo_pdf:
                 """
                 components.html(js_exec, height=0)
 
+                # Botão de repetição rápida caso queira ouvir novamente
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button("🔊 Ouvir de Novo", use_container_width=True):
+                        st.rerun()
+                with col2:
+                    if st.button("⚡ Próximo Bip", use_container_width=True):
+                        st.session_state.contador_leituras += 1
+                        st.rerun()
+
                 achou = True
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
+            
