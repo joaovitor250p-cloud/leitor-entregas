@@ -89,7 +89,7 @@ if tema_cor == "RGB Gamer 🌈":
         80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
         100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
     }
-    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {
+    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .stat-value-blue, .upload-title {
         animation: rgbGlow 6s infinite linear !important;
     }
     .upload-card, div[data-testid="stCustomComponentV1"] {
@@ -127,10 +127,21 @@ st.markdown(f"""
 .upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
 .upload-sub {{ font-size: 0.8rem; color: #999999; }}
 
-.stat-banner {{ background-color: {t['card_bg']}; border-radius: 14px; padding: 12px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
-.stat-value-green {{ font-size: 1.4rem; font-weight: bold; color: #28a745; }}
-.stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
-.stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
+.stat-banner {{ 
+    background-color: {t['card_bg']}; 
+    border-radius: 14px; 
+    padding: 14px 8px; 
+    border: 1px solid {t['border']}; 
+    display: flex; 
+    justify-content: space-around; 
+    text-align: center; 
+    margin-bottom: 15px; 
+}}
+.stat-item {{ flex: 1; }}
+.stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
+.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {t['accent']}; }}
+.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FFB703; }}
+.stat-label {{ font-size: 0.68rem; color: #AAAAAA; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
 
 .custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
 .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
@@ -243,7 +254,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF (FILTRAGEM PRECISA PARA CIRCUIT)
+# PROCESSAMENTO DO PDF COM CÁLCULO DE PARADAS REAIS
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -305,15 +316,22 @@ if arquivo_pdf:
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
-    total = len(todos_pacotes)
-    faltam = max(0, total - bipados)
+    total_pacotes = len(todos_pacotes)
+    faltam = max(0, total_pacotes - bipados)
+    
+    # Cálculo das paradas únicas (endereços únicos / paradas reais)
+    total_paradas = len(set(stop_correspondente.values()))
     
     st.markdown(f"""<div class="stat-banner">
-        <div>
-            <div class="stat-value-green">{bipados} / {total}</div>
-            <div class="stat-label">BIPADOS</div>
+        <div class="stat-item">
+            <div class="stat-value-green">{bipados} / {total_pacotes}</div>
+            <div class="stat-label">PACOTES</div>
         </div>
-        <div>
+        <div class="stat-item">
+            <div class="stat-value-blue">{total_paradas}</div>
+            <div class="stat-label">PARADAS REAIS</div>
+        </div>
+        <div class="stat-item">
             <div class="stat-value-orange">{faltam}</div>
             <div class="stat-label">FALTAM</div>
         </div>
