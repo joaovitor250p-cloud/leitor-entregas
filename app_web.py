@@ -340,7 +340,7 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
-    code = qrcode_scanner(key=f"scanner_{st.session_state.bip_counter}")
+    code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
@@ -391,6 +391,7 @@ if arquivo_pdf:
                     pitch_val = "2.0"
                     rate_val = "1.4"
 
+                # Áudio e som sem erro de sintaxe
                 js_exec = f"""
                 <script>
                 (function() {{
