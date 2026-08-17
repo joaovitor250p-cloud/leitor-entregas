@@ -40,9 +40,6 @@ with st.sidebar:
                 "Feminina / Normal", 
                 "Masculina / Grave", 
                 "Rápida / Ágil", 
-                "Pica-Pau 🪶",
-                "Locutor de Rádio 🎙️",
-                "Vilão / Monstro 😈",
                 "Esquilo 🐿️"
             ]
         )
@@ -291,7 +288,6 @@ if arquivo_pdf:
         if cods_validos:
             seq_stop_auto += 1
             
-            # Pega o número real sequencial do pacote na rota (ex: 11, 12, etc.)
             m_num = re.match(r'^(\d{1,3})\b', linha_str)
             if m_num:
                 stop_num = int(m_num.group(1))
@@ -314,32 +310,12 @@ if arquivo_pdf:
                 todos_pacotes.add(c)
                 if c not in mapa_rotas[end_key]:
                     mapa_rotas[end_key].append(c)
-                # Cada pacote guarda seu próprio número real individual
                 stop_correspondente[c] = stop_num
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
-    bipados = len(st.session_state.pacotes_bipados)
-    total_pacotes = len(todos_pacotes)
-    faltam = max(0, total_pacotes - bipados)
-    
-    # Paradas Reais = total de endereços físicos únicos
-    total_paradas = len(mapa_rotas)
-    
-    st.markdown(f"""<div class="stat-banner">
-        <div class="stat-item">
-            <div class="stat-value-green">{bipados} / {total_pacotes}</div>
-            <div class="stat-label">PACOTES</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-blue">{total_paradas}</div>
-            <div class="stat-label">PARADAS REAIS</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-orange">{faltam}</div>
-            <div class="stat-label">FALTAM</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
+    # Container para atualizar o banner instantaneamente no momento do bip
+    banner_placeholder = st.empty()
     
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
@@ -375,6 +351,7 @@ if arquivo_pdf:
                 break
                 
         if achou and pacote_identificado:
+            # Registra na hora antes de preencher o banner
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
@@ -390,7 +367,6 @@ if arquivo_pdf:
             
             st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
             
-            # Se tiver outros pacotes no mesmo local, lista exatamente os números irmãos
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
                 st.warning(f"⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
@@ -403,22 +379,12 @@ if arquivo_pdf:
                 pitch_val = "1.0"
                 rate_val = "1.0"
                 
-                if "Pica-Pau" in tipo_voz:
-                    fala_texto = f"He-he-he-he! {num_p}!"
-                    pitch_val = "1.8"
-                    rate_val = "1.45"
-                elif "Masculina" in tipo_voz:
+                if "Masculina" in tipo_voz:
                     pitch_val = "0.6"
                     rate_val = "0.95"
                 elif "Rápida" in tipo_voz:
                     pitch_val = "1.1"
                     rate_val = "1.35"
-                elif "Locutor" in tipo_voz:
-                    pitch_val = "0.7"
-                    rate_val = "0.9"
-                elif "Vilão" in tipo_voz:
-                    pitch_val = "0.3"
-                    rate_val = "0.8"
                 elif "Esquilo" in tipo_voz:
                     pitch_val = "2.0"
                     rate_val = "1.4"
@@ -441,4 +407,25 @@ if arquivo_pdf:
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
-            
+
+    # Renderiza o contador atualizado na hora exata do bip
+    bipados = len(st.session_state.pacotes_bipados)
+    total_pacotes = len(todos_pacotes)
+    faltam = max(0, total_pacotes - bipados)
+    total_paradas = len(mapa_rotas)
+    
+    banner_placeholder.markdown(f"""<div class="stat-banner">
+        <div class="stat-item">
+            <div class="stat-value-green">{bipados} / {total_pacotes}</div>
+            <div class="stat-label">PACOTES</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value-blue">{total_paradas}</div>
+            <div class="stat-label">PARADAS REAIS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value-orange">{faltam}</div>
+            <div class="stat-label">FALTAM</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    
