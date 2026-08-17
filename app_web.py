@@ -340,7 +340,8 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
-    code = qrcode_scanner(key="s1")
+    # Key dinâmica com o contador para resetar e destravar repetições de leitura na câmera
+    code = qrcode_scanner(key=f"scanner_{st.session_state.bip_counter}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
