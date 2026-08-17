@@ -26,7 +26,8 @@ with st.sidebar:
     
     tema_cor = st.selectbox(
         "🎨 Cor do Tema",
-        ["Branco (Light)", "Preto (Dark)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"]
+        ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
+        index=0
     )
     
     arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
@@ -50,11 +51,11 @@ with st.sidebar:
 
 # DEFINIÇÃO DAS PALETAS DE CORES
 estilos_temas = {
-    "Branco (Light)": {
-        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
-    },
     "Preto (Dark)": {
         "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500", "subtext": "#888888"
+    },
+    "Branco (Light)": {
+        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
     },
     "RGB Gamer 🌈": {
         "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC", "subtext": "#888888"
@@ -70,7 +71,7 @@ estilos_temas = {
     }
 }
 
-t = estilos_temas.get(tema_cor, estilos_temas["Branco (Light)"])
+t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
 cor_accent = t["accent"]
 
 # ANIMAÇÃO CSS RGB
@@ -88,12 +89,12 @@ if tema_cor == "RGB Gamer 🌈":
     .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .stat-value-blue, .upload-title {
         animation: rgbGlow 6s infinite linear !important;
     }
-    .upload-card, div[data-testid="stCustomComponentV1"] {
+    .unified-upload-box, div[data-testid="stCustomComponentV1"] {
         animation: rgbGlow 6s infinite linear !important;
     }
     """
 
-# ESTILO VISUAL TOTALMENTE DINÂMICO
+# ESTILO VISUAL DINÂMICO COM BOTÕES BRANCOS E UPLOAD INTEGRADO
 st.markdown(f"""
 <style>
 .stApp {{ 
@@ -112,23 +113,57 @@ st.markdown(f"""
     border-radius: 20px;
     border: 1px solid {t['border']};
     text-align: center;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     margin-bottom: 18px;
 }}
 .welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
 .welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
 .welcome-subtitle {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
-.upload-card {{
+/* CAIXA UNIFICADA DO UPLOAD */
+.unified-upload-box {{
     background-color: {t['card_bg']};
-    padding: 20px;
-    border-radius: 18px;
+    padding: 20px 16px 14px 16px;
+    border-radius: 20px;
     border: 2px dashed {t['accent']};
     text-align: center;
     margin-bottom: 20px;
 }}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
-.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; }}
+.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
+.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 14px; }}
+
+/* INTEGRAÇÃO DO DROPZONE DENTRO DA CAIXA */
+.unified-upload-box div[data-testid="stFileUploader"] {{
+    margin-bottom: 0px !important;
+}}
+.unified-upload-box div[data-testid="stFileUploaderDropzone"] {{
+    background-color: rgba(255,255,255,0.04) !important;
+    border: 1px dashed {t['border']} !important;
+    border-radius: 14px !important;
+    padding: 10px !important;
+}}
+
+/* ESTILO DOS BOTÕES EM BRANCO */
+.stButton > button, 
+div[data-testid="stFileUploader"] button,
+button[kind="secondary"],
+button[kind="primary"] {{
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border: 1px solid #E5E5EA !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 0.95rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    transition: all 0.2s ease-in-out !important;
+}}
+
+.stButton > button:hover, 
+div[data-testid="stFileUploader"] button:hover {{
+    background-color: #EAEAEA !important;
+    color: #000000 !important;
+    transform: scale(1.02);
+}}
 
 .stat-banner {{ 
     background-color: {t['card_bg']}; 
@@ -139,7 +174,7 @@ st.markdown(f"""
     justify-content: space-around; 
     text-align: center; 
     margin-bottom: 15px; 
-    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
 }}
 .stat-item {{ flex: 1; }}
 .stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
@@ -158,7 +193,7 @@ st.markdown(f"""
     border-bottom: 1px solid {t['border']}; 
     text-align: center; 
     color: {t['text_app']};
-    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
 }}
 .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
@@ -203,7 +238,7 @@ function aplicarMelhorias() {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);';
                     btn.onclick = async function() {
                         try {
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
@@ -256,14 +291,17 @@ if not arquivo_pdf_sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown(f"""
-    <div class="upload-card">
-        <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    arquivo_pdf_main = st.file_uploader("Selecione o PDF da Rota", type=["pdf"], key="pdf_main", label_visibility="collapsed")
+    # CARD UNIFICADO: O BOTÃO DE UPLOAD FICA DENTRO DA CAIXA COM A BORDA TRACEJADA
+    with st.container():
+        st.markdown("""
+        <div class="unified-upload-box">
+            <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
+            <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
+        """, unsafe_allow_html=True)
+        
+        arquivo_pdf_main = st.file_uploader("Selecione o PDF da Rota", type=["pdf"], key="pdf_main", label_visibility="collapsed")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
 arquivo_pdf = arquivo_pdf_sidebar or arquivo_pdf_main
 
