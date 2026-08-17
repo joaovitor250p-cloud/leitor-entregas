@@ -86,12 +86,7 @@ t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
 cor_accent = t["accent"]
 
 # ANIMAÇÃO CSS RGB
-css_rgb_anim = """
-@keyframes rgbGlow {
-    0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-    100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-}
-"""
+css_rgb_anim = ""
 if tema_cor == "RGB Gamer 🌈":
     css_rgb_anim = """
     @keyframes rgbGlow {
@@ -102,19 +97,20 @@ if tema_cor == "RGB Gamer 🌈":
         80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
         100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
     }
+    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {
+        animation: rgbGlow 6s infinite linear !important;
+    }
     """
 
-# ESTILO VISUAL DINÂMICO E LIMPEZA TOTAL
+# ESTILO VISUAL E LIMPEZA DE MARCAS STREAMLIT
 st.markdown(f"""
 <style>
-    /* --- LIMPEZA TOTAL (Tira logos do Streamlit/GitHub) --- */
-    [data-testid="stHeader"] {{ display: none !important; }}
-    footer {{ visibility: hidden !important; }}
+    /* REMOÇÃO DE MARCAS STREAMLIT */
+    [data-testid="stToolbar"] {{ display: none !important; }}
+    [data-testid="stFooter"] {{ display: none !important; }}
+    [data-testid="stDecoration"] {{ display: none !important; }}
     .stDeployButton {{ display: none !important; }}
-    #MainMenu {{ visibility: hidden !important; }}
-    .block-container {{ padding-top: 1rem !important; }}
-
-    /* --- SUAS CORES --- */
+    
     .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
     
     .hero-card {{
@@ -169,7 +165,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH DA CÂMERA E LIMPEZA
+# SCRIPT: FLASH DA CÂMERA
 js_camera = """<script>
 function aplicarModoRapido() {
     var iframes = window.parent.document.querySelectorAll('iframe');
