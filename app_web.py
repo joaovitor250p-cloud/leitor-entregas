@@ -5,14 +5,15 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-# Configuração da Página
+# Configuração da Página com sidebar expandida por padrão
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
     page_icon=URL_DO_LOGO,
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="expanded"
 )
 
 # Inicialização de Variáveis de Controle
@@ -102,17 +103,27 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL E LIMPEZA DE MARCAS STREAMLIT
+# ESTILO VISUAL: LIMPEZA DE LOGOS SEM OCULTAR O BOTÃO DA SIDEBAR
 st.markdown(f"""
 <style>
-    /* REMOÇÃO DE MARCAS STREAMLIT */
-    [data-testid="stToolbar"] {{ display: none !important; }}
-    [data-testid="stFooter"] {{ display: none !important; }}
-    [data-testid="stDecoration"] {{ display: none !important; }}
+    /* Oculta APENAS o lado direito do cabeçalho (Botão Fork, GitHub, Deploy) */
+    div[data-testid="stToolbar"] {{ display: none !important; }}
     .stDeployButton {{ display: none !important; }}
+    div[data-testid="stStatusWidget"] {{ display: none !important; }}
+    
+    /* Oculta o rodapé do Streamlit */
+    footer {{ display: none !important; }}
+    
+    /* Garante que o botão da barra lateral (>>) permaneça visível e no topo */
+    div[data-testid="stSidebarCollapsedControl"] {{
+        display: block !important;
+        visibility: visible !important;
+        z-index: 999999 !important;
+    }}
     
     .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-    
+    .block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
+
     .hero-card {{
         background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
         padding: 24px 18px;
@@ -159,9 +170,6 @@ st.markdown(f"""
     }}
 
     {css_rgb_anim}
-    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {{
-        animation: rgbGlow 6s infinite linear !important;
-    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -300,13 +308,24 @@ if arquivo_pdf:
 </div>"""
     st.markdown(banner_html, unsafe_allow_html=True)
     
+    with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
+        encontrou_duplo = False
+        for end, pacotes in mapa_rotas.items():
+            if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
+                encontrou_duplo = True
+                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` (Parada P{stop_correspondente.get(pacotes[0])})")
+        if not encontrou_duplo:
+            st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
+
     st.markdown("""<div class="camera-header">
     <div class="camera-title">⚡ BIPAGEM ULTRA-RÁPIDA</div>
-    <div class="camera-sub">Aponte para o QR Code</div>
+    <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
     code = qrcode_scanner(key=f"scanner_{st.session_state.bip_counter}")
-    input_code = st.text_input("", placeholder="Digitar BR...", label_visibility="collapsed")
+    
+    st.markdown("#### ⌨️ Digitar código manualmente")
+    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
     
     final_code = code or input_code
     
@@ -323,10 +342,37 @@ if arquivo_pdf:
                 
                 if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                     outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
-                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também: " + ", ".join(outros_stops))
+                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
                 fala_texto = f"{num_p}"
+                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                    fala_texto += " Atenção!"
+                    
+                pitch_val = "1.0"
+                rate_val = "1.0"
                 
+                if "Pica-Pau" in tipo_voz:
+                    fala_texto = f"He-he-he-he! {num_p}!"
+                    if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                        fala_texto += " Atenção!"
+                    pitch_val = "1.8"
+                    rate_val = "1.45"
+                elif "Masculina" in tipo_voz:
+                    pitch_val = "0.6"
+                    rate_val = "0.95"
+                elif "Rápida" in tipo_voz:
+                    pitch_val = "1.1"
+                    rate_val = "1.35"
+                elif "Locutor" in tipo_voz:
+                    pitch_val = "0.7"
+                    rate_val = "0.9"
+                elif "Vilão" in tipo_voz:
+                    pitch_val = "0.3"
+                    rate_val = "0.8"
+                elif "Esquilo" in tipo_voz:
+                    pitch_val = "2.0"
+                    rate_val = "1.4"
+
                 js_exec = f"""
                 <script>
                 (function() {{
@@ -339,11 +385,14 @@ if arquivo_pdf:
                         osc.start();
                         osc.stop(ctx.currentTime + 0.08);
                     }} catch(e) {{}}
+
                     if ({str(usar_audio).lower()}) {{
                         try {{
                             window.speechSynthesis.cancel();
                             var msg = new SpeechSynthesisUtterance("{fala_texto}");
                             msg.lang = "pt-BR";
+                            msg.pitch = {pitch_val};
+                            msg.rate = {rate_val};
                             window.speechSynthesis.speak(msg);
                         }} catch(e) {{}}
                     }}
