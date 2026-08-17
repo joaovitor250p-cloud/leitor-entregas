@@ -19,12 +19,9 @@ st.set_page_config(
 usar_audio = True
 tipo_voz = "Feminina / Normal"
 
-# Memória de Bipados
+# Memória de Bipados (Set garante contagem única de pacotes)
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
-
-if "bip_counter" not in st.session_state:
-    st.session_state.bip_counter = 0
 
 # MENU LATERAL
 with st.sidebar:
@@ -57,7 +54,6 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.bip_counter = 0
         st.rerun()
 
 # DEFINIÇÃO DAS PALETAS DE CORES
@@ -160,7 +156,7 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH DA CÂMERA
+# SCRIPT: SCAN RÁPIDO (FOCO CONTÍNUO + LEITURA FULLSCREEN + FLASH)
 js_camera = """<script>
 function aplicarModoRapido() {
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -170,6 +166,7 @@ function aplicarModoRapido() {
             if (doc && doc.querySelector('video')) {
                 var video = doc.querySelector('video');
                 
+                // Remove qualquer máscara de corte do scanner para ler na tela toda
                 var s = doc.createElement('style');
                 s.innerHTML = `
                     #qr-shaded-region { display: none !important; }
@@ -183,6 +180,7 @@ function aplicarModoRapido() {
                 `;
                 doc.head.appendChild(s);
 
+                // Força o sensor da câmera para foco contínuo ultra-rápido
                 if (video.srcObject && !video.dataset.focusApplied) {
                     var track = video.srcObject.getVideoTracks()[0];
                     if (track && track.getCapabilities) {
@@ -201,6 +199,7 @@ function aplicarModoRapido() {
                     }
                 }
 
+                // Botão de Flash rápido
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
@@ -353,8 +352,8 @@ if arquivo_pdf:
         for endereco, lista in mapa_rotas.items():
             if cod in lista:
                 st.session_state.pacotes_bipados.add(cod)
-                st.session_state.bip_counter += 1
                 num_p = stop_correspondente.get(cod, "?")
+                timestamp_agora = time.time()
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
@@ -391,11 +390,10 @@ if arquivo_pdf:
                     pitch_val = "2.0"
                     rate_val = "1.4"
 
-                # Áudio e som sem erro de sintaxe
                 js_exec = f"""
                 <script>
                 (function() {{
-                    try {{
+                    try {{{{
                         var ctx = new (window.AudioContext || window.webkitAudioContext)();
                         var osc = ctx.createOscillator();
                         osc.type = 'sine';
@@ -403,18 +401,18 @@ if arquivo_pdf:
                         osc.connect(ctx.destination);
                         osc.start();
                         osc.stop(ctx.currentTime + 0.08);
-                    }} catch(e) {{}}
+                    }}}} catch(e) {{{{}}}}
 
-                    if ({str(usar_audio).lower()}) {{
-                        try {{
+                    if ({str(usar_audio).lower()}) {{{{
+                        try {{{{
                             window.speechSynthesis.cancel();
-                            var msg = new SpeechSynthesisUtterance("{fala_texto}");
-                            msg.lang = "pt-BR";
+                            var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                            msg.lang = 'pt-BR';
                             msg.pitch = {pitch_val};
                             msg.rate = {rate_val};
                             window.speechSynthesis.speak(msg);
-                        }} catch(e) {{}}
-                    }}
+                        }}}} catch(e) {{{{}}}}
+                    }}}}
                 }})();
                 </script>
                 """
