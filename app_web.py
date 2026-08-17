@@ -1,5 +1,4 @@
 import re
-import time
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -22,9 +21,6 @@ tipo_voz = "Feminina / Normal"
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
-
-if "bip_counter" not in st.session_state:
-    st.session_state.bip_counter = 0
 
 # MENU LATERAL
 with st.sidebar:
@@ -57,7 +53,6 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.bip_counter = 0
         st.rerun()
 
 # DEFINIÇÃO DAS PALETAS DE CORES
@@ -147,6 +142,7 @@ st.markdown(f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
+/* CONTAINER DO SCANNER LIMPO E RESPONSIVO */
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
     border-radius: 16px;
@@ -160,58 +156,33 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: MIRA VISÍVEL + FLASH + FOCO
+# SCRIPT: ÁUDIO, FLASH E MIRA LIMPA
 js_camera = """<script>
-function aplicarModoRapido() {
+function playBeep() {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+}
+
+function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(frame) {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                var video = doc.querySelector('video');
-                
-                // Estilo que mantém os quadradinhos/mira ativos
-                if (!doc.getElementById('custom-scanner-style')) {
-                    var s = doc.createElement('style');
-                    s.id = 'custom-scanner-style';
-                    s.innerHTML = `
-                        #reader__dashboard { display: none !important; }
-                        #reader__scan_region img { opacity: 0.9 !important; }
-                        video { 
-                            width: 100% !important; 
-                            object-fit: cover !important; 
-                            border-radius: 14px;
-                        }
-                    `;
-                    doc.head.appendChild(s);
-                }
-
-                if (video.srcObject && !video.dataset.focusApplied) {
-                    var track = video.srcObject.getVideoTracks()[0];
-                    if (track && track.getCapabilities) {
-                        var cap = track.getCapabilities();
-                        var constr = { advanced: [] };
-                        if (cap.focusMode && cap.focusMode.includes('continuous')) {
-                            constr.advanced.push({ focusMode: 'continuous' });
-                        }
-                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) {
-                            constr.advanced.push({ exposureMode: 'continuous' });
-                        }
-                        if (constr.advanced.length > 0) {
-                            track.applyConstraints(constr).catch(function(){});
-                        }
-                        video.dataset.focusApplied = "true";
-                    }
-                }
-
+                // Adiciona o botão de Flash caso o aparelho suporte
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:7px 14px; border-radius:20px; font-weight:bold; font-size:12px; cursor:pointer;';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.75); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:12px; cursor:pointer;';
                     btn.onclick = async function() {
                         try {
-                            var track = video.srcObject.getVideoTracks()[0];
+                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
                             var capabilities = track.getCapabilities ? track.getCapabilities() : {};
                             if (capabilities.torch) {
                                 var on = btn.innerHTML.includes('ON');
@@ -227,11 +198,11 @@ function aplicarModoRapido() {
     });
 }
 var ACCENT_COLOR = '""" + cor_accent + """';
-setInterval(aplicarModoRapido, 350);
+setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
 
-# NORMALIZAÇÃO DE ENDEREÇO
+# LÓGICA DE NORMALIZAÇÃO DE ENDEREÇO
 def normalizar_endereco(texto):
     if not texto:
         return ""
@@ -255,7 +226,7 @@ if not arquivo_pdf_sidebar:
     st.markdown("""
     <div class="upload-card">
         <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem rápida</div>
+        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -268,7 +239,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO CIRCUIT
+# PROCESSAMENTO ESPECÍFICO DO CIRCUIT
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -315,12 +286,12 @@ if arquivo_pdf:
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
-    faltam = max(0, total - bipados)
+    faltam = total - bipados
     
     banner_html = f"""<div class="stat-banner">
     <div>
         <div class="stat-value-green">{bipados} / {total}</div>
-        <div class="stat-label">BIPADOS ÚNICOS</div>
+        <div class="stat-label">BIPADOS</div>
     </div>
     <div>
         <div class="stat-value-orange">{faltam}</div>
@@ -339,10 +310,11 @@ if arquivo_pdf:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
     st.markdown("""<div class="camera-header">
-    <div class="camera-title">⚡ BIPAGEM ULTRA-RÁPIDA</div>
-    <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
+    <div class="camera-title">📸 BIPAR PACOTE</div>
+    <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
 </div>""", unsafe_allow_html=True)
 
+    # Scanner nativo com dimensionamento automático
     code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
@@ -356,8 +328,9 @@ if arquivo_pdf:
         for endereco, lista in mapa_rotas.items():
             if cod in lista:
                 st.session_state.pacotes_bipados.add(cod)
-                st.session_state.bip_counter += 1
                 num_p = stop_correspondente.get(cod, "?")
+                
+                components.html("<script>playBeep();</script>", height=0)
                 
                 st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
                 
@@ -365,62 +338,47 @@ if arquivo_pdf:
                     outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
                     st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
-                fala_texto = f"{num_p}"
-                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
-                    fala_texto += " Atenção!"
-                    
-                pitch_val = "1.0"
-                rate_val = "1.0"
-                
-                if "Pica-Pau" in tipo_voz:
-                    fala_texto = f"He-he-he-he! {num_p}!"
+                if usar_audio:
+                    fala_texto = f"{num_p}"
                     if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
                         fala_texto += " Atenção!"
-                    pitch_val = "1.8"
-                    rate_val = "1.45"
-                elif "Masculina" in tipo_voz:
-                    pitch_val = "0.6"
-                    rate_val = "0.95"
-                elif "Rápida" in tipo_voz:
-                    pitch_val = "1.1"
-                    rate_val = "1.35"
-                elif "Locutor" in tipo_voz:
-                    pitch_val = "0.7"
-                    rate_val = "0.9"
-                elif "Vilão" in tipo_voz:
-                    pitch_val = "0.3"
-                    rate_val = "0.8"
-                elif "Esquilo" in tipo_voz:
-                    pitch_val = "2.0"
-                    rate_val = "1.4"
+                        
+                    pitch_val = "1.0"
+                    rate_val = "1.0"
+                    
+                    if "Pica-Pau" in tipo_voz:
+                        fala_texto = f"He-he-he-he! {num_p}!"
+                        if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                            fala_texto += " Atenção!"
+                        pitch_val = "1.8"
+                        rate_val = "1.45"
+                    elif "Masculina" in tipo_voz:
+                        pitch_val = "0.6"
+                        rate_val = "0.95"
+                    elif "Rápida" in tipo_voz:
+                        pitch_val = "1.1"
+                        rate_val = "1.35"
+                    elif "Locutor" in tipo_voz:
+                        pitch_val = "0.7"
+                        rate_val = "0.9"
+                    elif "Vilão" in tipo_voz:
+                        pitch_val = "0.3"
+                        rate_val = "0.8"
+                    elif "Esquilo" in tipo_voz:
+                        pitch_val = "2.0"
+                        rate_val = "1.4"
 
-                js_exec = f"""
-                <script>
-                (function() {{
-                    try {{
-                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        var osc = ctx.createOscillator();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(880, ctx.currentTime);
-                        osc.connect(ctx.destination);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.08);
-                    }} catch(e) {{}}
-
-                    if ({str(usar_audio).lower()}) {{
-                        try {{
-                            window.speechSynthesis.cancel();
-                            var msg = new SpeechSynthesisUtterance("{fala_texto}");
-                            msg.lang = "pt-BR";
-                            msg.pitch = {pitch_val};
-                            msg.rate = {rate_val};
-                            window.speechSynthesis.speak(msg);
-                        }} catch(e) {{}}
-                    }}
-                }})();
-                </script>
-                """
-                components.html(js_exec, height=0)
+                    js_audio = (
+                        "<script>"
+                        "window.speechSynthesis.cancel();"
+                        f"var msg = new SpeechSynthesisUtterance('{fala_texto}');"
+                        "msg.lang = 'pt-BR';"
+                        f"msg.pitch = {pitch_val};"
+                        f"msg.rate = {rate_val};"
+                        "window.speechSynthesis.speak(msg);"
+                        "</script>"
+                    )
+                    components.html(js_audio, height=0)
 
                 achou = True
                 break
