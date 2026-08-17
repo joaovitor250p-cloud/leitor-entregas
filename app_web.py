@@ -14,10 +14,6 @@ st.set_page_config(
     layout="centered"
 )
 
-# Inicialização de Variáveis de Controle
-usar_audio = True
-tipo_voz = "Feminina / Normal"
-
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
@@ -36,6 +32,7 @@ with st.sidebar:
     arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
+    tipo_voz = "Feminina / Normal"
     if usar_audio:
         tipo_voz = st.selectbox(
             "🎙️ Estilo da Voz", 
@@ -100,7 +97,7 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO
+# ESTILO VISUAL
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
@@ -142,7 +139,6 @@ st.markdown(f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
-/* CONTAINER DO SCANNER LIMPO E RESPONSIVO */
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
     border-radius: 16px;
@@ -156,16 +152,18 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: ÁUDIO, FLASH E MIRA LIMPA
+# SCRIPT: FLASH E BEEP
 js_camera = """<script>
 function playBeep() {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
+    try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+    } catch(e) {}
 }
 
 function aplicarMelhorias() {
@@ -174,7 +172,6 @@ function aplicarMelhorias() {
         try {
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (doc && doc.querySelector('video')) {
-                // Adiciona o botão de Flash caso o aparelho suporte
                 if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
@@ -202,15 +199,26 @@ setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
 
-# LÓGICA DE NORMALIZAÇÃO DE ENDEREÇO
+# FUNÇÕES AUXILIARES
+def extrair_codigo_chave(texto):
+    """Extrai código alfanumérico limpo (ex: BR123456789012 ou códigos longos)"""
+    if not texto:
+        return ""
+    # Busca padrão BR seguido de letras/números
+    match_br = re.search(r'BR[A-Za-z0-9]{8,25}', texto, re.IGNORECASE)
+    if match_br:
+        return match_br.group(0).upper().strip()
+    # Caso não seja padrão BR, limpa caracteres especiais
+    limpo = re.sub(r'[^A-Za-z0-9]', '', texto).upper().strip()
+    return limpo
+
 def normalizar_endereco(texto):
     if not texto:
         return ""
     m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
     if m:
         return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
-    limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
-    return limpo
+    return re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
 
 # TELA PRINCIPAL
 arquivo_pdf_main = None
@@ -239,7 +247,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO ESPECÍFICO DO CIRCUIT
+# PROCESSAMENTO DO PDF
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -252,9 +260,12 @@ if arquivo_pdf:
         if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str:
             continue
             
-        cods = re.findall(r'BR[A-Za-z0-9]{10,16}', linha_str, re.IGNORECASE)
+        cods = re.findall(r'[A-Za-z0-9]{8,25}', linha_str)
         
-        if cods:
+        # Filtra códigos relevantes (padrão de rastreio)
+        cods_validos = [c.upper() for c in cods if len(c) >= 10 and not c.isdigit()]
+        
+        if cods_validos:
             seq_stop_auto += 1
             
             m_num = re.match(r'^(\d{1,3})\b', linha_str)
@@ -269,36 +280,34 @@ if arquivo_pdf:
             
             end_key = normalizar_endereco(linha_str)
             if not end_key or len(end_key) < 3:
-                end_key = f"pacote_isolado_{cods[0]}"
+                end_key = f"pacote_isolado_{cods_validos[0]}"
                 
             if end_key not in mapa_rotas:
                 mapa_rotas[end_key] = []
                 
-            for c in cods:
-                c_u = c.upper()
-                todos_pacotes.add(c_u)
-                if c_u not in mapa_rotas[end_key]:
-                    mapa_rotas[end_key].append(c_u)
-                    stop_correspondente[c_u] = stop_num
+            for c in cods_validos:
+                todos_pacotes.add(c)
+                if c not in mapa_rotas[end_key]:
+                    mapa_rotas[end_key].append(c)
+                    stop_correspondente[c] = stop_num
                     nome_exibicao[end_key] = linha_str[:45]
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
     bipados = len(st.session_state.pacotes_bipados)
     total = len(todos_pacotes)
-    faltam = total - bipados
+    faltam = max(0, total - bipados)
     
-    banner_html = f"""<div class="stat-banner">
-    <div>
-        <div class="stat-value-green">{bipados} / {total}</div>
-        <div class="stat-label">BIPADOS</div>
-    </div>
-    <div>
-        <div class="stat-value-orange">{faltam}</div>
-        <div class="stat-label">FALTAM</div>
-    </div>
-</div>"""
-    st.markdown(banner_html, unsafe_allow_html=True)
+    st.markdown(f"""<div class="stat-banner">
+        <div>
+            <div class="stat-value-green">{bipados} / {total}</div>
+            <div class="stat-label">BIPADOS</div>
+        </div>
+        <div>
+            <div class="stat-value-orange">{faltam}</div>
+            <div class="stat-label">FALTAM</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
     
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
@@ -310,78 +319,94 @@ if arquivo_pdf:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
     st.markdown("""<div class="camera-header">
-    <div class="camera-title">📸 BIPAR PACOTE</div>
-    <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
-</div>""", unsafe_allow_html=True)
+        <div class="camera-title">📸 BIPAR PACOTE</div>
+        <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
+    </div>""", unsafe_allow_html=True)
 
-    # Scanner nativo com dimensionamento automático
     code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
-    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
+    input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
     
-    final_code = code or input_code
+    bruto = code or input_code
     
-    if final_code:
-        cod = final_code.upper().strip()
+    if bruto:
+        cod_limpo = extrair_codigo_chave(bruto)
         achou = False
-        for endereco, lista in mapa_rotas.items():
-            if cod in lista:
-                st.session_state.pacotes_bipados.add(cod)
-                num_p = stop_correspondente.get(cod, "?")
-                
-                components.html("<script>playBeep();</script>", height=0)
-                
-                st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
-                
-                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
-                    outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
-                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
-
-                if usar_audio:
-                    fala_texto = f"{num_p}"
-                    if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
-                        fala_texto += " Atenção!"
-                        
-                    pitch_val = "1.0"
-                    rate_val = "1.0"
-                    
-                    if "Pica-Pau" in tipo_voz:
-                        fala_texto = f"He-he-he-he! {num_p}!"
-                        if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
-                            fala_texto += " Atenção!"
-                        pitch_val = "1.8"
-                        rate_val = "1.45"
-                    elif "Masculina" in tipo_voz:
-                        pitch_val = "0.6"
-                        rate_val = "0.95"
-                    elif "Rápida" in tipo_voz:
-                        pitch_val = "1.1"
-                        rate_val = "1.35"
-                    elif "Locutor" in tipo_voz:
-                        pitch_val = "0.7"
-                        rate_val = "0.9"
-                    elif "Vilão" in tipo_voz:
-                        pitch_val = "0.3"
-                        rate_val = "0.8"
-                    elif "Esquilo" in tipo_voz:
-                        pitch_val = "2.0"
-                        rate_val = "1.4"
-
-                    js_audio = (
-                        "<script>"
-                        "window.speechSynthesis.cancel();"
-                        f"var msg = new SpeechSynthesisUtterance('{fala_texto}');"
-                        "msg.lang = 'pt-BR';"
-                        f"msg.pitch = {pitch_val};"
-                        f"msg.rate = {rate_val};"
-                        "window.speechSynthesis.speak(msg);"
-                        "</script>"
-                    )
-                    components.html(js_audio, height=0)
-
+        pacote_identificado = None
+        
+        # 1. Busca exata ou por correspondência cruzada
+        for cod_registrado in todos_pacotes:
+            if cod_registrado == cod_limpo or cod_registrado in bruto.upper() or cod_limpo in cod_registrado:
+                pacote_identificado = cod_registrado
                 achou = True
                 break
-        if not achou:
-            st.error("❌ Código não encontrado!")
+                
+        if achou and pacote_identificado:
+            st.session_state.pacotes_bipados.add(pacote_identificado)
+            num_p = stop_correspondente.get(pacote_identificado, "?")
+            
+            # Localiza o endereço correspondente
+            end_match = ""
+            lista_duplos = []
+            for end, pacs in mapa_rotas.items():
+                if pacote_identificado in pacs:
+                    end_match = end
+                    lista_duplos = pacs
+                    break
+
+            components.html("<script>playBeep();</script>", height=0)
+            
+            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
+            
+            if len(lista_duplos) > 1 and not end_match.startswith("pacote_isolado_"):
+                outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
+                st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
+
+            if usar_audio:
+                fala_texto = f"{num_p}"
+                if len(lista_duplos) > 1 and not end_match.startswith("pacote_isolado_"):
+                    fala_texto += " Atenção!"
+                    
+                pitch_val = "1.0"
+                rate_val = "1.0"
+                
+                if "Pica-Pau" in tipo_voz:
+                    fala_texto = f"He-he-he-he! {num_p}!"
+                    pitch_val = "1.8"
+                    rate_val = "1.45"
+                elif "Masculina" in tipo_voz:
+                    pitch_val = "0.6"
+                    rate_val = "0.95"
+                elif "Rápida" in tipo_voz:
+                    pitch_val = "1.1"
+                    rate_val = "1.35"
+                elif "Locutor" in tipo_voz:
+                    pitch_val = "0.7"
+                    rate_val = "0.9"
+                elif "Vilão" in tipo_voz:
+                    pitch_val = "0.3"
+                    rate_val = "0.8"
+                elif "Esquilo" in tipo_voz:
+                    pitch_val = "2.0"
+                    rate_val = "1.4"
+
+                js_audio = f"""
+                <script>
+                (function() {{
+                    try {{
+                        window.speechSynthesis.cancel();
+                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                        msg.lang = 'pt-BR';
+                        msg.pitch = {pitch_val};
+                        msg.rate = {rate_val};
+                        window.speechSynthesis.speak(msg);
+                    }} catch(e) {{}}
+                }})();
+                </script>
+                """
+                components.html(js_audio, height=0)
+        else:
+            st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
+            st.caption(f"Valor bruto lido: `{bruto}`")
             
