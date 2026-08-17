@@ -5,15 +5,14 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-# Configuração da Página com sidebar expandida por padrão
+# Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
     page_icon=URL_DO_LOGO,
-    layout="centered",
-    initial_sidebar_state="expanded"
+    layout="centered"
 )
 
 # Inicialização de Variáveis de Controle
@@ -101,75 +100,63 @@ if tema_cor == "RGB Gamer 🌈":
     .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {
         animation: rgbGlow 6s infinite linear !important;
     }
+    .upload-card, div[data-testid="stCustomComponentV1"] {
+        animation: rgbGlow 6s infinite linear !important;
+    }
     """
 
-# ESTILO VISUAL: LIMPEZA DE LOGOS SEM OCULTAR O BOTÃO DA SIDEBAR
+# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
-    /* Oculta APENAS o lado direito do cabeçalho (Botão Fork, GitHub, Deploy) */
-    div[data-testid="stToolbar"] {{ display: none !important; }}
-    .stDeployButton {{ display: none !important; }}
-    div[data-testid="stStatusWidget"] {{ display: none !important; }}
-    
-    /* Oculta o rodapé do Streamlit */
-    footer {{ display: none !important; }}
-    
-    /* Garante que o botão da barra lateral (>>) permaneça visível e no topo */
-    div[data-testid="stSidebarCollapsedControl"] {{
-        display: block !important;
-        visibility: visible !important;
-        z-index: 999999 !important;
-    }}
-    
-    .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-    .block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
+.stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
+.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
 
-    .hero-card {{
-        background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
-        padding: 24px 18px;
-        border-radius: 20px;
-        border: 1px solid {t['border']};
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        margin-bottom: 18px;
-    }}
-    .welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
-    .welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
-    .welcome-subtitle {{ font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+.hero-card {{
+    background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
+    padding: 24px 18px;
+    border-radius: 20px;
+    border: 1px solid {t['border']};
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    margin-bottom: 18px;
+}}
+.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
+.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
+.welcome-subtitle {{ font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
-    .upload-card {{
-        background-color: {t['card_bg']};
-        padding: 20px;
-        border-radius: 18px;
-        border: 2px dashed {t['accent']};
-        text-align: center;
-        margin-bottom: 20px;
-    }}
-    .upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
-    .upload-sub {{ font-size: 0.8rem; color: #999999; }}
+.upload-card {{
+    background-color: {t['card_bg']};
+    padding: 20px;
+    border-radius: 18px;
+    border: 2px dashed {t['accent']};
+    text-align: center;
+    margin-bottom: 20px;
+}}
+.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
+.upload-sub {{ font-size: 0.8rem; color: #999999; }}
 
-    .stat-banner {{ background-color: {t['card_bg']}; border-radius: 14px; padding: 12px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
-    .stat-value-green {{ font-size: 1.4rem; font-weight: bold; color: #28a745; }}
-    .stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
-    .stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
+.stat-banner {{ background-color: {t['card_bg']}; border-radius: 14px; padding: 12px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
+.stat-value-green {{ font-size: 1.4rem; font-weight: bold; color: #28a745; }}
+.stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
+.stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
 
-    .custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
-    .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
+.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
+.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
-    .camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
-    .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-    .camera-sub {{ font-size: 0.78rem; color: #888888; }}
+.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
+.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
+.camera-sub {{ font-size: 0.78rem; color: #888888; }}
 
-    div[data-testid="stCustomComponentV1"] {{ 
-        width: 100% !important;
-        border-radius: 16px;
-        border: 2px solid {t['accent']};
-        background-color: #000000;
-        margin-bottom: 15px;
-        overflow: hidden;
-    }}
+div[data-testid="stCustomComponentV1"] {{ 
+    width: 100% !important;
+    border-radius: 16px;
+    border: 2px solid {t['accent']};
+    background-color: #000000;
+    margin-bottom: 15px;
+    overflow: hidden;
+}}
 
-    {css_rgb_anim}
+{css_rgb_anim}
 </style>
 """, unsafe_allow_html=True)
 
@@ -188,7 +175,11 @@ function aplicarModoRapido() {
                     #qr-shaded-region { display: none !important; }
                     #reader__scan_region { width: 100% !important; min-height: 100% !important; }
                     #reader__dashboard { display: none !important; }
-                    video { width: 100% !important; object-fit: cover !important; border-radius: 14px; }
+                    video { 
+                        width: 100% !important; 
+                        object-fit: cover !important; 
+                        border-radius: 14px;
+                    }
                 `;
                 doc.head.appendChild(s);
 
@@ -197,9 +188,15 @@ function aplicarModoRapido() {
                     if (track && track.getCapabilities) {
                         var cap = track.getCapabilities();
                         var constr = { advanced: [] };
-                        if (cap.focusMode && cap.focusMode.includes('continuous')) constr.advanced.push({ focusMode: 'continuous' });
-                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) constr.advanced.push({ exposureMode: 'continuous' });
-                        if (constr.advanced.length > 0) track.applyConstraints(constr).catch(function(){});
+                        if (cap.focusMode && cap.focusMode.includes('continuous')) {
+                            constr.advanced.push({ focusMode: 'continuous' });
+                        }
+                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) {
+                            constr.advanced.push({ exposureMode: 'continuous' });
+                        }
+                        if (constr.advanced.length > 0) {
+                            track.applyConstraints(constr).catch(function(){});
+                        }
                         video.dataset.focusApplied = "true";
                     }
                 }
@@ -233,9 +230,11 @@ components.html(js_camera, height=0)
 
 # NORMALIZAÇÃO DE ENDEREÇO
 def normalizar_endereco(texto):
-    if not texto: return ""
+    if not texto:
+        return ""
     m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
-    if m: return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
+    if m:
+        return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
     limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
     return limpo
 
@@ -266,27 +265,40 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
+# PROCESSAMENTO CIRCUIT
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
     linhas = texto.split('\n')
+    
     seq_stop_auto = 0
     
     for idx, linha in enumerate(linhas):
         linha_str = linha.strip()
-        if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str: continue
+        if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str:
+            continue
             
         cods = re.findall(r'BR[A-Za-z0-9]{10,16}', linha_str, re.IGNORECASE)
         
         if cods:
             seq_stop_auto += 1
+            
             m_num = re.match(r'^(\d{1,3})\b', linha_str)
-            stop_num = int(m_num.group(1)) if m_num else seq_stop_auto
+            if m_num:
+                stop_num = int(m_num.group(1))
+            else:
+                m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
+                if m_num_ant:
+                    stop_num = int(m_num_ant.group(1))
+                else:
+                    stop_num = seq_stop_auto
             
             end_key = normalizar_endereco(linha_str)
-            if not end_key or len(end_key) < 3: end_key = f"pacote_isolado_{cods[0]}"
+            if not end_key or len(end_key) < 3:
+                end_key = f"pacote_isolado_{cods[0]}"
                 
-            if end_key not in mapa_rotas: mapa_rotas[end_key] = []
+            if end_key not in mapa_rotas:
+                mapa_rotas[end_key] = []
                 
             for c in cods:
                 c_u = c.upper()
@@ -303,8 +315,14 @@ if arquivo_pdf:
     faltam = max(0, total - bipados)
     
     banner_html = f"""<div class="stat-banner">
-    <div><div class="stat-value-green">{bipados} / {total}</div><div class="stat-label">BIPADOS ÚNICOS</div></div>
-    <div><div class="stat-value-orange">{faltam}</div><div class="stat-label">FALTAM</div></div>
+    <div>
+        <div class="stat-value-green">{bipados} / {total}</div>
+        <div class="stat-label">BIPADOS ÚNICOS</div>
+    </div>
+    <div>
+        <div class="stat-value-orange">{faltam}</div>
+        <div class="stat-label">FALTAM</div>
+    </div>
 </div>"""
     st.markdown(banner_html, unsafe_allow_html=True)
     
@@ -400,6 +418,7 @@ if arquivo_pdf:
                 </script>
                 """
                 components.html(js_exec, height=0)
+
                 achou = True
                 break
         if not achou:
