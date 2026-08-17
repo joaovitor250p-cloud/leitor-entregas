@@ -222,16 +222,12 @@ def extrair_codigo_chave(texto):
 def normalizar_endereco(texto):
     if not texto:
         return ""
-    # Pega nome da rua + número
     m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
     if m:
         rua_limpa = re.sub(r'[^a-zA-Z0-9]', '', m.group(1).lower())
         num_limpo = m.group(2).strip()
         return f"{rua_limpa}_{num_limpo}"
-    
-    # Fallback caso formato varie
-    limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
-    return limpo
+    return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
 # TELA PRINCIPAL
 arquivo_pdf_main = None
@@ -257,11 +253,10 @@ arquivo_pdf = arquivo_pdf_sidebar or arquivo_pdf_main
 
 mapa_rotas = {}
 stop_correspondente = {}
-stop_do_endereco = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF (AGRUPAMENTO PRECISO DE PARADAS REAIS)
+# PROCESSAMENTO DO PDF
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -294,36 +289,33 @@ if arquivo_pdf:
         cods_validos = [c.upper() for c in cods_validos]
         
         if cods_validos:
+            seq_stop_auto += 1
+            
+            # Pega o número real sequencial do pacote na rota (ex: 11, 12, etc.)
+            m_num = re.match(r'^(\d{1,3})\b', linha_str)
+            if m_num:
+                stop_num = int(m_num.group(1))
+            else:
+                m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
+                if m_num_ant:
+                    stop_num = int(m_num_ant.group(1))
+                else:
+                    stop_num = seq_stop_auto
+            
             end_key = normalizar_endereco(linha_str)
             if not end_key or len(end_key) < 3:
                 end_key = f"pacote_isolado_{cods_validos[0]}"
                 
-            # Se é um endereço novo, gera um novo número de parada
             if end_key not in mapa_rotas:
-                seq_stop_auto += 1
-                
-                m_num = re.match(r'^(\d{1,3})\b', linha_str)
-                if m_num:
-                    stop_num = int(m_num.group(1))
-                else:
-                    m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
-                    if m_num_ant:
-                        stop_num = int(m_num_ant.group(1))
-                    else:
-                        stop_num = seq_stop_auto
-                        
-                stop_do_endereco[end_key] = stop_num
                 mapa_rotas[end_key] = []
                 nome_exibicao[end_key] = linha_str[:45]
-            else:
-                # Se o endereço já existe (pacote duplo/triplo), reaproveita a mesma parada
-                stop_num = stop_do_endereco[end_key]
                 
             for c in cods_validos:
                 todos_pacotes.add(c)
                 if c not in mapa_rotas[end_key]:
                     mapa_rotas[end_key].append(c)
-                    stop_correspondente[c] = stop_num
+                # Cada pacote guarda seu próprio número real individual
+                stop_correspondente[c] = stop_num
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
@@ -331,7 +323,7 @@ if arquivo_pdf:
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     
-    # Paradas Reais = quantidade total de endereços únicos
+    # Paradas Reais = total de endereços físicos únicos
     total_paradas = len(mapa_rotas)
     
     st.markdown(f"""<div class="stat-banner">
@@ -354,7 +346,8 @@ if arquivo_pdf:
         for end, pacotes in mapa_rotas.items():
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
-                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` (Parada P{stop_do_endereco.get(end)})")
+                numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
+                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})")
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
@@ -397,13 +390,15 @@ if arquivo_pdf:
             
             st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
             
-            if len(lista_duplos) > 1 and not end_match.startswith("pacote_isolado_"):
-                st.warning(f"⚠️ **MESMO ENDEREÇO!** Você tem `{len(lista_duplos)} pacotes` para esta mesma parada P{num_p}!")
+            # Se tiver outros pacotes no mesmo local, lista exatamente os números irmãos
+            outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
+            if outros_stops and not end_match.startswith("pacote_isolado_"):
+                st.warning(f"⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
 
             if usar_audio:
                 fala_texto = f"{num_p}"
-                if len(lista_duplos) > 1 and not end_match.startswith("pacote_isolado_"):
-                    fala_texto += " Atenção, pacote duplo!"
+                if outros_stops and not end_match.startswith("pacote_isolado_"):
+                    fala_texto += f" Atenção! Mesmo endereço da parada {outros_stops[0].replace('P', '')}!"
                     
                 pitch_val = "1.0"
                 rate_val = "1.0"
@@ -446,4 +441,4 @@ if arquivo_pdf:
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
-    
+            
