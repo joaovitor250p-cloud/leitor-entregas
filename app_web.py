@@ -422,3 +422,4 @@ if arquivo_pdf:
                 break
         if not achou:
             st.error("❌ Código não encontrado!")
+            
