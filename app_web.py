@@ -9,240 +9,126 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
-st.set_page_config(
-    page_title=NOME_DO_APP,
-    page_icon=URL_DO_LOGO,
-    layout="centered"
-)
+st.set_page_config(page_title=NOME_DO_APP, page_icon=URL_DO_LOGO, layout="centered")
 
-# Inicialização de Variáveis de Controle
-usar_audio = True
-tipo_voz = "Feminina / Normal"
+# --- ESTADO DA SESSÃO ---
+if "pacotes_bipados" not in st.session_state: st.session_state.pacotes_bipados = set()
+if "bip_counter" not in st.session_state: st.session_state.bip_counter = 0
+if "ultima_leitura" not in st.session_state: st.session_state.ultima_leitura = None
 
-# Memória de Bipados
-if "pacotes_bipados" not in st.session_state:
-    st.session_state.pacotes_bipados = set()
-
-if "bip_counter" not in st.session_state:
-    st.session_state.bip_counter = 0
-
-# MENU LATERAL
+# --- MENU LATERAL ---
 with st.sidebar:
     st.title(f"🚚 {NOME_DO_APP}")
-    st.caption("Sistema Inteligente de Logística")
-    st.write("---")
-    
-    tema_cor = st.selectbox(
-        "🎨 Cor do Tema",
-        ["Preto (Dark)", "RGB Gamer 🌈", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
-    )
-    
-    arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
-    
+    tema_cor = st.selectbox("🎨 Cor do Tema", ["Preto (Dark)", "RGB Gamer 🌈", "Branco (Light)"])
+    arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota", type=["pdf"])
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
-    if usar_audio:
-        tipo_voz = st.selectbox(
-            "🎙️ Estilo da Voz", 
-            [
-                "Feminina / Normal", 
-                "Masculina / Grave", 
-                "Rápida / Ágil", 
-                "Pica-Pau 🪶",
-                "Locutor de Rádio 🎙️",
-                "Vilão / Monstro 😈",
-                "Esquilo 🐿️"
-            ]
-        )
-        
-    st.write("---")
+    
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.bip_counter = 0
+        st.session_state.ultima_leitura = None
         st.rerun()
 
-# DEFINIÇÃO DAS PALETAS DE CORES
+# --- CORES E ESTILOS ---
 estilos_temas = {
-    "Preto (Dark)": {
-        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500"
-    },
-    "RGB Gamer 🌈": {
-        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC"
-    },
-    "Branco (Light)": {
-        "bg_app": "#F5F5F7", "text_app": "#1D1D1F", "card_bg": "#FFFFFF", "border": "#E5E5EA", "accent": "#007AFF"
-    },
-    "Cinza": {
-        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500"
-    },
-    "Azul": {
-        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8"
-    },
-    "Vermelho": {
-        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D"
-    }
+    "Preto (Dark)": {"bg": "#121212", "text": "#FFFFFF", "card": "#1E1E1E", "border": "#333333", "accent": "#FF9500"},
+    "RGB Gamer 🌈": {"bg": "#0D0D11", "text": "#FFFFFF", "card": "#16161D", "border": "#222230", "accent": "#00FFCC"},
+    "Branco (Light)": {"bg": "#F5F5F7", "text": "#1D1D1F", "card": "#FFFFFF", "border": "#E5E5EA", "accent": "#007AFF"}
 }
-
 t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
-cor_accent = t["accent"]
 
-# ANIMAÇÃO CSS RGB
-css_rgb_anim = ""
-if tema_cor == "RGB Gamer 🌈":
-    css_rgb_anim = """
-    @keyframes rgbGlow {
-        0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-        20% { border-color: #FF8800; color: #FF8800; box-shadow: 0 0 12px rgba(255,136,0,0.5); }
-        40% { border-color: #FFFF00; color: #FFFF00; box-shadow: 0 0 12px rgba(255,255,0,0.5); }
-        60% { border-color: #00FF66; color: #00FF66; box-shadow: 0 0 12px rgba(0,255,102,0.5); }
-        80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
-        100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-    }
-    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .upload-title {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    .upload-card, div[data-testid="stCustomComponentV1"] {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    """
-
-# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
-.stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
-
-.hero-card {{
-    background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
-    padding: 24px 18px;
-    border-radius: 20px;
-    border: 1px solid {t['border']};
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    margin-bottom: 18px;
-}}
-.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
-.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
-.welcome-subtitle {{ font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
-
-.upload-card {{
-    background-color: {t['card_bg']};
-    padding: 20px;
-    border-radius: 18px;
-    border: 2px dashed {t['accent']};
-    text-align: center;
-    margin-bottom: 20px;
-}}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
-.upload-sub {{ font-size: 0.8rem; color: #999999; }}
-
-.stat-banner {{ background-color: {t['card_bg']}; border-radius: 14px; padding: 12px; border: 1px solid {t['border']}; display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; }}
-.stat-value-green {{ font-size: 1.4rem; font-weight: bold; color: #28a745; }}
-.stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
-.stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
-
-.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
-.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
-
-.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
-.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.78rem; color: #888888; }}
-
-div[data-testid="stCustomComponentV1"] {{ 
-    width: 100% !important;
-    border-radius: 16px;
-    border: 2px solid {t['accent']};
-    background-color: #000000;
-    margin-bottom: 15px;
-    overflow: hidden;
-}}
-
-{css_rgb_anim}
+.stApp {{ background-color: {t['bg']}; color: {t['text']}; }}
+.camera-container {{ border: 3px solid {t['accent']}; border-radius: 20px; overflow: hidden; }}
+.hero-card {{ background: {t['card']}; padding: 20px; border-radius: 20px; text-align: center; border: 1px solid {t['border']}; margin-bottom: 20px; }}
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH DA CÂMERA
-js_camera = """<script>
-function aplicarModoRapido() {
+# --- SCRIPT DA CÂMERA (COM OS QUADRADINHOS) ---
+# Removi os comandos 'display: none' para permitir que a biblioteca mostre o guia visual
+js_camera = f"""<script>
+function ajustarScanner() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {
-        try {
+    iframes.forEach(function(frame) {{
+        try {{
             var doc = frame.contentDocument || frame.contentWindow.document;
-            if (doc && doc.querySelector('video')) {
-                var video = doc.querySelector('video');
-                
+            if (doc && doc.querySelector('video')) {{
+                // Deixamos o box de escaneamento visível!
                 var s = doc.createElement('style');
                 s.innerHTML = `
-                    #qr-shaded-region { display: none !important; }
-                    #reader__scan_region { width: 100% !important; min-height: 100% !important; }
-                    #reader__dashboard { display: none !important; }
-                    video { 
-                        width: 100% !important; 
-                        object-fit: cover !important; 
-                        border-radius: 14px;
-                    }
+                    #reader__scan_region {{ border: 2px solid {t['accent']} !important; }}
+                    #reader__dashboard {{ background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; }}
                 `;
                 doc.head.appendChild(s);
-
-                if (video.srcObject && !video.dataset.focusApplied) {
-                    var track = video.srcObject.getVideoTracks()[0];
-                    if (track && track.getCapabilities) {
-                        var cap = track.getCapabilities();
-                        var constr = { advanced: [] };
-                        if (cap.focusMode && cap.focusMode.includes('continuous')) {
-                            constr.advanced.push({ focusMode: 'continuous' });
-                        }
-                        if (cap.exposureMode && cap.exposureMode.includes('continuous')) {
-                            constr.advanced.push({ exposureMode: 'continuous' });
-                        }
-                        if (constr.advanced.length > 0) {
-                            track.applyConstraints(constr).catch(function(){});
-                        }
-                        video.dataset.focusApplied = "true";
-                    }
-                }
-
-                if (!doc.getElementById('btn-flash')) {
-                    var btn = doc.createElement('button');
-                    btn.id = 'btn-flash'; 
-                    btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid ' + ACCENT_COLOR + '; padding:7px 14px; border-radius:20px; font-weight:bold; font-size:12px; cursor:pointer;';
-                    btn.onclick = async function() {
-                        try {
-                            var track = video.srcObject.getVideoTracks()[0];
-                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                            if (capabilities.torch) {
-                                var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({advanced: [{torch: !on}]});
-                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                            }
-                        } catch(err) {}
-                    };
-                    doc.body.appendChild(btn);
-                }
-            }
-        } catch(e) {}
-    });
-}
-var ACCENT_COLOR = '""" + cor_accent + """';
-setInterval(aplicarModoRapido, 350);
+            }}
+        }} catch(e) {{}}
+    }});
+}}
+setInterval(ajustarScanner, 1000);
 </script>"""
 components.html(js_camera, height=0)
 
-# NORMALIZAÇÃO DE ENDEREÇO
-def normalizar_endereco(texto):
-    if not texto:
-        return ""
-    m = re.search(r'(?:r(?:ua)?\.?|av(?:enida)?\.?|al(?:ameda)?\.?|est(?:rada)?\.?|tv|travessa)\s+([^,]+?)\s*,\s*(\d+)', texto, re.IGNORECASE)
-    if m:
-        return f"{m.group(1).strip().lower()}_{m.group(2).strip()}"
-    limpo = re.sub(r'[^a-zA-Z0-9]', '', texto)[:30].lower()
-    return limpo
+# --- LÓGICA DE PROCESSAMENTO PDF ---
+arquivo_pdf = arquivo_pdf_sidebar
+mapa_rotas = {}
+stop_correspondente = {}
+todos_pacotes = set()
 
-# TELA PRINCIPAL
-arquivo_pdf_main = None
-if not arquivo_pdf_sidebar:
-    st.markdown(f"""
-    <div class="hero-card">
+if arquivo_pdf:
+    leitor = PdfReader(arquivo_pdf)
+    texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
+    linhas = texto.split('\n')
+    seq_stop_auto = 0
+    for idx, linha in enumerate(linhas):
+        cods = re.findall(r'BR[A-Za-z0-9]{10,16}', linha, re.IGNORECASE)
+        if cods:
+            seq_stop_auto += 1
+            m_num = re.match(r'^(\d{1,3})\b', linha)
+            stop_num = int(m_num.group(1)) if m_num else seq_stop_auto
+            for c in cods:
+                c_u = c.upper()
+                todos_pacotes.add(c_u)
+                stop_correspondente[c_u] = stop_num
+
+# --- TELA PRINCIPAL E SCANNER ---
+st.markdown("### ⚡ BIPAGEM ULTRA-RÁPIDA")
+
+# Lógica BLINDADA: Só mostra o scanner se não tivermos leitura pendente
+if st.session_state.ultima_leitura is None:
+    code = qrcode_scanner(key="scanner_unico")
+    if code:
+        st.session_state.ultima_leitura = code
+        st.rerun() # Vai processar o código lido
+else:
+    # Mostra o código lido e botão para limpar
+    final_code = st.session_state.ultima_leitura
+    st.success(f"✅ Código capturado: {final_code}")
+    if st.button("📸 Bipar Próximo"):
+        st.session_state.ultima_leitura = None
+        st.rerun()
+    
+    # Processa o código
+    cod = final_code.upper().strip()
+    if cod in stop_correspondente:
+        st.session_state.pacotes_bipados.add(cod)
+        num_p = stop_correspondente[cod]
+        st.markdown(f'<div class="hero-card"><h2>Parada: <span style="color:{t["accent"]}">P{num_p}</span></h2><p>Pacote: {cod}</p></div>', unsafe_allow_html=True)
+        
+        # Audio simples (SpeechSynthesis)
+        js_audio = f"""<script>
+        var msg = new SpeechSynthesisUtterance("{num_p}");
+        msg.lang = "pt-BR";
+        window.speechSynthesis.speak(msg);
+        </script>"""
+        components.html(js_audio, height=0)
+    else:
+        st.error("❌ Código não encontrado na rota!")
+
+# --- STATUS BAR ---
+st.write("---")
+bipados = len(st.session_state.pacotes_bipados)
+st.metric("Total de Pacotes Bipados", f"{bipados} / {len(todos_pacotes)}")
+card">
         <img src="{URL_DO_LOGO}" class="welcome-logo">
         <div class="welcome-title">{NOME_DO_APP}</div>
         <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
