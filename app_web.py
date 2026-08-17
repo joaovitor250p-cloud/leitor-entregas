@@ -97,7 +97,7 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL
+# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
 .stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
@@ -201,16 +201,12 @@ components.html(js_camera, height=0)
 
 # FUNÇÕES AUXILIARES
 def extrair_codigo_chave(texto):
-    """Extrai código alfanumérico limpo (ex: BR123456789012 ou códigos longos)"""
     if not texto:
         return ""
-    # Busca padrão BR seguido de letras/números
     match_br = re.search(r'BR[A-Za-z0-9]{8,25}', texto, re.IGNORECASE)
     if match_br:
         return match_br.group(0).upper().strip()
-    # Caso não seja padrão BR, limpa caracteres especiais
-    limpo = re.sub(r'[^A-Za-z0-9]', '', texto).upper().strip()
-    return limpo
+    return re.sub(r'[^A-Za-z0-9]', '', texto).upper().strip()
 
 def normalizar_endereco(texto):
     if not texto:
@@ -247,23 +243,37 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF
+# PROCESSAMENTO DO PDF (FILTRAGEM PRECISA PARA CIRCUIT)
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
     linhas = texto.split('\n')
     
     seq_stop_auto = 0
+    termos_ignorar = [
+        "ADDRESS", "NOTES", "CIRCUIT", "OPTIMIZED", "STOP", 
+        "DELIVERY", "ROUTE", "DISPATCH", "TOTAL", "PACKAGE"
+    ]
     
     for idx, linha in enumerate(linhas):
         linha_str = linha.strip()
-        if not linha_str or "Address" in linha_str or "Notes" in linha_str or "Circuit" in linha_str:
+        if not linha_str:
             continue
             
-        cods = re.findall(r'[A-Za-z0-9]{8,25}', linha_str)
+        cods_validos = re.findall(r'BR[A-Za-z0-9]{10,20}', linha_str, re.IGNORECASE)
         
-        # Filtra códigos relevantes (padrão de rastreio)
-        cods_validos = [c.upper() for c in cods if len(c) >= 10 and not c.isdigit()]
+        if not cods_validos:
+            candidatos = re.findall(r'\b[A-Za-z0-9]{10,22}\b', linha_str)
+            for c in candidatos:
+                c_up = c.upper()
+                if (
+                    not c.isdigit() 
+                    and not c.isalpha() 
+                    and not any(t in c_up for t in termos_ignorar)
+                ):
+                    cods_validos.append(c)
+        
+        cods_validos = [c.upper() for c in cods_validos]
         
         if cods_validos:
             seq_stop_auto += 1
@@ -335,7 +345,6 @@ if arquivo_pdf:
         achou = False
         pacote_identificado = None
         
-        # 1. Busca exata ou por correspondência cruzada
         for cod_registrado in todos_pacotes:
             if cod_registrado == cod_limpo or cod_registrado in bruto.upper() or cod_limpo in cod_registrado:
                 pacote_identificado = cod_registrado
@@ -346,7 +355,6 @@ if arquivo_pdf:
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
-            # Localiza o endereço correspondente
             end_match = ""
             lista_duplos = []
             for end, pacs in mapa_rotas.items():
