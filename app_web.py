@@ -6,7 +6,7 @@ from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
 # Configuração da Página
-NOME_DO_APP = "PACOTE É MATO"
+NOME_DO_APP = "Bipai"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
 st.set_page_config(
