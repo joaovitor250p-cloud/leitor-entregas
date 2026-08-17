@@ -23,8 +23,8 @@ tipo_voz = "Feminina / Normal"
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-if "contador_leituras" not in st.session_state:
-    st.session_state.contador_leituras = 0
+if "bip_counter" not in st.session_state:
+    st.session_state.bip_counter = 0
 
 # MENU LATERAL
 with st.sidebar:
@@ -57,7 +57,7 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.contador_leituras = 0
+        st.session_state.bip_counter = 0
         st.rerun()
 
 # DEFINIÇÃO DAS PALETAS DE CORES
@@ -140,7 +140,7 @@ st.markdown(f"""
 .stat-value-orange {{ font-size: 1.4rem; font-weight: bold; color: {t['accent']}; }}
 .stat-label {{ font-size: 0.72rem; color: #AAAAAA; font-weight: bold; }}
 
-.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 10px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
+.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
 .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
 .camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
@@ -160,7 +160,7 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH + CONTROLE DE CÂMERA
+# SCRIPT: FLASH DA CÂMERA
 js_camera = """<script>
 function aplicarModoRapido() {
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -252,7 +252,7 @@ if not arquivo_pdf_sidebar:
     st.markdown("""
     <div class="upload-card">
         <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a busca por voz</div>
+        <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem rápida</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -264,7 +264,6 @@ mapa_rotas = {}
 stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
-lista_enderecos_completos = []
 
 # PROCESSAMENTO CIRCUIT
 if arquivo_pdf:
@@ -308,12 +307,6 @@ if arquivo_pdf:
                     mapa_rotas[end_key].append(c_u)
                     stop_correspondente[c_u] = stop_num
                     nome_exibicao[end_key] = linha_str[:45]
-                    lista_enderecos_completos.append({
-                        "stop": stop_num,
-                        "endereco": linha_str,
-                        "codigo": c_u,
-                        "chave_end": end_key
-                    })
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
@@ -347,158 +340,88 @@ if arquivo_pdf:
     <div class="camera-sub">Aponte para o QR Code em qualquer ângulo</div>
 </div>""", unsafe_allow_html=True)
 
-    code = qrcode_scanner(key=f"scanner_{st.session_state.contador_leituras}")
+    code = qrcode_scanner(key="s1")
     
-    # SEÇÃO DE BUSCA MANUAL E BUSCA POR VOZ
-    st.markdown("#### 🔍 Buscar Parada (Voz ou Digitação)")
+    st.markdown("#### ⌨️ Digitar código manualmente")
+    input_code = st.text_input("", placeholder="BR123456789012", label_visibility="collapsed")
     
-    # COMPONENTE DE RECONHECIMENTO DE VOZ
-    js_busca_voz = """
-    <div>
-        <button id="btn-voz" onclick="iniciarVoz()" style="
-            width: 100%;
-            background: #FF9500;
-            color: #000;
-            font-weight: 900;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
-        ">
-            🎙️ Falar Nome da Rua / Número
-        </button>
-        <div id="status-voz" style="color: #FFF; font-size: 12px; text-align: center; margin-top: 6px;"></div>
-    </div>
-
-    <script>
-    function iniciarVoz() {
-        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('Reconhecimento de voz não suportado neste navegador. Use o Chrome no Android.');
-            return;
-        }
-
-        var recognition = new SpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.interimResults = false;
-
-        var btn = document.getElementById('btn-voz');
-        var status = document.getElementById('status-voz');
-
-        recognition.onstart = function() {
-            btn.style.background = '#FF3B30';
-            btn.innerHTML = '🔴 Ouvindo... Fale agora!';
-            status.innerHTML = 'Diga o nome da rua ou número da casa...';
-        };
-
-        recognition.onresult = function(event) {
-            var transcricao = event.results[0][0].transcript;
-            status.innerHTML = 'Você disse: "' + transcricao + '"';
-            
-            // Injeta o texto no input do Streamlit
-            var inputs = window.parent.document.querySelectorAll('input[type="text"]');
-            if (inputs.length > 0) {
-                var target = inputs[inputs.length - 1];
-                target.value = transcricao;
-                target.dispatchEvent(new Event('input', { bubbles: true }));
-                target.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        };
-
-        recognition.onerror = function(event) {
-            status.innerHTML = '⚠️ Erro ao ouvir: ' + event.error;
-        };
-
-        recognition.onend = function() {
-            btn.style.background = '#FF9500';
-            btn.innerHTML = '🎙️ Falar Nome da Rua / Número';
-        };
-
-        recognition.start();
-    }
-    </script>
-    """
-    components.html(js_busca_voz, height=85)
-
-    input_busca = st.text_input("Digite código ou parte do endereço", placeholder="Ex: Barlavento, 3215, ou código BR...", label_visibility="collapsed", key="input_manual")
+    final_code = code or input_code
     
-    # PRIORIDADE: QR CODE OU BUSCA
-    termo_busca = code or input_busca
-    
-    if termo_busca:
-        termo_limpo = termo_busca.strip().lower()
-        termo_upper = termo_busca.strip().upper()
-        
+    if final_code:
+        cod = final_code.upper().strip()
         achou = False
-        resultado_parada = None
-        resultado_cod = None
-        resultado_endereco = None
-        resultado_lista = []
-
-        # 1. Busca exata por código de rastreio (Bipagem)
         for endereco, lista in mapa_rotas.items():
-            if termo_upper in lista:
-                achou = True
-                resultado_parada = stop_correspondente.get(termo_upper, "?")
-                resultado_cod = termo_upper
-                resultado_endereco = nome_exibicao.get(endereco, "Endereço")
-                resultado_lista = lista
-                st.session_state.pacotes_bipados.add(termo_upper)
-                st.session_state.contador_leituras += 1
-                break
-        
-        # 2. Busca flexível por Voz / Texto (Rua, Número, Bairro)
-        if not achou:
-            for item in lista_enderecos_completos:
-                if termo_limpo in item["endereco"].lower() or termo_limpo in item["chave_end"]:
-                    achou = True
-                    resultado_parada = item["stop"]
-                    resultado_cod = item["codigo"]
-                    resultado_endereco = item["endereco"]
-                    resultado_lista = mapa_rotas.get(item["chave_end"], [resultado_cod])
-                    break
-        
-        # EXIBIÇÃO E ÁUDIO
-        if achou:
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{resultado_parada}</div><div>📍 <b>{resultado_endereco}</b></div><div style="color:#AAAAAA; font-size:12px; margin-top:4px;">Pacote: {resultado_cod}</div></div>', unsafe_allow_html=True)
-            
-            if len(resultado_lista) > 1:
-                outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in resultado_lista if p != resultado_cod]
-                st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
-
-            fala_texto = f"{resultado_parada}"
-            if len(resultado_lista) > 1:
-                fala_texto += " Atenção!"
+            if cod in lista:
+                st.session_state.pacotes_bipados.add(cod)
+                st.session_state.bip_counter += 1
+                num_p = stop_correspondente.get(cod, "?")
                 
-            pitch_val = "1.0"
-            rate_val = "1.0"
-            
-            if "Pica-Pau" in tipo_voz:
-                fala_texto = f"He-he-he-he! {resultado_parada}!"
-                if len(resultado_lista) > 1:
-                    fala_texto += " Atenção!"
-                pitch_val = "1.8"
-                rate_val = "1.45"
-            elif "Masculina" in tipo_voz:
-                pitch_val = "0.6"
-                rate_val = "0.95"
-            elif "Rápida" in tipo_voz:
-                pitch_val = "1.1"
-                rate_val = "1.35"
-            elif "Locutor" in tipo_voz:
-                pitch_val = "0.7"
-                rate_val = "0.9"
-            elif "Vilão" in tipo_voz:
-                pitch_val = "0.3"
-                rate_val = "0.8"
-            elif "Esquilo" in tipo_voz:
-                pitch_val = "2.0"
-                rate_val = "1.4"
+                st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {cod}</div></div>', unsafe_allow_html=True)
+                
+                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                    outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista if p != cod]
+                    st.warning(f"⚠️ **MESMO ENDEREÇO!** Pegue também o(s) pacote(s) da(s): " + ", ".join(outros_stops))
 
-            # EXECUÇÃO DO 
+                fala_texto = f"{num_p}"
+                if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                    fala_texto += " Atenção!"
+                    
+                pitch_val = "1.0"
+                rate_val = "1.0"
+                
+                if "Pica-Pau" in tipo_voz:
+                    fala_texto = f"He-he-he-he! {num_p}!"
+                    if len(lista) > 1 and not endereco.startswith("pacote_isolado_"):
+                        fala_texto += " Atenção!"
+                    pitch_val = "1.8"
+                    rate_val = "1.45"
+                elif "Masculina" in tipo_voz:
+                    pitch_val = "0.6"
+                    rate_val = "0.95"
+                elif "Rápida" in tipo_voz:
+                    pitch_val = "1.1"
+                    rate_val = "1.35"
+                elif "Locutor" in tipo_voz:
+                    pitch_val = "0.7"
+                    rate_val = "0.9"
+                elif "Vilão" in tipo_voz:
+                    pitch_val = "0.3"
+                    rate_val = "0.8"
+                elif "Esquilo" in tipo_voz:
+                    pitch_val = "2.0"
+                    rate_val = "1.4"
+
+                # Áudio e som sem erro de sintaxe
+                js_exec = f"""
+                <script>
+                (function() {{
+                    try {{
+                        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        var osc = ctx.createOscillator();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, ctx.currentTime);
+                        osc.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.08);
+                    }} catch(e) {{}}
+
+                    if ({str(usar_audio).lower()}) {{
+                        try {{
+                            window.speechSynthesis.cancel();
+                            var msg = new SpeechSynthesisUtterance("{fala_texto}");
+                            msg.lang = "pt-BR";
+                            msg.pitch = {pitch_val};
+                            msg.rate = {rate_val};
+                            window.speechSynthesis.speak(msg);
+                        }} catch(e) {{}}
+                    }}
+                }})();
+                </script>
+                """
+                components.html(js_exec, height=0)
+
+                achou = True
+                break
+        if not achou:
+            st.error("❌ Código não encontrado!")
+            
