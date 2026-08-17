@@ -26,7 +26,7 @@ with st.sidebar:
     
     tema_cor = st.selectbox(
         "🎨 Cor do Tema",
-        ["Preto (Dark)", "RGB Gamer 🌈", "Branco (Light)", "Cinza", "Azul", "Vermelho"]
+        ["Branco (Light)", "Preto (Dark)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"]
     )
     
     arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
@@ -39,8 +39,7 @@ with st.sidebar:
             [
                 "Feminina / Normal", 
                 "Masculina / Grave", 
-                "Rápida / Ágil", 
-                "Esquilo 🐿️"
+                "Rápida / Ágil"
             ]
         )
         
@@ -51,27 +50,27 @@ with st.sidebar:
 
 # DEFINIÇÃO DAS PALETAS DE CORES
 estilos_temas = {
+    "Branco (Light)": {
+        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
+    },
     "Preto (Dark)": {
-        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500"
+        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500", "subtext": "#888888"
     },
     "RGB Gamer 🌈": {
-        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC"
-    },
-    "Branco (Light)": {
-        "bg_app": "#F5F5F7", "text_app": "#1D1D1F", "card_bg": "#FFFFFF", "border": "#E5E5EA", "accent": "#007AFF"
+        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC", "subtext": "#888888"
     },
     "Cinza": {
-        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500"
+        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500", "subtext": "#AAAAAA"
     },
     "Azul": {
-        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8"
+        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8", "subtext": "#94A3B8"
     },
     "Vermelho": {
-        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D"
+        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D", "subtext": "#FFAAAA"
     }
 }
 
-t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
+t = estilos_temas.get(tema_cor, estilos_temas["Branco (Light)"])
 cor_accent = t["accent"]
 
 # ANIMAÇÃO CSS RGB
@@ -94,24 +93,31 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO
+# ESTILO VISUAL TOTALMENTE DINÂMICO
 st.markdown(f"""
 <style>
-.stApp {{ background-color: {t['bg_app']}; color: {t['text_app']}; }}
-.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
+.stApp {{ 
+    background-color: {t['bg_app']} !important; 
+    color: {t['text_app']} !important; 
+}}
+
+.block-container {{ 
+    padding-top: 1.2rem !important; 
+    padding-bottom: 2rem !important; 
+}}
 
 .hero-card {{
-    background: linear-gradient(145deg, {t['card_bg']}, {t['bg_app']});
+    background-color: {t['card_bg']};
     padding: 24px 18px;
     border-radius: 20px;
     border: 1px solid {t['border']};
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     margin-bottom: 18px;
 }}
 .welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
 .welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
-.welcome-subtitle {{ font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+.welcome-subtitle {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
 .upload-card {{
     background-color: {t['card_bg']};
@@ -122,7 +128,7 @@ st.markdown(f"""
     margin-bottom: 20px;
 }}
 .upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 6px; }}
-.upload-sub {{ font-size: 0.8rem; color: #999999; }}
+.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; }}
 
 .stat-banner {{ 
     background-color: {t['card_bg']}; 
@@ -133,19 +139,32 @@ st.markdown(f"""
     justify-content: space-around; 
     text-align: center; 
     margin-bottom: 15px; 
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
 }}
 .stat-item {{ flex: 1; }}
 .stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
 .stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {t['accent']}; }}
-.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FFB703; }}
-.stat-label {{ font-size: 0.68rem; color: #AAAAAA; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
+.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FF9500; }}
+.stat-label {{ font-size: 0.68rem; color: {t['subtext']}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
 
-.custom-card {{ background-color: {t['card_bg']}; padding: 16px; border-radius: 14px; border-left: 6px solid #28a745; margin-bottom: 15px; border-top: 1px solid {t['border']}; border-right: 1px solid {t['border']}; border-bottom: 1px solid {t['border']}; text-align: center; }}
+.custom-card {{ 
+    background-color: {t['card_bg']}; 
+    padding: 16px; 
+    border-radius: 14px; 
+    border-left: 6px solid #28a745; 
+    margin-bottom: 15px; 
+    border-top: 1px solid {t['border']}; 
+    border-right: 1px solid {t['border']}; 
+    border-bottom: 1px solid {t['border']}; 
+    text-align: center; 
+    color: {t['text_app']};
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}}
 .stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
 .camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
 .camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.78rem; color: #888888; }}
+.camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
@@ -237,7 +256,7 @@ if not arquivo_pdf_sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
+    st.markdown(f"""
     <div class="upload-card">
         <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
         <div class="upload-sub">Envie o arquivo PDF da sua rota para liberar a câmera e a bipagem</div>
@@ -314,7 +333,6 @@ if arquivo_pdf:
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
-    # Container para atualizar o banner instantaneamente no momento do bip
     banner_placeholder = st.empty()
     
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
@@ -351,7 +369,6 @@ if arquivo_pdf:
                 break
                 
         if achou and pacote_identificado:
-            # Registra na hora antes de preencher o banner
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
@@ -385,9 +402,6 @@ if arquivo_pdf:
                 elif "Rápida" in tipo_voz:
                     pitch_val = "1.1"
                     rate_val = "1.35"
-                elif "Esquilo" in tipo_voz:
-                    pitch_val = "2.0"
-                    rate_val = "1.4"
 
                 js_audio = f"""
                 <script>
@@ -408,7 +422,7 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # Renderiza o contador atualizado na hora exata do bip
+    # Renderiza o contador instantâneo
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
