@@ -18,17 +18,23 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# MENU LATERAL (Exclusivo Preto e Branco)
+# MENU LATERAL
 with st.sidebar:
-    st.markdown('<h2 style="color:#FFF;"><span class="anim-emoji">🚚</span> ' + NOME_DO_APP + '</h2>', unsafe_allow_html=True)
+    st.title(f"🚚 {NOME_DO_APP}")
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
+    
+    tema_cor = st.selectbox(
+        "🎨 Cor do Tema",
+        ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
+        index=0
+    )
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
     if usar_audio:
         tipo_voz = st.selectbox(
-            "Estilo da Voz", 
+            "🎙️ Estilo da Voz", 
             [
                 "Feminina / Normal", 
                 "Masculina / Grave", 
@@ -41,178 +47,163 @@ with st.sidebar:
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-# ESTILO VISUAL 100% PRETO E BRANCO COM EMOJIS ANIMADOS
-st.markdown("""
+# DEFINIÇÃO DAS PALETAS DE CORES
+estilos_temas = {
+    "Preto (Dark)": {
+        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500", "subtext": "#888888"
+    },
+    "Branco (Light)": {
+        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
+    },
+    "RGB Gamer 🌈": {
+        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC", "subtext": "#888888"
+    },
+    "Cinza": {
+        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500", "subtext": "#AAAAAA"
+    },
+    "Azul": {
+        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8", "subtext": "#94A3B8"
+    },
+    "Vermelho": {
+        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D", "subtext": "#FFAAAA"
+    }
+}
+
+t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
+cor_accent = t["accent"]
+
+# ANIMAÇÃO CSS RGB
+css_rgb_anim = ""
+if tema_cor == "RGB Gamer 🌈":
+    css_rgb_anim = """
+    @keyframes rgbGlow {
+        0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+        20% { border-color: #FF8800; color: #FF8800; box-shadow: 0 0 12px rgba(255,136,0,0.5); }
+        40% { border-color: #FFFF00; color: #FFFF00; box-shadow: 0 0 12px rgba(255,255,0,0.5); }
+        60% { border-color: #00FF66; color: #00FF66; box-shadow: 0 0 12px rgba(0,255,102,0.5); }
+        80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
+        100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+    }
+    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .stat-value-blue, .upload-title {
+        animation: rgbGlow 6s infinite linear !important;
+    }
+    .upload-card, div[data-testid="stCustomComponentV1"] {
+        animation: rgbGlow 6s infinite linear !important;
+    }
+    """
+
+# ESTILO VISUAL DINÂMICO
+st.markdown(f"""
 <style>
-/* ANIMAÇÃO UNIVERSAL PARA TODOS OS EMOJIS */
-@keyframes emojiPulse {
-    0% { transform: scale(1) rotate(0deg); }
-    25% { transform: scale(1.15) rotate(-5deg); }
-    50% { transform: scale(1.22) rotate(5deg); }
-    75% { transform: scale(1.12) rotate(-3deg); }
-    100% { transform: scale(1) rotate(0deg); }
-}
+.stApp {{ 
+    background-color: {t['bg_app']} !important; 
+    color: {t['text_app']} !important; 
+}}
 
-@keyframes arrowBounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-    40% { transform: translateY(8px) scale(1.2); }
-    60% { transform: translateY(4px) scale(1.1); }
-}
-
-.anim-emoji {
-    display: inline-block !important;
-    animation: emojiPulse 2.4s infinite ease-in-out !important;
-    transform-origin: center center;
-}
-
-.anim-arrow {
-    display: inline-block !important;
-    font-size: 1.8rem;
-    animation: arrowBounce 1.4s infinite ease-in-out !important;
-}
-
-/* PALETA PRETO E BRANCO */
-.stApp { 
-    background-color: #000000 !important; 
-    color: #FFFFFF !important; 
-}
-
-.block-container { 
+.block-container {{ 
     padding-top: 1.2rem !important; 
     padding-bottom: 2rem !important; 
-}
+}}
 
-.hero-card {
-    background-color: #0F0F0F;
+.hero-card {{
+    background-color: {t['card_bg']};
     padding: 24px 18px;
     border-radius: 20px;
-    border: 1px solid #2B2B2B;
+    border: 1px solid {t['border']};
     text-align: center;
-    box-shadow: 0 8px 25px rgba(255,255,255,0.03);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     margin-bottom: 18px;
-}
+}}
+.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
+.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
+.welcome-subtitle {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
-.welcome-logo { 
-    width: 80px; 
-    height: 80px; 
-    object-fit: contain; 
-    margin-bottom: 10px; 
-    filter: grayscale(100%) brightness(200%);
-}
-
-.welcome-title { 
-    font-size: 1.7rem; 
-    font-weight: 900; 
-    color: #FFFFFF; 
-    letter-spacing: 1px; 
-}
-
-.welcome-subtitle { 
-    font-size: 0.75rem; 
-    color: #888888; 
-    font-weight: 700; 
-    letter-spacing: 1.5px; 
-    text-transform: uppercase; 
-}
-
-.upload-card {
-    background-color: #0F0F0F;
+.upload-card {{
+    background-color: {t['card_bg']};
     padding: 20px;
     border-radius: 18px;
-    border: 2px dashed #FFFFFF;
+    border: 2px dashed {t['accent']};
     text-align: center;
     margin-bottom: 14px;
-}
+}}
+.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
+.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 6px; }}
+.upload-arrow {{ font-size: 1.6rem; animation: bounce 1.5s infinite; }}
 
-.upload-title { 
-    font-size: 1.1rem; 
-    font-weight: 800; 
-    color: #FFFFFF; 
-    margin-bottom: 4px; 
-}
+@keyframes bounce {{
+    0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
+    40% {{ transform: translateY(6px); }}
+    60% {{ transform: translateY(3px); }}
+}}
 
-.upload-sub { 
-    font-size: 0.8rem; 
-    color: #888888; 
-    margin-bottom: 6px; 
-}
-
-/* BOTÕES BRANCOS COM TEXTO PRETO */
+/* BOTÕES BRANCOS */
 .stButton > button, 
 div[data-testid="stFileUploader"] button,
 button[kind="secondary"],
-button[kind="primary"] {
+button[kind="primary"] {{
     background-color: #FFFFFF !important;
     color: #000000 !important;
     border: 1px solid #FFFFFF !important;
     border-radius: 12px !important;
-    font-weight: 900 !important;
+    font-weight: 800 !important;
     font-size: 0.95rem !important;
-    box-shadow: 0 4px 14px rgba(255,255,255,0.15) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
     transition: all 0.2s ease-in-out !important;
-}
+}}
 
 .stButton > button:hover, 
-div[data-testid="stFileUploader"] button:hover {
-    background-color: #D9D9D9 !important;
+div[data-testid="stFileUploader"] button:hover {{
+    background-color: #E6E6E6 !important;
     color: #000000 !important;
     transform: scale(1.02);
-}
+}}
 
-.stat-banner { 
-    background-color: #0F0F0F; 
+.stat-banner {{ 
+    background-color: {t['card_bg']}; 
     border-radius: 14px; 
     padding: 14px 8px; 
-    border: 1px solid #2B2B2B; 
+    border: 1px solid {t['border']}; 
     display: flex; 
     justify-content: space-around; 
     text-align: center; 
     margin-bottom: 15px; 
-}
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}}
+.stat-item {{ flex: 1; }}
+.stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
+.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {t['accent']}; }}
+.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FF9500; }}
+.stat-label {{ font-size: 0.68rem; color: {t['subtext']}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
 
-.stat-item { flex: 1; }
-.stat-value-green { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; }
-.stat-value-blue { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; text-decoration: underline; }
-.stat-value-orange { font-size: 1.35rem; font-weight: 900; color: #AAAAAA; }
-.stat-label { font-size: 0.68rem; color: #888888; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }
-
-.custom-card { 
-    background-color: #0F0F0F; 
-    padding: 18px; 
+.custom-card {{ 
+    background-color: {t['card_bg']}; 
+    padding: 16px; 
     border-radius: 14px; 
-    border: 1px solid #FFFFFF; 
+    border-left: 6px solid #28a745; 
     margin-bottom: 15px; 
+    border-top: 1px solid {t['border']}; 
+    border-right: 1px solid {t['border']}; 
+    border-bottom: 1px solid {t['border']}; 
     text-align: center; 
-    color: #FFFFFF;
-}
+    color: {t['text_app']};
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}}
+.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
 
-.stop-number-big { 
-    font-size: 4rem; 
-    font-weight: 900; 
-    color: #FFFFFF; 
-    line-height: 1; 
-    margin-bottom: 8px; 
-}
+.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
+.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
+.camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
-.camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }
-.camera-title { font-size: 1.05rem; font-weight: 900; color: #FFFFFF; text-transform: uppercase; }
-.camera-sub { font-size: 0.78rem; color: #888888; }
-
-div[data-testid="stCustomComponentV1"] { 
+div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
     border-radius: 16px;
-    border: 2px solid #FFFFFF;
+    border: 2px solid {t['accent']};
     background-color: #000000;
     margin-bottom: 15px;
     overflow: hidden;
-}
+}}
 
-/* EXPANDER PRETO E BRANCO */
-div[data-testid="stExpander"] {
-    background-color: #0F0F0F !important;
-    border: 1px solid #2B2B2B !important;
-    border-radius: 12px !important;
-}
+{css_rgb_anim}
 </style>
 """, unsafe_allow_html=True)
 
@@ -240,7 +231,7 @@ function aplicarMelhorias() {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer;';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);';
                     btn.onclick = async function() {
                         try {
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
@@ -258,6 +249,7 @@ function aplicarMelhorias() {
         } catch(e) {}
     });
 }
+var ACCENT_COLOR = '""" + cor_accent + """';
 setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
@@ -285,16 +277,16 @@ def normalizar_endereco(texto):
 st.markdown(f"""
 <div class="hero-card">
     <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title"><span class="anim-emoji">🚚</span> {NOME_DO_APP}</div>
+    <div class="welcome-title">{NOME_DO_APP}</div>
     <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="upload-card">
-    <div class="upload-title"><span class="anim-emoji">📄</span> CARREGAR ROTA DA ENTREGA</div>
+    <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
     <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-    <div class="anim-arrow">👇</div>
+    <div class="upload-arrow">👇</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -379,18 +371,18 @@ if arquivo_pdf:
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
-                st.markdown(f'<span class="anim-emoji">🚨</span> **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})', unsafe_allow_html=True)
+                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})")
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
     st.markdown("""<div class="camera-header">
-        <div class="camera-title"><span class="anim-emoji">📸</span> BIPAR PACOTE</div>
+        <div class="camera-title">📸 BIPAR PACOTE</div>
         <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
     </div>""", unsafe_allow_html=True)
 
     code = qrcode_scanner(key="s1")
     
-    st.markdown('#### <span class="anim-emoji">⌨️</span> Digitar código manualmente', unsafe_allow_html=True)
+    st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
     
     bruto = code or input_code
@@ -420,7 +412,7 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div><span class="anim-emoji">📍</span> Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
