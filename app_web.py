@@ -10,6 +10,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
+CHAVE_PIX = "09354708595"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -166,6 +167,19 @@ css_style = (
     "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
     "}"
     ".stop-number-big { font-size: 4rem; font-weight: 900; color: " + t['text_app'] + "; line-height: 1; margin-bottom: 8px; }"
+    
+    ".pix-card {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    border: 1px solid " + t['border'] + ";"
+    "    border-radius: 14px;"
+    "    padding: 12px;"
+    "    text-align: center;"
+    "    margin-top: 25px;"
+    "    box-shadow: 0 4px 12px " + t['shadow'] + ";"
+    "}"
+    ".pix-title { font-size: 0.88rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 4px; }"
+    ".pix-desc { font-size: 0.76rem; color: " + t['subtext'] + "; margin-bottom: 6px; }"
+    ".pix-key { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; background: rgba(127,127,127,0.15); padding: 4px 8px; border-radius: 8px; display: inline-block; letter-spacing: 1px; }"
     
     ".camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }"
     ".camera-title { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; text-transform: uppercase; }"
@@ -455,7 +469,7 @@ if arquivo_pdf:
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    # BANNER COM RELÓGIO EXATO E SEM O RITMO DE BIP
+    # BANNER COM RELÓGIO EXATO
     html_banner = (
         '<div class="clock-banner">'
         '    🕒 HORÁRIO: ' + hora_atual_str +
@@ -476,4 +490,13 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-                       
+
+# CARD DE APOIO / COLABORAÇÃO VIA PIX
+st.markdown(
+    '<div class="pix-card">'
+    '    <div class="pix-title">🤝 Fortaleça o Corre!</div>'
+    '    <div class="pix-desc">O app te ajudou a agilizar a rota? Faça uma contribuição de qualquer valor:</div>'
+    '    <div class="pix-key">🔑 Chave Pix: ' + CHAVE_PIX + '</div>'
+    '</div>',
+    unsafe_allow_html=True
+        )
