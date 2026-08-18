@@ -1,6 +1,4 @@
-import datetime
 import re
-from zoneinfo import ZoneInfo
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -80,29 +78,11 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS E JS DINÂMICO
-css_js = (
+# CSS DINÂMICO PRETO E BRANCO
+css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
     ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
-    
-    # RELÓGIO FLUTUANTE FIXO E PEQUENO NO CANTO
-    ".fixed-clock-badge {"
-    "    position: fixed;"
-    "    top: 10px;"
-    "    right: 12px;"
-    "    background-color: " + t['card_bg'] + ";"
-    "    color: " + t['text_app'] + ";"
-    "    border: 1px solid " + t['border'] + ";"
-    "    padding: 3px 8px;"
-    "    border-radius: 8px;"
-    "    font-size: 0.72rem;"
-    "    font-weight: 900;"
-    "    letter-spacing: 0.5px;"
-    "    box-shadow: 0 2px 8px " + t['shadow'] + ";"
-    "    z-index: 999999;"
-    "    pointer-events: none;"
-    "}"
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -206,7 +186,11 @@ css_js = (
     "    color: " + t['text_app'] + " !important;"
     "}"
     "</style>"
-    
+)
+st.markdown(css_style, unsafe_allow_html=True)
+
+# SCRIPT: FLASH E BEEP
+js_camera = (
     "<script>"
     "function playBeep() {"
     "    try {"
@@ -218,14 +202,6 @@ css_js = (
     "        osc.start();"
     "        osc.stop(ctx.currentTime + 0.1);"
     "    } catch(e) {}"
-    "}"
-    "function updateLiveClock() {"
-    "    var el = document.getElementById('live-clock-badge');"
-    "    if (el) {"
-    "        var now = new Date();"
-    "        var timeStr = now.toLocaleTimeString('pt-BR', {timeZone: 'America/Sao_Paulo', hour12: false});"
-    "        el.innerHTML = '🕒 ' + timeStr;"
-    "    }"
     "}"
     "function aplicarMelhorias() {"
     "    var iframes = window.parent.document.querySelectorAll('iframe');"
@@ -256,14 +232,9 @@ css_js = (
     "    });"
     "}"
     "setInterval(aplicarMelhorias, 400);"
-    "setInterval(updateLiveClock, 1000);"
-    "updateLiveClock();"
     "</script>"
 )
-st.markdown(css_js, unsafe_allow_html=True)
-
-# ELEMENTO DO RELÓGIO FIXO PEQUENO
-st.markdown('<div id="live-clock-badge" class="fixed-clock-badge">🕒 --:--:--</div>', unsafe_allow_html=True)
+components.html(js_camera, height=0)
 
 # FUNÇÕES AUXILIARES
 def extrair_codigo_chave(texto):
@@ -506,4 +477,3 @@ if arquivo_pdf:
         '</div>'
     )
     st.markdown(html_stats, unsafe_allow_html=True)
-    
