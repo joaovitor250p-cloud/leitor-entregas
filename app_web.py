@@ -80,11 +80,26 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO PRETO E BRANCO
+# CSS DINÂMICO
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
     ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
+    
+    # RELÓGIO FIXO NO CANTO SUPERIOR ESQUERDO
+    ".fixed-clock {"
+    "    position: fixed;"
+    "    top: 15px;"
+    "    left: 15px;"
+    "    background-color: rgba(127,127,127,0.2);"
+    "    color: " + t['text_app'] + ";"
+    "    padding: 6px 12px;"
+    "    border-radius: 8px;"
+    "    font-weight: 900;"
+    "    font-size: 0.9rem;"
+    "    z-index: 99999;"
+    "    border: 1px solid " + t['border'] + ";"
+    "}"
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -98,19 +113,6 @@ css_style = (
     ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }"
     ".welcome-title { font-size: 2rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 2px; text-transform: uppercase; }"
     ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }"
-    
-    ".clock-banner {"
-    "    background-color: " + t['card_bg'] + ";"
-    "    border-radius: 12px;"
-    "    padding: 8px 12px;"
-    "    border: 1px solid " + t['border'] + ";"
-    "    text-align: center;"
-    "    margin-bottom: 12px;"
-    "    font-weight: 900;"
-    "    font-size: 1rem;"
-    "    color: " + t['text_app'] + ";"
-    "    letter-spacing: 1px;"
-    "}"
     
     ".upload-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -270,6 +272,11 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
+# RELÓGIO FIXO NO CANTO SUPERIOR
+fuso_br = ZoneInfo("America/Sao_Paulo")
+hora_atual_str = datetime.datetime.now(fuso_br).strftime("%H:%M")
+st.markdown('<div class="fixed-clock">🕒 ' + hora_atual_str + '</div>', unsafe_allow_html=True)
+
 # TELA PRINCIPAL
 st.markdown(
     '<div class="hero-card">'
@@ -296,12 +303,12 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX (MENSAGEM DIRETA E IMPACTANTE)
+# CARD DO PIX
 if not arquivo_pdf:
     st.markdown(
         '<div class="pix-card">'
         '    <div class="pix-title">🚀 O app te ajudou no corre?</div>'
-        '    <div class="pix-desc">Fortaleça o projeto com um Pix de qualquer valor. Ajuda a manter a ferramenta rodando liso na rua. Tamo junto!</div>'
+        '    <div class="pix-desc">Fortaleça o projeto! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>'
         '    <div class="pix-key">🔑 Pix: ' + CHAVE_PIX + '</div>'
         '</div>',
         unsafe_allow_html=True
@@ -373,8 +380,6 @@ if arquivo_pdf:
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
-    banner_placeholder = st.empty()
-    
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
         for end, pacotes in mapa_rotas.items():
@@ -471,20 +476,13 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # HORÁRIO OFICIAL DO BRASIL (FUSO SÃO PAULO)
-    fuso_br = ZoneInfo("America/Sao_Paulo")
-    hora_atual_str = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
-    
+    # CONTADORES
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    # BANNER COM RELÓGIO EXATO
-    html_banner = (
-        '<div class="clock-banner">'
-        '    🕒 HORÁRIO: ' + hora_atual_str +
-        '</div>'
+    st.markdown(
         '<div class="stat-banner">'
         '    <div class="stat-item">'
         '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
@@ -498,7 +496,7 @@ if arquivo_pdf:
         '        <div class="stat-value">' + str(faltam) + '</div>'
         '        <div class="stat-label">FALTAM</div>'
         '    </div>'
-        '</div>'
-    )
-    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-        
+        '</div>',
+        unsafe_allow_html=True
+            )
+    
