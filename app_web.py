@@ -498,7 +498,7 @@ if arquivo_pdf:
     total_paradas = len(mapa_rotas)
     
     # BANNER COM RELÓGIO EXATO
-    html_banner = (
+    banner_html_conteudo = (
         '<div class="clock-banner">'
         '    🕒 HORÁRIO: ' + hora_atual_str +
         '</div>'
@@ -517,4 +517,4 @@ if arquivo_pdf:
         '    </div>'
         '</div>'
     )
-    banner_placeholder.markdown(html_banner, unsafe_allow_
+    banner_placeholder.markdown(banner_html_conte
