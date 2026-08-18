@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
+# Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
@@ -15,9 +16,11 @@ st.set_page_config(
     layout="centered"
 )
 
+# Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
+# DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
     "Preto (Dark)": {
         "bg_app": "#000000",
@@ -51,6 +54,7 @@ estilos_temas = {
     }
 }
 
+# MENU LATERAL
 with st.sidebar:
     st.markdown(
         f'<h2 style="margin-bottom:2px; font-weight:900;"><img src="{IMG_MOTO}" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h2>',
@@ -70,7 +74,11 @@ with st.sidebar:
     if usar_audio:
         tipo_voz = st.selectbox(
             "🎙️ Estilo da Voz", 
-            ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil"]
+            [
+                "Feminina / Normal", 
+                "Masculina / Grave", 
+                "Rápida / Ágil"
+            ]
         )
         
     st.write("---")
@@ -80,10 +88,11 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
+# CSS DINÂMICO
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
-.block-container {{ padding-top: 1.5rem !important; padding-bottom: 2rem !important; }}
+.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
 
 .hero-card {{
     background-color: {t['card_bg']};
@@ -190,6 +199,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
+# SCRIPT: FLASH E BEEP
 js_camera = f"""
 <script>
 function playBeep() {{
@@ -236,6 +246,7 @@ setInterval(aplicarMelhorias, 400);
 """
 components.html(js_camera, height=0)
 
+# FUNÇÕES AUXILIARES
 def extrair_codigo_chave(texto):
     if not texto:
         return ""
@@ -254,6 +265,7 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
+# TELA PRINCIPAL
 st.markdown(
     f"""
     <div class="hero-card">
@@ -283,6 +295,7 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
+# CARD DO PIX
 if not arquivo_pdf:
     st.markdown(
         f"""
@@ -300,6 +313,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
+# PROCESSAMENTO DO PDF
 if arquivo_pdf:
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -358,6 +372,7 @@ if arquivo_pdf:
                     mapa_rotas[end_key].append(c)
                 stop_correspondente[c] = stop_num
 
+# TELA DE EXECUÇÃO
 if arquivo_pdf:
     stats_placeholder = st.empty()
 
@@ -459,6 +474,7 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
+    # ATUALIZAÇÃO DOS CONTADORES ACIMA DA CÂMERA
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
