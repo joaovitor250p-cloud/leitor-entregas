@@ -8,6 +8,24 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
+# Emojis Animados Oficiais em Alta Definição (Google Noto Animated)
+EMOJIS = {
+    "truck": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f69a/512.gif",
+    "palette": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a8/512.gif",
+    "sound": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f50a/512.gif",
+    "mic": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f399_fe0f/512.gif",
+    "refresh": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f504/512.gif",
+    "doc": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c4/512.gif",
+    "down": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f447/512.gif",
+    "camera": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif",
+    "keyboard": "https://fonts.gstatic.com/s/e/notoemoji/latest/2328_fe0f/512.gif",
+    "pin": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4cd/512.gif",
+    "siren": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6a8/512.gif",
+    "robot": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif",
+    "flash": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f526/512.gif",
+    "bolt": "https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.gif"
+}
+
 st.set_page_config(
     page_title=NOME_DO_APP,
     page_icon=URL_DO_LOGO,
@@ -20,26 +38,33 @@ if "pacotes_bipados" not in st.session_state:
 
 # MENU LATERAL
 with st.sidebar:
-    st.title(f"🚚 {NOME_DO_APP}")
+    st.markdown(f'<h3><img src="{EMOJIS["truck"]}" class="emoji-img-md"> {NOME_DO_APP}</h3>', unsafe_allow_html=True)
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
     
+    st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["palette"]}" class="emoji-img"> Cor do Tema</div>', unsafe_allow_html=True)
     tema_cor = st.selectbox(
-        "🎨 Cor do Tema",
+        "Cor do Tema",
         ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
-        index=0
+        index=0,
+        label_visibility="collapsed"
     )
     
-    usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
+    st.write("")
+    st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["sound"]}" class="emoji-img"> Falar Número da Parada</div>', unsafe_allow_html=True)
+    usar_audio = st.toggle("Falar Número da Parada", value=True, label_visibility="collapsed")
+    
     tipo_voz = "Feminina / Normal"
     if usar_audio:
+        st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["mic"]}" class="emoji-img"> Estilo da Voz</div>', unsafe_allow_html=True)
         tipo_voz = st.selectbox(
-            "🎙️ Estilo da Voz", 
+            "Estilo da Voz", 
             [
                 "Feminina / Normal", 
                 "Masculina / Grave", 
                 "Rápida / Ágil"
-            ]
+            ],
+            label_visibility="collapsed"
         )
         
     st.write("---")
@@ -92,7 +117,7 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO
+# ESTILO VISUAL DINÂMICO E EMOJIS ANIMADOS
 st.markdown(f"""
 <style>
 .stApp {{ 
@@ -103,6 +128,37 @@ st.markdown(f"""
 .block-container {{ 
     padding-top: 1.2rem !important; 
     padding-bottom: 2rem !important; 
+}}
+
+/* EMOJIS ANIMADOS */
+.emoji-img {{
+    width: 22px;
+    height: 22px;
+    vertical-align: -4px;
+    display: inline-block;
+    margin-right: 6px;
+}}
+
+.emoji-img-md {{
+    width: 28px;
+    height: 28px;
+    vertical-align: -5px;
+    display: inline-block;
+    margin-right: 6px;
+}}
+
+.emoji-img-lg {{
+    width: 42px;
+    height: 42px;
+    display: inline-block;
+    margin-top: 6px;
+}}
+
+.sidebar-label {{
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: {t['text_app']};
 }}
 
 .hero-card {{
@@ -127,14 +183,7 @@ st.markdown(f"""
     margin-bottom: 14px;
 }}
 .upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
-.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 6px; }}
-.upload-arrow {{ font-size: 1.6rem; animation: bounce 1.5s infinite; }}
-
-@keyframes bounce {{
-    0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
-    40% {{ transform: translateY(6px); }}
-    60% {{ transform: translateY(3px); }}
-}}
+.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 4px; }}
 
 /* BOTÕES BRANCOS */
 .stButton > button, 
@@ -207,10 +256,10 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH E BEEP
-js_camera = """<script>
-function playBeep() {
-    try {
+# SCRIPT: FLASH COM EMOJI ANIMADO E BEEP
+js_camera = f"""<script>
+function playBeep() {{
+    try {{
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
         var osc = ctx.createOscillator();
         osc.type = 'sine';
@@ -218,38 +267,38 @@ function playBeep() {
         osc.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.1);
-    } catch(e) {}
-}
+    }} catch(e) {{}}
+}}
 
-function aplicarMelhorias() {
+function aplicarMelhorias() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {
-        try {
+    iframes.forEach(function(frame) {{
+        try {{
             var doc = frame.contentDocument || frame.contentWindow.document;
-            if (doc && doc.querySelector('video')) {
-                if (!doc.getElementById('btn-flash')) {
+            if (doc && doc.querySelector('video')) {{
+                if (!doc.getElementById('btn-flash')) {{
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
-                    btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);';
-                    btn.onclick = async function() {
-                        try {
+                    btn.innerHTML = '<img src="{EMOJIS["flash"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4); display:flex; align-items:center;';
+                    btn.onclick = async function() {{
+                        try {{
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                            if (capabilities.torch) {
+                            var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
+                            if (capabilities.torch) {{
                                 var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({advanced: [{torch: !on}]});
-                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                            }
-                        } catch(err) {}
-                    };
+                                await track.applyConstraints({{advanced: [{{torch: !on}}]}});
+                                btn.innerHTML = !on ? '<img src="{EMOJIS["bolt"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash ON' : '<img src="{EMOJIS["flash"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
+                            }}
+                        }} catch(err) {{}}
+                    }};
                     doc.body.appendChild(btn);
-                }
-            }
-        } catch(e) {}
-    });
-}
-var ACCENT_COLOR = '""" + cor_accent + """';
+                }}
+            }}
+        }} catch(e) {{}}
+    }});
+}}
+var ACCENT_COLOR = '{cor_accent}';
 setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
@@ -277,16 +326,16 @@ def normalizar_endereco(texto):
 st.markdown(f"""
 <div class="hero-card">
     <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title">{NOME_DO_APP}</div>
+    <div class="welcome-title"><img src="{EMOJIS['truck']}" class="emoji-img-md"> {NOME_DO_APP}</div>
     <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""
+st.markdown(f"""
 <div class="upload-card">
-    <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
+    <div class="upload-title"><img src="{EMOJIS['doc']}" class="emoji-img-md"> CARREGAR ROTA DA ENTREGA</div>
     <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-    <div class="upload-arrow">👇</div>
+    <div><img src="{EMOJIS['down']}" class="emoji-img-lg"></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -365,24 +414,24 @@ if arquivo_pdf:
 if arquivo_pdf:
     banner_placeholder = st.empty()
     
-    with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
+    with st.expander("Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
         for end, pacotes in mapa_rotas.items():
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
-                st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})")
+                st.markdown(f'<img src="{EMOJIS["siren"]}" class="emoji-img"> **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})', unsafe_allow_html=True)
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    st.markdown("""<div class="camera-header">
-        <div class="camera-title">📸 BIPAR PACOTE</div>
+    st.markdown(f"""<div class="camera-header">
+        <div class="camera-title"><img src="{EMOJIS['camera']}" class="emoji-img-md"> BIPAR PACOTE</div>
         <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
     </div>""", unsafe_allow_html=True)
 
     code = qrcode_scanner(key="s1")
     
-    st.markdown("#### ⌨️ Digitar código manualmente")
+    st.markdown(f'#### <img src="{EMOJIS["keyboard"]}" class="emoji-img"> Digitar código manualmente', unsafe_allow_html=True)
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
     
     bruto = code or input_code
@@ -412,7 +461,7 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div><img src="{EMOJIS["pin"]}" class="emoji-img"> Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
@@ -461,15 +510,4 @@ if arquivo_pdf:
     banner_placeholder.markdown(f"""<div class="stat-banner">
         <div class="stat-item">
             <div class="stat-value-green">{bipados} / {total_pacotes}</div>
-            <div class="stat-label">PACOTES</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-blue">{total_paradas}</div>
-            <div class="stat-label">PARADAS REAIS</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-orange">{faltam}</div>
-            <div class="stat-label">FALTAM</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
     
