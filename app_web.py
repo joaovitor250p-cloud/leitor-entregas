@@ -10,7 +10,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
-CHAVE_PIX = "093.547.085-95"
+CHAVE_PIX = "09354708595"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -174,7 +174,7 @@ css_style = (
     "    border-radius: 14px;"
     "    padding: 12px;"
     "    text-align: center;"
-    "    margin-top: 25px;"
+    "    margin-top: 20px;"
     "    box-shadow: 0 4px 12px " + t['shadow'] + ";"
     "}"
     ".pix-title { font-size: 0.88rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 4px; }"
@@ -295,6 +295,17 @@ arquivo_pdf = st.file_uploader(
     key="pdf_main", 
     label_visibility="collapsed"
 )
+
+# CARD DO PIX SÓ APARECE ANTES DO UPLOAD (SOME AUTOMATICAMENTE AO CARREGAR O PDF)
+if not arquivo_pdf:
+    st.markdown(
+        '<div class="pix-card">'
+        '    <div class="pix-title">🤝 Fortaleça o Corre!</div>'
+        '    <div class="pix-desc">O app te ajudou a agilizar a rota? Faça uma contribuição de qualquer valor:</div>'
+        '    <div class="pix-key">🔑 Chave Pix: ' + CHAVE_PIX + '</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 mapa_rotas = {}
 stop_correspondente = {}
@@ -490,13 +501,4 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-
-# CARD DE APOIO / COLABORAÇÃO VIA PIX
-st.markdown(
-    '<div class="pix-card">'
-    '    <div class="pix-title">🤝 Fortaleça o Corre!</div>'
-    '    <div class="pix-desc">O app te ajudou a agilizar a rota? Faça uma contribuição de qualquer valor:</div>'
-    '    <div class="pix-key">🔑 Chave Pix: ' + CHAVE_PIX + '</div>'
-    '</div>',
-    unsafe_allow_html=True
-        )
+            
