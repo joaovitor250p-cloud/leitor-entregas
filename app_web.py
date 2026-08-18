@@ -128,18 +128,18 @@ css_style = (
     
     ".stat-banner {"
     "    background-color: " + t['card_bg'] + ";"
-    "    border-radius: 14px;"
-    "    padding: 12px 6px;"
+    "    border-radius: 16px;"
+    "    padding: 16px 8px;"
     "    border: 2px solid " + t['border'] + ";"
     "    display: flex;"
     "    justify-content: space-around;"
     "    text-align: center;"
-    "    margin-bottom: 12px;"
-    "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
+    "    margin-bottom: 16px;"
+    "    box-shadow: 0 6px 18px " + t['shadow'] + ";"
     "}"
     ".stat-item { flex: 1; }"
-    ".stat-value { font-size: 1.25rem; font-weight: 900; color: " + t['text_app'] + "; }"
-    ".stat-label { font-size: 0.65rem; color: " + t['subtext'] + "; font-weight: 900; margin-top: 2px; letter-spacing: 0.5px; }"
+    ".stat-value { font-size: 1.6rem; font-weight: 900; color: " + t['text_app'] + "; line-height: 1.1; }"
+    ".stat-label { font-size: 0.78rem; color: " + t['subtext'] + "; font-weight: 900; margin-top: 4px; letter-spacing: 0.8px; text-transform: uppercase; }"
     
     ".custom-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -358,6 +358,9 @@ if arquivo_pdf:
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
+    # BANNER DE ESTATÍSTICAS ACIMA DA CÂMERA (ATUALIZAÇÃO DINÂMICA)
+    stats_placeholder = st.empty()
+
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
         for end, pacotes in mapa_rotas.items():
@@ -454,7 +457,7 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # CONTADORES / ESTATÍSTICAS
+    # ATUALIZAÇÃO DOS CONTADORES ACIMA DA CÂMERA
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
@@ -476,5 +479,5 @@ if arquivo_pdf:
         '    </div>'
         '</div>'
     )
-    st.markdown(html_stats, unsafe_allow_html=True)
-                
+    stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
+    
