@@ -10,10 +10,8 @@ URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
 # Emojis Animados Oficiais (Google Noto Animated)
 IMG_TRUCK = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f69a/512.gif"
-IMG_PALETTE = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a8/512.gif"
 IMG_SOUND = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f50a/512.gif"
 IMG_MIC = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f399_fe0f/512.gif"
-IMG_REFRESH = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f504/512.gif"
 IMG_DOC = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c4/512.gif"
 IMG_DOWN = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f447/512.gif"
 IMG_CAMERA = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif"
@@ -36,26 +34,14 @@ if "pacotes_bipados" not in st.session_state:
 # MENU LATERAL
 with st.sidebar:
     st.markdown(
-        f'<h3><img src="{IMG_TRUCK}" class="emoji-img-md"> {NOME_DO_APP}</h3>',
+        '<h3 style="color:#FFF;"><img src="' + IMG_TRUCK + '" class="emoji-img-md"> ' + NOME_DO_APP + '</h3>',
         unsafe_allow_html=True
     )
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
     
     st.markdown(
-        f'<div class="sidebar-label"><img src="{IMG_PALETTE}" class="emoji-img"> Cor do Tema</div>',
-        unsafe_allow_html=True
-    )
-    tema_cor = st.selectbox(
-        "Cor do Tema",
-        ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
-        index=0,
-        label_visibility="collapsed"
-    )
-    
-    st.write("")
-    st.markdown(
-        f'<div class="sidebar-label"><img src="{IMG_SOUND}" class="emoji-img"> Falar Número da Parada</div>',
+        '<div class="sidebar-label"><img src="' + IMG_SOUND + '" class="emoji-img"> Falar Número da Parada</div>',
         unsafe_allow_html=True
     )
     usar_audio = st.toggle("Falar Número da Parada", value=True, label_visibility="collapsed")
@@ -63,7 +49,7 @@ with st.sidebar:
     tipo_voz = "Feminina / Normal"
     if usar_audio:
         st.markdown(
-            f'<div class="sidebar-label"><img src="{IMG_MIC}" class="emoji-img"> Estilo da Voz</div>',
+            '<div class="sidebar-label"><img src="' + IMG_MIC + '" class="emoji-img"> Estilo da Voz</div>',
             unsafe_allow_html=True
         )
         tipo_voz = st.selectbox(
@@ -81,197 +67,158 @@ with st.sidebar:
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-# DEFINIÇÃO DAS PALETAS DE CORES
-estilos_temas = {
-    "Preto (Dark)": {
-        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500", "subtext": "#888888"
-    },
-    "Branco (Light)": {
-        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
-    },
-    "RGB Gamer 🌈": {
-        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC", "subtext": "#888888"
-    },
-    "Cinza": {
-        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500", "subtext": "#AAAAAA"
-    },
-    "Azul": {
-        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8", "subtext": "#94A3B8"
-    },
-    "Vermelho": {
-        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D", "subtext": "#FFAAAA"
-    }
+# ESTILO VISUAL PRETO E BRANCO COM EMOJIS ANIMADOS
+css_style = """
+<style>
+.stApp { 
+    background-color: #000000 !important; 
+    color: #FFFFFF !important; 
 }
 
-t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
-cor_accent = t["accent"]
-bg_app = t["bg_app"]
-text_app = t["text_app"]
-card_bg = t["card_bg"]
-border = t["border"]
-subtext = t["subtext"]
-
-# ANIMAÇÃO CSS RGB
-css_rgb_anim = ""
-if tema_cor == "RGB Gamer 🌈":
-    css_rgb_anim = """
-    @keyframes rgbGlow {
-        0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-        20% { border-color: #FF8800; color: #FF8800; box-shadow: 0 0 12px rgba(255,136,0,0.5); }
-        40% { border-color: #FFFF00; color: #FFFF00; box-shadow: 0 0 12px rgba(255,255,0,0.5); }
-        60% { border-color: #00FF66; color: #00FF66; box-shadow: 0 0 12px rgba(0,255,102,0.5); }
-        80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
-        100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-    }
-    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .stat-value-blue, .upload-title {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    .upload-card, div[data-testid="stCustomComponentV1"] {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    """
-
-# ESTILO VISUAL DINÂMICO
-st.markdown(f"""
-<style>
-.stApp {{ 
-    background-color: {bg_app} !important; 
-    color: {text_app} !important; 
-}}
-
-.block-container {{ 
+.block-container { 
     padding-top: 1.2rem !important; 
     padding-bottom: 2rem !important; 
-}}
+}
 
-.emoji-img {{
+.emoji-img {
     width: 22px;
     height: 22px;
     vertical-align: -4px;
     display: inline-block;
     margin-right: 6px;
-}}
+}
 
-.emoji-img-md {{
+.emoji-img-md {
     width: 28px;
     height: 28px;
     vertical-align: -5px;
     display: inline-block;
     margin-right: 6px;
-}}
+}
 
-.emoji-img-lg {{
+.emoji-img-lg {
     width: 42px;
     height: 42px;
     display: inline-block;
     margin-top: 6px;
-}}
+}
 
-.sidebar-label {{
+.sidebar-label {
     font-size: 0.88rem;
     font-weight: 700;
     margin-bottom: 5px;
-    color: {text_app};
-}}
+    color: #FFFFFF;
+}
 
-.hero-card {{
-    background-color: {card_bg};
+.hero-card {
+    background-color: #0F0F0F;
     padding: 24px 18px;
     border-radius: 20px;
-    border: 1px solid {border};
+    border: 1px solid #2B2B2B;
     text-align: center;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(255,255,255,0.03);
     margin-bottom: 18px;
-}}
-.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
-.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {cor_accent}; letter-spacing: 1px; }}
-.welcome-subtitle {{ font-size: 0.75rem; color: {subtext}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+}
+.welcome-logo { 
+    width: 80px; 
+    height: 80px; 
+    object-fit: contain; 
+    margin-bottom: 10px; 
+    filter: grayscale(100%) brightness(200%);
+}
+.welcome-title { font-size: 1.7rem; font-weight: 900; color: #FFFFFF; letter-spacing: 1px; }
+.welcome-subtitle { font-size: 0.75rem; color: #888888; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
 
-.upload-card {{
-    background-color: {card_bg};
+.upload-card {
+    background-color: #0F0F0F;
     padding: 20px;
     border-radius: 18px;
-    border: 2px dashed {cor_accent};
+    border: 2px dashed #FFFFFF;
     text-align: center;
     margin-bottom: 14px;
-}}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {text_app}; margin-bottom: 4px; }}
-.upload-sub {{ font-size: 0.8rem; color: {subtext}; margin-bottom: 4px; }}
+}
+.upload-title { font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin-bottom: 4px; }
+.upload-sub { font-size: 0.8rem; color: #888888; margin-bottom: 4px; }
 
 .stButton > button, 
 div[data-testid="stFileUploader"] button,
 button[kind="secondary"],
-button[kind="primary"] {{
+button[kind="primary"] {
     background-color: #FFFFFF !important;
     color: #000000 !important;
     border: 1px solid #FFFFFF !important;
     border-radius: 12px !important;
     font-weight: 800 !important;
     font-size: 0.95rem !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    box-shadow: 0 4px 12px rgba(255,255,255,0.15) !important;
     transition: all 0.2s ease-in-out !important;
-}}
+}
 
 .stButton > button:hover, 
-div[data-testid="stFileUploader"] button:hover {{
-    background-color: #E6E6E6 !important;
+div[data-testid="stFileUploader"] button:hover {
+    background-color: #D9D9D9 !important;
     color: #000000 !important;
     transform: scale(1.02);
-}}
+}
 
-.stat-banner {{ 
-    background-color: {card_bg}; 
+.stat-banner { 
+    background-color: #0F0F0F; 
     border-radius: 14px; 
     padding: 14px 8px; 
-    border: 1px solid {border}; 
+    border: 1px solid #2B2B2B; 
     display: flex; 
     justify-content: space-around; 
     text-align: center; 
     margin-bottom: 15px; 
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}}
-.stat-item {{ flex: 1; }}
-.stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
-.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {cor_accent}; }}
-.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FF9500; }}
-.stat-label {{ font-size: 0.68rem; color: {subtext}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
+    box-shadow: 0 4px 14px rgba(255,255,255,0.04);
+}
+.stat-item { flex: 1; }
+.stat-value-green { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; }
+.stat-value-blue { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; text-decoration: underline; }
+.stat-value-orange { font-size: 1.35rem; font-weight: 900; color: #888888; }
+.stat-label { font-size: 0.68rem; color: #888888; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }
 
-.custom-card {{ 
-    background-color: {card_bg}; 
+.custom-card { 
+    background-color: #0F0F0F; 
     padding: 16px; 
     border-radius: 14px; 
-    border-left: 6px solid #28a745; 
+    border: 1px solid #FFFFFF; 
     margin-bottom: 15px; 
-    border-top: 1px solid {border}; 
-    border-right: 1px solid {border}; 
-    border-bottom: 1px solid {border}; 
     text-align: center; 
-    color: {text_app};
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}}
-.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {cor_accent}; line-height: 1; margin-bottom: 8px; }}
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(255,255,255,0.06);
+}
+.stop-number-big { font-size: 4rem; font-weight: 900; color: #FFFFFF; line-height: 1; margin-bottom: 8px; }
 
-.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
-.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {cor_accent}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.78rem; color: {subtext}; }}
+.camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }
+.camera-title { font-size: 1.05rem; font-weight: 800; color: #FFFFFF; text-transform: uppercase; }
+.camera-sub { font-size: 0.78rem; color: #888888; }
 
-div[data-testid="stCustomComponentV1"] {{ 
+div[data-testid="stCustomComponentV1"] { 
     width: 100% !important;
     border-radius: 16px;
-    border: 2px solid {cor_accent};
+    border: 2px solid #FFFFFF;
     background-color: #000000;
     margin-bottom: 15px;
     overflow: hidden;
-}}
+}
 
-{css_rgb_anim}
+div[data-testid="stExpander"] {
+    background-color: #0F0F0F !important;
+    border: 1px solid #2B2B2B !important;
+    border-radius: 12px !important;
+}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(css_style, unsafe_allow_html=True)
 
 # SCRIPT: FLASH E BEEP
-js_camera = f"""<script>
-function playBeep() {{
-    try {{
+js_flash_html = '<img src="' + IMG_FLASH + '" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash'
+js_bolt_html = '<img src="' + IMG_BOLT + '" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash ON'
+
+js_camera = """<script>
+function playBeep() {
+    try {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
         var osc = ctx.createOscillator();
         osc.type = 'sine';
@@ -279,37 +226,37 @@ function playBeep() {{
         osc.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.1);
-    }} catch(e) {{}}
-}}
+    } catch(e) {}
+}
 
-function aplicarMelhorias() {{
+function aplicarMelhorias() {
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {{
-        try {{
+    iframes.forEach(function(frame) {
+        try {
             var doc = frame.contentDocument || frame.contentWindow.document;
-            if (doc && doc.querySelector('video')) {{
-                if (!doc.getElementById('btn-flash')) {{
+            if (doc && doc.querySelector('video')) {
+                if (!doc.getElementById('btn-flash')) {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
-                    btn.innerHTML = '<img src="{IMG_FLASH}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
+                    btn.innerHTML = '""" + js_flash_html + """';
                     btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4); display:flex; align-items:center;';
-                    btn.onclick = async function() {{
-                        try {{
+                    btn.onclick = async function() {
+                        try {
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                            var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
-                            if (capabilities.torch) {{
+                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                            if (capabilities.torch) {
                                 var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                btn.innerHTML = !on ? '<img src="{IMG_BOLT}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash ON' : '<img src="{IMG_FLASH}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
-                            }}
-                        }} catch(err) {{}}
-                    }};
+                                await track.applyConstraints({advanced: [{torch: !on}]});
+                                btn.innerHTML = !on ? '""" + js_bolt_html + """' : '""" + js_flash_html + """';
+                            }
+                        } catch(err) {}
+                    };
                     doc.body.appendChild(btn);
-                }}
-            }}
-        }} catch(e) {{}}
-    }});
-}}
+                }
+            }
+        } catch(e) {}
+    });
+}
 setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
@@ -334,21 +281,23 @@ def normalizar_endereco(texto):
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
 # TELA PRINCIPAL
-st.markdown(f"""
-<div class="hero-card">
-    <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title"><img src="{IMG_TRUCK}" class="emoji-img-md"> {NOME_DO_APP}</div>
-    <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="hero-card">'
+    '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
+    '<div class="welcome-title"><img src="' + IMG_TRUCK + '" class="emoji-img-md"> ' + NOME_DO_APP + '</div>'
+    '<div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>'
+    '</div>',
+    unsafe_allow_html=True
+)
 
-st.markdown(f"""
-<div class="upload-card">
-    <div class="upload-title"><img src="{IMG_DOC}" class="emoji-img-md"> CARREGAR ROTA DA ENTREGA</div>
-    <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-    <div><img src="{IMG_DOWN}" class="emoji-img-lg"></div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="upload-card">'
+    '<div class="upload-title"><img src="' + IMG_DOC + '" class="emoji-img-md"> CARREGAR ROTA DA ENTREGA</div>'
+    '<div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>'
+    '<div><img src="' + IMG_DOWN + '" class="emoji-img-lg"></div>'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 arquivo_pdf = st.file_uploader(
     "Selecione o PDF da Rota", 
@@ -431,22 +380,23 @@ if arquivo_pdf:
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
-                st.markdown(
-                    f'<img src="{IMG_SIREN}" class="emoji-img"> **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})',
-                    unsafe_allow_html=True
-                )
+                msg_duplo = '<img src="' + IMG_SIREN + '" class="emoji-img"> <b>' + nome_exibicao.get(end, end).title() + '</b>: <code>' + str(len(pacotes)) + ' pcts</code> (' + numeros_stops + ')'
+                st.markdown(msg_duplo, unsafe_allow_html=True)
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    st.markdown(f"""<div class="camera-header">
-        <div class="camera-title"><img src="{IMG_CAMERA}" class="emoji-img-md"> BIPAR PACOTE</div>
-        <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="camera-header">'
+        '<div class="camera-title"><img src="' + IMG_CAMERA + '" class="emoji-img-md"> BIPAR PACOTE</div>'
+        '<div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     code = qrcode_scanner(key="s1")
     
     st.markdown(
-        f'#### <img src="{IMG_KEYBOARD}" class="emoji-img"> Digitar código manualmente',
+        '#### <img src="' + IMG_KEYBOARD + '" class="emoji-img"> Digitar código manualmente',
         unsafe_allow_html=True
     )
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
@@ -478,19 +428,22 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            st.markdown(
-                f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div><img src="{IMG_PIN}" class="emoji-img"> Pacote: {pacote_identificado}</div></div>',
-                unsafe_allow_html=True
+            card_pacote_html = (
+                '<div class="custom-card">'
+                '<div class="stop-number-big">P' + str(num_p) + '</div>'
+                '<div><img src="' + IMG_PIN + '" class="emoji-img"> Pacote: ' + str(pacote_identificado) + '</div>'
+                '</div>'
             )
+            st.markdown(card_pacote_html, unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
-                st.warning(f"⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
+                st.warning("⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
 
             if usar_audio:
-                fala_texto = f"{num_p}"
+                fala_texto = str(num_p)
                 if outros_stops and not end_match.startswith("pacote_isolado_"):
-                    fala_texto += f" Atenção! Mesmo endereço da parada {outros_stops[0].replace('P', '')}!"
+                    fala_texto += " Atenção! Mesmo endereço da parada " + outros_stops[0].replace('P', '') + "!"
                     
                 pitch_val = "1.0"
                 rate_val = "1.0"
@@ -502,34 +455,46 @@ if arquivo_pdf:
                     pitch_val = "1.1"
                     rate_val = "1.35"
 
-                js_audio = f"""
-                <script>
-                (function() {{
-                    try {{
-                        window.speechSynthesis.cancel();
-                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
-                        msg.lang = 'pt-BR';
-                        msg.pitch = {pitch_val};
-                        msg.rate = {rate_val};
-                        window.speechSynthesis.speak(msg);
-                    }} catch(e) {{}}
-                }})();
-                </script>
-                """
+                js_audio = (
+                    "<script>"
+                    "(function() {"
+                    "    try {"
+                    "        window.speechSynthesis.cancel();"
+                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
+                    "        msg.lang = 'pt-BR';"
+                    "        msg.pitch = " + pitch_val + ";"
+                    "        msg.rate = " + rate_val + ";"
+                    "        window.speechSynthesis.speak(msg);"
+                    "    } catch(e) {}"
+                    "})();"
+                    "</script>"
+                )
                 components.html(js_audio, height=0)
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # Renderiza o contador instantâneo
+    # Renderiza o banner instantaneamente sem quebra de aspas
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    banner_placeholder.markdown(f"""<div class="stat-banner">
-        <div class="stat-item">
-            <div class="stat-value-green">{bipados} / {total_pacotes}</div>
-            <div class="stat-label">PACOTES</div>
-        </div>
-        <div class="stat-it
+    html_banner = (
+        '<div class="stat-banner">'
+        '    <div class="stat-item">'
+        '        <div class="stat-value-green">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
+        '        <div class="stat-label">PACOTES</div>'
+        '    </div>'
+        '    <div class="stat-item">'
+        '        <div class="stat-value-blue">' + str(total_paradas) + '</div>'
+        '        <div class="stat-label">PARADAS REAIS</div>'
+        '    </div>'
+        '    <div class="stat-item">'
+        '        <div class="stat-value-orange">' + str(faltam) + '</div>'
+        '        <div class="stat-label">FALTAM</div>'
+        '    </div>'
+        '</div>'
+    )
+    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
+            
