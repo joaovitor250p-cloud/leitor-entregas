@@ -19,7 +19,7 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# DEFINIÇÃO DOS TEMAS ESTRITAMENTE PRETO & BRANCO
+# DEFINIÇÃO DOS TEMAS PRETO & BRANCO
 estilos_temas = {
     "Preto (Dark)": {
         "bg_app": "#000000",
@@ -29,8 +29,7 @@ estilos_temas = {
         "btn_bg": "#FFFFFF",
         "btn_text": "#000000",
         "subtext": "#AAAAAA",
-        "shadow": "rgba(255,255,255,0.12)",
-        "logo_filter": "grayscale(100%) brightness(200%)"
+        "shadow": "rgba(255,255,255,0.12)"
     },
     "Branco (Light)": {
         "bg_app": "#FFFFFF",
@@ -40,8 +39,7 @@ estilos_temas = {
         "btn_bg": "#000000",
         "btn_text": "#FFFFFF",
         "subtext": "#555555",
-        "shadow": "rgba(0,0,0,0.15)",
-        "logo_filter": "grayscale(100%)"
+        "shadow": "rgba(0,0,0,0.15)"
     }
 }
 
@@ -79,7 +77,7 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# APLICAÇÃO DO CSS DINÂMICO
+# APLICAÇÃO DO CSS DINÂMICO COM O LOGO EM CORES ORIGINAIS
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
@@ -94,7 +92,7 @@ css_style = (
     "    box-shadow: 0 8px 24px " + t['shadow'] + ";"
     "    margin-bottom: 18px;"
     "}"
-    ".welcome-logo { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: " + t['logo_filter'] + "; }"
+    ".welcome-logo { width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }"
     ".welcome-title { font-size: 1.7rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 1px; }"
     ".welcome-subtitle { font-size: 0.75rem; color: " + t['subtext'] + "; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }"
     
@@ -243,7 +241,7 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL
+# TELA PRINCIPAL (LOGO COM SUAS CORES ORIGINAIS)
 st.markdown(
     '<div class="hero-card">'
     '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
@@ -456,4 +454,3 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-            
