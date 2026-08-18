@@ -18,7 +18,7 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# MENU LATERAL
+# MENU LATERAL (Apenas Temas, Vozes e Zerar Rota)
 with st.sidebar:
     st.title(f"🚚 {NOME_DO_APP}")
     st.caption("Sistema Inteligente de Logística")
@@ -29,8 +29,6 @@ with st.sidebar:
         ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
         index=0
     )
-    
-    arquivo_pdf_sidebar = st.file_uploader("📂 Enviar PDF da Rota (Menu)", type=["pdf"], key="pdf_sidebar")
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -275,33 +273,29 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL
-arquivo_pdf_main = None
-if not arquivo_pdf_sidebar:
-    st.markdown(f"""
-    <div class="hero-card">
-        <img src="{URL_DO_LOGO}" class="welcome-logo">
-        <div class="welcome-title">{NOME_DO_APP}</div>
-        <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="upload-card">
-        <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-        <div class="upload-arrow">👇</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    arquivo_pdf_main = st.file_uploader(
-        "Selecione o PDF da Rota", 
-        type=["pdf"], 
-        key="pdf_main", 
-        label_visibility="collapsed"
-    )
+# TELA PRINCIPAL (UPLOAD EXCLUSIVO NA PARTE PRINCIPAL)
+st.markdown(f"""
+<div class="hero-card">
+    <img src="{URL_DO_LOGO}" class="welcome-logo">
+    <div class="welcome-title">{NOME_DO_APP}</div>
+    <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
+</div>
+""", unsafe_allow_html=True)
 
-arquivo_pdf = arquivo_pdf_sidebar or arquivo_pdf_main
+st.markdown("""
+<div class="upload-card">
+    <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
+    <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
+    <div class="upload-arrow">👇</div>
+</div>
+""", unsafe_allow_html=True)
+
+arquivo_pdf = st.file_uploader(
+    "Selecione o PDF da Rota", 
+    type=["pdf"], 
+    key="pdf_main", 
+    label_visibility="collapsed"
+)
 
 mapa_rotas = {}
 stop_correspondente = {}
@@ -478,4 +472,3 @@ if arquivo_pdf:
             <div class="stat-label">FALTAM</div>
         </div>
     </div>""", unsafe_allow_html=True)
-    
