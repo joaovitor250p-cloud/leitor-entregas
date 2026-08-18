@@ -5,12 +5,26 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
+import qrcode
+import io
+import base64
 
 # Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
-CHAVE_PIX = "093.547.085-95"
+CHAVE_PIX = "Pacoteemato@gmail.com"
+
+# Função para gerar QR Code em base64
+def gerar_qrcode_pix(chave):
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(chave)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    img_str = base64.b64encode(buffer.getvalue()).decode()
+    return img_str
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -172,14 +186,15 @@ css_style = (
     "    background-color: " + t['card_bg'] + ";"
     "    border: 1px solid " + t['border'] + ";"
     "    border-radius: 14px;"
-    "    padding: 14px;"
+    "    padding: 16px;"
     "    text-align: center;"
     "    margin-top: 20px;"
     "    box-shadow: 0 4px 12px " + t['shadow'] + ";"
     "}"
-    ".pix-title { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 4px; letter-spacing: 0.5px; }"
-    ".pix-desc { font-size: 0.82rem; color: " + t['subtext'] + "; margin-bottom: 10px; line-height: 1.4; }"
-    ".pix-key { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; background: rgba(127,127,127,0.18); padding: 6px 12px; border-radius: 8px; display: inline-block; letter-spacing: 1px; }"
+    ".pix-qr { margin: 10px auto; width: 180px; }"
+    ".pix-title { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 6px; letter-spacing: 0.5px; }"
+    ".pix-desc { font-size: 0.82rem; color: " + t['subtext'] + "; margin-bottom: 12px; line-height: 1.4; }"
+    ".pix-key { font-size: 0.9rem; font-weight: 800; color: " + t['text_app'] + "; background: rgba(127,127,127,0.18); padding: 6px 10px; border-radius: 8px; display: inline-block; }"
     
     ".camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }"
     ".camera-title { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; text-transform: uppercase; }"
@@ -296,13 +311,15 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX (MENSAGEM AMIGÁVEL PARA OS MOTOCAS)
+# CARD DO PIX COM QR CODE GERADO
 if not arquivo_pdf:
+    qrcode_base64 = gerar_qrcode_pix(CHAVE_PIX)
     st.markdown(
         '<div class="pix-card">'
-        '    <div class="pix-title">🚀 O app salvou seu corre hoje?</div>'
-        '    <div class="pix-desc">Se essa ferramenta te ajudou a ganhar tempo e evitar dor de cabeça na rota, fortalece a gente com um café! Qualquer valor ajuda o sistema a continuar rodando liso na rua. Tamo junto!</div>'
-        '    <div class="pix-key">🔑 Pix (CPF): ' + CHAVE_PIX + '</div>'
+        '    <div class="pix-title">🚀 O app te salvou hoje?</div>'
+        '    <div class="pix-desc">Fortaleça o corre! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>'
+        f'    <img src="data:image/png;base64,{qrcode_base64}" class="pix-qr">'
+        '    <div class="pix-key">🔑 Pix: ' + CHAVE_PIX + '</div>'
         '</div>',
         unsafe_allow_html=True
     )
@@ -500,5 +517,4 @@ if arquivo_pdf:
         '    </div>'
         '</div>'
     )
-    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-    
+    banner_placeholder.markdown(html_banner, u
