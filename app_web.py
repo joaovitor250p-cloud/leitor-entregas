@@ -92,18 +92,19 @@ t = estilos_temas[tema_cor]
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
-    ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
+    ".block-container { padding-top: 3.8rem !important; padding-bottom: 2rem !important; }"
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
-    "    padding: 22px 18px;"
+    "    padding: 24px 18px;"
     "    border-radius: 20px;"
     "    border: 2px solid " + t['border'] + ";"
     "    text-align: center;"
     "    box-shadow: 0 8px 24px " + t['shadow'] + ";"
+    "    margin-top: 8px;"
     "    margin-bottom: 14px;"
     "}"
-    ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }"
+    ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-top: 4px; margin-bottom: 12px; }"
     ".welcome-title { font-size: 2rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 2px; text-transform: uppercase; }"
     ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }"
     
@@ -489,4 +490,4 @@ if arquivo_pdf:
         '</div>'
     )
     stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
-        
+    
