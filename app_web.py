@@ -69,7 +69,7 @@ with st.sidebar:
         index=0
     )
     
-    usar_frontal = st.toggle("🤳 Usar Câmera Frontal", value=False)
+    usar_frontal = st.toggle("🤳 Câmera Frontal (Selfie)", value=False)
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -202,8 +202,8 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH, BEEP E CONTROLE DE CÂMERA FRONTAL/TRASEIRA
-modo_cam = "user" if usar_frontal else "environment"
+# SCRIPT: FORÇAR CÂMERA FRONTAL/TRASEIRA, FLASH E BEEP
+modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
 function playBeep() {{
@@ -217,16 +217,46 @@ function playBeep() {{
         osc.stop(ctx.currentTime + 0.1);
     }} catch(e) {{}}
 }}
-function aplicarMelhorias() {{
+
+async function forcarCamera() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {{
+    for (var i = 0; i < iframes.length; i++) {{
         try {{
-            var doc = frame.contentDocument || frame.contentWindow.document;
+            var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                // Botão de Flash apenas para traseira
-                if (!"{usar_frontal}".toLowerCase().includes("true")) {{
+                // Se o modo desejado for frontal e a câmera ainda estiver na traseira
+                if (!video.dataset.modeApplied || video.dataset.modeApplied !== "{modo_cam_js}") {{
+                    video.dataset.modeApplied = "{modo_cam_js}";
+                    
+                    if (video.srcObject) {{
+                        var tracks = video.srcObject.getTracks();
+                        tracks.forEach(function(track) {{ track.stop(); }});
+                    }}
+                    
+                    var constraints = {{
+                        video: {{ facingMode: {{ exact: "{modo_cam_js}" }} }},
+                        audio: false
+                    }};
+                    
+                    try {{
+                        var stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        video.srcObject = stream;
+                        video.play();
+                    }} catch(err) {{
+                        // Fallback se "exact" falhar
+                        var fallbackStream = await navigator.mediaDevices.getUserMedia({{
+                            video: {{ facingMode: "{modo_cam_js}" }},
+                            audio: false
+                        }});
+                        video.srcObject = fallbackStream;
+                        video.play();
+                    }}
+                }}
+                
+                // Flash só para câmera traseira
+                if ("{modo_cam_js}" === "environment") {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
                         btn.id = 'btn-flash';
@@ -248,9 +278,10 @@ function aplicarMelhorias() {{
                 }}
             }}
         }} catch(e) {{}}
-    }});
+    }}
 }}
-setInterval(aplicarMelhorias, 400);
+
+setInterval(forcarCamera, 500);
 </script>
 """
 components.html(js_camera, height=0)
@@ -405,9 +436,7 @@ if arquivo_pdf:
         unsafe_allow_html=True
     )
 
-    # Chave única para reiniciar o leitor se trocar de câmera
-    scanner_key = f"scanner_{'front' if usar_frontal else 'back'}"
-    code = qrcode_scanner(key=scanner_key)
+    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
@@ -508,4 +537,3 @@ if arquivo_pdf:
     </div>
     """
     stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
-    
