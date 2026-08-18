@@ -1,6 +1,6 @@
 import datetime
 import re
-import time
+from zoneinfo import ZoneInfo
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -17,13 +17,9 @@ st.set_page_config(
     layout="centered"
 )
 
-# Memória de Bipados e Métricas de Ritmo
+# Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
-if "inicio_triagem" not in st.session_state:
-    st.session_state.inicio_triagem = None
-if "ultimo_bip_time" not in st.session_state:
-    st.session_state.ultimo_bip_time = None
 
 # DEFINIÇÃO DOS TEMAS PRETO & BRANCO
 estilos_temas = {
@@ -79,8 +75,6 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        st.session_state.inicio_triagem = None
-        st.session_state.ultimo_bip_time = None
         st.rerun()
 
 t = estilos_temas[tema_cor]
@@ -109,13 +103,12 @@ css_style = (
     "    border-radius: 12px;"
     "    padding: 8px 12px;"
     "    border: 1px solid " + t['border'] + ";"
-    "    display: flex;"
-    "    justify-content: space-between;"
-    "    align-items: center;"
+    "    text-align: center;"
     "    margin-bottom: 12px;"
-    "    font-weight: 800;"
-    "    font-size: 0.88rem;"
+    "    font-weight: 900;"
+    "    font-size: 1rem;"
     "    color: " + t['text_app'] + ";"
+    "    letter-spacing: 1px;"
     "}"
     
     ".upload-card {"
@@ -394,12 +387,6 @@ if arquivo_pdf:
                 break
                 
         if achou and pacote_identificado:
-            # Controle de tempo do indicador de ritmo
-            agora_ts = time.time()
-            if st.session_state.inicio_triagem is None:
-                st.session_state.inicio_triagem = agora_ts
-            st.session_state.ultimo_bip_time = agora_ts
-            
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
@@ -459,32 +446,19 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # CÁLCULOS DO RITMO, TEMPO E HORÁRIO
-    hora_atual_str = datetime.datetime.now().strftime("%H:%M:%S")
+    # HORÁRIO OFICIAL DO BRASIL (FUSO SÃO PAULO)
+    fuso_br = ZoneInfo("America/Sao_Paulo")
+    hora_atual_str = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
+    
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    ritmo_str = "0.0/min"
-    estimativa_str = "--"
-    if st.session_state.inicio_triagem and bipados > 0:
-        tempo_decorrido = time.time() - st.session_state.inicio_triagem
-        minutos = tempo_decorrido / 60.0
-        if minutos > 0.05:
-            ppm = bipados / minutos
-            ritmo_str = f"{ppm:.1f}/min"
-            if ppm > 0 and faltam > 0:
-                minutos_restantes = faltam / ppm
-                estimativa_str = f"{int(minutos_restantes)}m" if minutos_restantes >= 1 else "<1m"
-            elif faltam == 0:
-                estimativa_str = "Concluído!"
-
-    # Renderiza o Relógio em tempo real + Painel de Ritmo + Contadores
+    # BANNER COM RELÓGIO EXATO E SEM O RITMO DE BIP
     html_banner = (
         '<div class="clock-banner">'
-        '    <div>🕒 ' + hora_atual_str + '</div>'
-        '    <div>⚡ Ritmo: ' + ritmo_str + ' | Término: ~' + estimativa_str + '</div>'
+        '    🕒 HORÁRIO: ' + hora_atual_str +
         '</div>'
         '<div class="stat-banner">'
         '    <div class="stat-item">'
@@ -502,4 +476,4 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-    
+                       
