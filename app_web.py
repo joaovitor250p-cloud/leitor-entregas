@@ -311,12 +311,12 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX COM QR CODE GERADO
+# CARD DO PIX COM QR CODE
 if not arquivo_pdf:
     qrcode_base64 = gerar_qrcode_pix(CHAVE_PIX)
     st.markdown(
         '<div class="pix-card">'
-        '    <div class="pix-title">🚀 O app te salvou hoje?</div>'
+        '    <div class="pix-title">🚀 O app te ajudou?</div>'
         '    <div class="pix-desc">Fortaleça o corre! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>'
         f'    <img src="data:image/png;base64,{qrcode_base64}" class="pix-qr">'
         '    <div class="pix-key">🔑 Pix: ' + CHAVE_PIX + '</div>'
@@ -517,4 +517,4 @@ if arquivo_pdf:
         '    </div>'
         '</div>'
     )
-    banner_placeholder.markdown(html_banner, u
+    banner_placeholder.markdown(html_banner, unsafe_allow_
