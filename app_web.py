@@ -49,7 +49,7 @@ estilos_temas = {
 # MENU LATERAL
 with st.sidebar:
     st.markdown(
-        '<h2 style="margin-bottom:2px; font-weight:900; letter-spacing:1px;"><img src="' + IMG_MOTO + '" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h2>',
+        '<h2 style="margin-bottom:2px; font-weight:900;"><img src="' + IMG_MOTO + '" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h2>',
         unsafe_allow_html=True
     )
     st.caption("Sistema Inteligente de Triagem e Logística")
@@ -296,7 +296,7 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX COM CPF FORMATADO (EXIBIDO SOMENTE ANTES DO UPLOAD)
+# CARD DO PIX COM CPF (APARECE ANTES DO UPLOAD)
 if not arquivo_pdf:
     st.markdown(
         '<div class="pix-card">'
@@ -501,4 +501,4 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-                
+                    
