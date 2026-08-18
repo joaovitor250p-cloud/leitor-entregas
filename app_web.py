@@ -8,23 +8,20 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 
-# Emojis Animados Oficiais em Alta Definição (Google Noto Animated)
-EMOJIS = {
-    "truck": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f69a/512.gif",
-    "palette": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a8/512.gif",
-    "sound": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f50a/512.gif",
-    "mic": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f399_fe0f/512.gif",
-    "refresh": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f504/512.gif",
-    "doc": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c4/512.gif",
-    "down": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f447/512.gif",
-    "camera": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif",
-    "keyboard": "https://fonts.gstatic.com/s/e/notoemoji/latest/2328_fe0f/512.gif",
-    "pin": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4cd/512.gif",
-    "siren": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6a8/512.gif",
-    "robot": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif",
-    "flash": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f526/512.gif",
-    "bolt": "https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.gif"
-}
+# Emojis Animados Oficiais (Google Noto Animated)
+IMG_TRUCK = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f69a/512.gif"
+IMG_PALETTE = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a8/512.gif"
+IMG_SOUND = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f50a/512.gif"
+IMG_MIC = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f399_fe0f/512.gif"
+IMG_REFRESH = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f504/512.gif"
+IMG_DOC = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c4/512.gif"
+IMG_DOWN = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f447/512.gif"
+IMG_CAMERA = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif"
+IMG_KEYBOARD = "https://fonts.gstatic.com/s/e/notoemoji/latest/2328_fe0f/512.gif"
+IMG_PIN = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4cd/512.gif"
+IMG_SIREN = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6a8/512.gif"
+IMG_FLASH = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f526/512.gif"
+IMG_BOLT = "https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.gif"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -38,11 +35,17 @@ if "pacotes_bipados" not in st.session_state:
 
 # MENU LATERAL
 with st.sidebar:
-    st.markdown(f'<h3><img src="{EMOJIS["truck"]}" class="emoji-img-md"> {NOME_DO_APP}</h3>', unsafe_allow_html=True)
+    st.markdown(
+        f'<h3><img src="{IMG_TRUCK}" class="emoji-img-md"> {NOME_DO_APP}</h3>',
+        unsafe_allow_html=True
+    )
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
     
-    st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["palette"]}" class="emoji-img"> Cor do Tema</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="sidebar-label"><img src="{IMG_PALETTE}" class="emoji-img"> Cor do Tema</div>',
+        unsafe_allow_html=True
+    )
     tema_cor = st.selectbox(
         "Cor do Tema",
         ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
@@ -51,12 +54,18 @@ with st.sidebar:
     )
     
     st.write("")
-    st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["sound"]}" class="emoji-img"> Falar Número da Parada</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="sidebar-label"><img src="{IMG_SOUND}" class="emoji-img"> Falar Número da Parada</div>',
+        unsafe_allow_html=True
+    )
     usar_audio = st.toggle("Falar Número da Parada", value=True, label_visibility="collapsed")
     
     tipo_voz = "Feminina / Normal"
     if usar_audio:
-        st.markdown(f'<div class="sidebar-label"><img src="{EMOJIS["mic"]}" class="emoji-img"> Estilo da Voz</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="sidebar-label"><img src="{IMG_MIC}" class="emoji-img"> Estilo da Voz</div>',
+            unsafe_allow_html=True
+        )
         tipo_voz = st.selectbox(
             "Estilo da Voz", 
             [
@@ -96,6 +105,11 @@ estilos_temas = {
 
 t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
 cor_accent = t["accent"]
+bg_app = t["bg_app"]
+text_app = t["text_app"]
+card_bg = t["card_bg"]
+border = t["border"]
+subtext = t["subtext"]
 
 # ANIMAÇÃO CSS RGB
 css_rgb_anim = ""
@@ -117,12 +131,12 @@ if tema_cor == "RGB Gamer 🌈":
     }
     """
 
-# ESTILO VISUAL DINÂMICO E EMOJIS ANIMADOS
+# ESTILO VISUAL DINÂMICO
 st.markdown(f"""
 <style>
 .stApp {{ 
-    background-color: {t['bg_app']} !important; 
-    color: {t['text_app']} !important; 
+    background-color: {bg_app} !important; 
+    color: {text_app} !important; 
 }}
 
 .block-container {{ 
@@ -130,7 +144,6 @@ st.markdown(f"""
     padding-bottom: 2rem !important; 
 }}
 
-/* EMOJIS ANIMADOS */
 .emoji-img {{
     width: 22px;
     height: 22px;
@@ -158,34 +171,33 @@ st.markdown(f"""
     font-size: 0.88rem;
     font-weight: 700;
     margin-bottom: 5px;
-    color: {t['text_app']};
+    color: {text_app};
 }}
 
 .hero-card {{
-    background-color: {t['card_bg']};
+    background-color: {card_bg};
     padding: 24px 18px;
     border-radius: 20px;
-    border: 1px solid {t['border']};
+    border: 1px solid {border};
     text-align: center;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     margin-bottom: 18px;
 }}
 .welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
-.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
-.welcome-subtitle {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {cor_accent}; letter-spacing: 1px; }}
+.welcome-subtitle {{ font-size: 0.75rem; color: {subtext}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
 
 .upload-card {{
-    background-color: {t['card_bg']};
+    background-color: {card_bg};
     padding: 20px;
     border-radius: 18px;
-    border: 2px dashed {t['accent']};
+    border: 2px dashed {cor_accent};
     text-align: center;
     margin-bottom: 14px;
 }}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
-.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 4px; }}
+.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {text_app}; margin-bottom: 4px; }}
+.upload-sub {{ font-size: 0.8rem; color: {subtext}; margin-bottom: 4px; }}
 
-/* BOTÕES BRANCOS */
 .stButton > button, 
 div[data-testid="stFileUploader"] button,
 button[kind="secondary"],
@@ -208,10 +220,10 @@ div[data-testid="stFileUploader"] button:hover {{
 }}
 
 .stat-banner {{ 
-    background-color: {t['card_bg']}; 
+    background-color: {card_bg}; 
     border-radius: 14px; 
     padding: 14px 8px; 
-    border: 1px solid {t['border']}; 
+    border: 1px solid {border}; 
     display: flex; 
     justify-content: space-around; 
     text-align: center; 
@@ -220,33 +232,33 @@ div[data-testid="stFileUploader"] button:hover {{
 }}
 .stat-item {{ flex: 1; }}
 .stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
-.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {t['accent']}; }}
+.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {cor_accent}; }}
 .stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FF9500; }}
-.stat-label {{ font-size: 0.68rem; color: {t['subtext']}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
+.stat-label {{ font-size: 0.68rem; color: {subtext}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
 
 .custom-card {{ 
-    background-color: {t['card_bg']}; 
+    background-color: {card_bg}; 
     padding: 16px; 
     border-radius: 14px; 
     border-left: 6px solid #28a745; 
     margin-bottom: 15px; 
-    border-top: 1px solid {t['border']}; 
-    border-right: 1px solid {t['border']}; 
-    border-bottom: 1px solid {t['border']}; 
+    border-top: 1px solid {border}; 
+    border-right: 1px solid {border}; 
+    border-bottom: 1px solid {border}; 
     text-align: center; 
-    color: {t['text_app']};
+    color: {text_app};
     box-shadow: 0 4px 14px rgba(0,0,0,0.3);
 }}
-.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
+.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {cor_accent}; line-height: 1; margin-bottom: 8px; }}
 
 .camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
-.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
+.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {cor_accent}; text-transform: uppercase; }}
+.camera-sub {{ font-size: 0.78rem; color: {subtext}; }}
 
 div[data-testid="stCustomComponentV1"] {{ 
     width: 100% !important;
     border-radius: 16px;
-    border: 2px solid {t['accent']};
+    border: 2px solid {cor_accent};
     background-color: #000000;
     margin-bottom: 15px;
     overflow: hidden;
@@ -256,7 +268,7 @@ div[data-testid="stCustomComponentV1"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# SCRIPT: FLASH COM EMOJI ANIMADO E BEEP
+# SCRIPT: FLASH E BEEP
 js_camera = f"""<script>
 function playBeep() {{
     try {{
@@ -279,7 +291,7 @@ function aplicarMelhorias() {{
                 if (!doc.getElementById('btn-flash')) {{
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
-                    btn.innerHTML = '<img src="{EMOJIS["flash"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
+                    btn.innerHTML = '<img src="{IMG_FLASH}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
                     btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4); display:flex; align-items:center;';
                     btn.onclick = async function() {{
                         try {{
@@ -288,7 +300,7 @@ function aplicarMelhorias() {{
                             if (capabilities.torch) {{
                                 var on = btn.innerHTML.includes('ON');
                                 await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                btn.innerHTML = !on ? '<img src="{EMOJIS["bolt"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash ON' : '<img src="{EMOJIS["flash"]}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
+                                btn.innerHTML = !on ? '<img src="{IMG_BOLT}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash ON' : '<img src="{IMG_FLASH}" style="width:18px; height:18px; vertical-align:-3px; margin-right:4px;"> Flash';
                             }}
                         }} catch(err) {{}}
                     }};
@@ -298,7 +310,6 @@ function aplicarMelhorias() {{
         }} catch(e) {{}}
     }});
 }}
-var ACCENT_COLOR = '{cor_accent}';
 setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
@@ -326,16 +337,16 @@ def normalizar_endereco(texto):
 st.markdown(f"""
 <div class="hero-card">
     <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title"><img src="{EMOJIS['truck']}" class="emoji-img-md"> {NOME_DO_APP}</div>
+    <div class="welcome-title"><img src="{IMG_TRUCK}" class="emoji-img-md"> {NOME_DO_APP}</div>
     <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="upload-card">
-    <div class="upload-title"><img src="{EMOJIS['doc']}" class="emoji-img-md"> CARREGAR ROTA DA ENTREGA</div>
+    <div class="upload-title"><img src="{IMG_DOC}" class="emoji-img-md"> CARREGAR ROTA DA ENTREGA</div>
     <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-    <div><img src="{EMOJIS['down']}" class="emoji-img-lg"></div>
+    <div><img src="{IMG_DOWN}" class="emoji-img-lg"></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -420,18 +431,24 @@ if arquivo_pdf:
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
                 encontrou_duplo = True
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
-                st.markdown(f'<img src="{EMOJIS["siren"]}" class="emoji-img"> **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})', unsafe_allow_html=True)
+                st.markdown(
+                    f'<img src="{IMG_SIREN}" class="emoji-img"> **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})',
+                    unsafe_allow_html=True
+                )
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
     st.markdown(f"""<div class="camera-header">
-        <div class="camera-title"><img src="{EMOJIS['camera']}" class="emoji-img-md"> BIPAR PACOTE</div>
+        <div class="camera-title"><img src="{IMG_CAMERA}" class="emoji-img-md"> BIPAR PACOTE</div>
         <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
     </div>""", unsafe_allow_html=True)
 
     code = qrcode_scanner(key="s1")
     
-    st.markdown(f'#### <img src="{EMOJIS["keyboard"]}" class="emoji-img"> Digitar código manualmente', unsafe_allow_html=True)
+    st.markdown(
+        f'#### <img src="{IMG_KEYBOARD}" class="emoji-img"> Digitar código manualmente',
+        unsafe_allow_html=True
+    )
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
     
     bruto = code or input_code
@@ -461,7 +478,10 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div><img src="{EMOJIS["pin"]}" class="emoji-img"> Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div><img src="{IMG_PIN}" class="emoji-img"> Pacote: {pacote_identificado}</div></div>',
+                unsafe_allow_html=True
+            )
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
@@ -510,4 +530,6 @@ if arquivo_pdf:
     banner_placeholder.markdown(f"""<div class="stat-banner">
         <div class="stat-item">
             <div class="stat-value-green">{bipados} / {total_pacotes}</div>
-    
+            <div class="stat-label">PACOTES</div>
+        </div>
+        <div class="stat-it
