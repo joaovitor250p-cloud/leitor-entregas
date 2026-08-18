@@ -4,8 +4,11 @@ import streamlit.components.v1 as components
 from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
-# Configuração da Página
+# ==========================================
+# 1. SUAS INFORMAÇÕES DE MARCA / ATALHO
+# ==========================================
 NOME_DO_APP = "PACOTE É MATO"
+# Cole aqui o link direto (.png) da sua logo personalizada:
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
 CHAVE_PIX = "Pacoteemato@gmail.com"
@@ -14,6 +17,24 @@ st.set_page_config(
     page_title=NOME_DO_APP,
     page_icon=URL_DO_LOGO,
     layout="centered"
+)
+
+# Injeção de metadados para forçar o ícone e nome no Android e iPhone
+st.markdown(
+    f"""
+    <head>
+        <title>{NOME_DO_APP}</title>
+        <meta name="apple-mobile-web-app-title" content="{NOME_DO_APP}">
+        <meta name="application-name" content="{NOME_DO_APP}">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <link rel="apple-touch-icon" sizes="192x192" href="{URL_DO_LOGO}">
+        <link rel="apple-touch-icon" sizes="512x512" href="{URL_DO_LOGO}">
+        <link rel="icon" type="image/png" sizes="192x192" href="{URL_DO_LOGO}">
+        <link rel="icon" type="image/png" sizes="512x512" href="{URL_DO_LOGO}">
+    </head>
+    """,
+    unsafe_allow_html=True
 )
 
 # Memória de Bipados
@@ -92,19 +113,18 @@ t = estilos_temas[tema_cor]
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
-    ".block-container { padding-top: 3.8rem !important; padding-bottom: 2rem !important; }"
+    ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
-    "    padding: 24px 18px;"
+    "    padding: 22px 18px;"
     "    border-radius: 20px;"
     "    border: 2px solid " + t['border'] + ";"
     "    text-align: center;"
     "    box-shadow: 0 8px 24px " + t['shadow'] + ";"
-    "    margin-top: 8px;"
     "    margin-bottom: 14px;"
     "}"
-    ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-top: 4px; margin-bottom: 12px; }"
+    ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }"
     ".welcome-title { font-size: 2rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 2px; text-transform: uppercase; }"
     ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }"
     
@@ -489,4 +509,4 @@ if arquivo_pdf:
         '    </div>'
         '</div>'
     )
-    stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
+    stats_placeholder.markdown(html_stats, unsafe_a
