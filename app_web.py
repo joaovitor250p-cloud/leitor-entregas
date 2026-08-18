@@ -19,14 +19,46 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
+# DEFINIÇÃO DOS TEMAS ESTRITAMENTE PRETO & BRANCO
+estilos_temas = {
+    "Preto (Dark)": {
+        "bg_app": "#000000",
+        "text_app": "#FFFFFF",
+        "card_bg": "#0B0B0B",
+        "border": "#FFFFFF",
+        "btn_bg": "#FFFFFF",
+        "btn_text": "#000000",
+        "subtext": "#AAAAAA",
+        "shadow": "rgba(255,255,255,0.12)",
+        "logo_filter": "grayscale(100%) brightness(200%)"
+    },
+    "Branco (Light)": {
+        "bg_app": "#FFFFFF",
+        "text_app": "#000000",
+        "card_bg": "#F5F5F7",
+        "border": "#000000",
+        "btn_bg": "#000000",
+        "btn_text": "#FFFFFF",
+        "subtext": "#555555",
+        "shadow": "rgba(0,0,0,0.15)",
+        "logo_filter": "grayscale(100%)"
+    }
+}
+
 # MENU LATERAL
 with st.sidebar:
     st.markdown(
-        f'<h3 style="color:#FFFFFF;"><img src="{IMG_MOTO}" style="width:28px; height:28px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h3>',
+        '<h3 style="margin-bottom:2px;"><img src="' + IMG_MOTO + '" style="width:28px; height:28px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h3>',
         unsafe_allow_html=True
     )
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
+    
+    tema_cor = st.selectbox(
+        "🎨 Modo de Cor",
+        ["Preto (Dark)", "Branco (Light)"],
+        index=0
+    )
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -45,185 +77,151 @@ with st.sidebar:
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-# ESTILO VISUAL 100% PRETO E BRANCO (Fundo Preto com Texto Branco / Elementos Brancos com Texto Preto)
-st.markdown("""
-<style>
-/* FUNDO PRETO E TEXTO BRANCO NO APP */
-.stApp { 
-    background-color: #000000 !important; 
-    color: #FFFFFF !important; 
-}
+t = estilos_temas[tema_cor]
 
-.block-container { 
-    padding-top: 1.2rem !important; 
-    padding-bottom: 2rem !important; 
-}
-
-/* CARDS COM FUNDO PRETO, BORDA BRANCA E TEXTO BRANCO */
-.hero-card {
-    background-color: #000000;
-    padding: 24px 18px;
-    border-radius: 20px;
-    border: 1px solid #FFFFFF;
-    text-align: center;
-    box-shadow: 0 8px 24px rgba(255,255,255,0.05);
-    margin-bottom: 18px;
-}
-.welcome-logo { 
-    width: 80px; 
-    height: 80px; 
-    object-fit: contain; 
-    margin-bottom: 10px; 
-    filter: grayscale(100%) brightness(200%);
-}
-.welcome-title { 
-    font-size: 1.7rem; 
-    font-weight: 900; 
-    color: #FFFFFF; 
-    letter-spacing: 1px; 
-}
-.welcome-subtitle { 
-    font-size: 0.75rem; 
-    color: #FFFFFF; 
-    font-weight: 700; 
-    letter-spacing: 1.5px; 
-    text-transform: uppercase; 
-}
-
-.upload-card {
-    background-color: #000000;
-    padding: 20px;
-    border-radius: 18px;
-    border: 2px dashed #FFFFFF;
-    text-align: center;
-    margin-bottom: 14px;
-}
-.upload-title { font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin-bottom: 4px; }
-.upload-sub { font-size: 0.8rem; color: #FFFFFF; margin-bottom: 6px; }
-.upload-arrow { font-size: 1.6rem; animation: bounce 1.5s infinite; }
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(6px); }
-    60% { transform: translateY(3px); }
-}
-
-/* ELEMENTOS BRANCOS COM TEXTO PRETO */
-.stButton > button, 
-div[data-testid="stFileUploader"] button,
-button[kind="secondary"],
-button[kind="primary"] {
-    background-color: #FFFFFF !important;
-    color: #000000 !important;
-    border: 1px solid #FFFFFF !important;
-    border-radius: 12px !important;
-    font-weight: 900 !important;
-    font-size: 0.95rem !important;
-    box-shadow: 0 4px 12px rgba(255,255,255,0.2) !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-.stButton > button:hover, 
-div[data-testid="stFileUploader"] button:hover {
-    background-color: #E0E0E0 !important;
-    color: #000000 !important;
-    transform: scale(1.02);
-}
-
-/* BANNER DE ESTATÍSTICAS */
-.stat-banner { 
-    background-color: #000000; 
-    border-radius: 14px; 
-    padding: 14px 8px; 
-    border: 1px solid #FFFFFF; 
-    display: flex; 
-    justify-content: space-around; 
-    text-align: center; 
-    margin-bottom: 15px; 
-    box-shadow: 0 4px 14px rgba(255,255,255,0.05);
-}
-.stat-item { flex: 1; }
-.stat-value-white { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; }
-.stat-label { font-size: 0.68rem; color: #FFFFFF; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }
-
-.custom-card { 
-    background-color: #000000; 
-    padding: 16px; 
-    border-radius: 14px; 
-    border: 2px solid #FFFFFF; 
-    margin-bottom: 15px; 
-    text-align: center; 
-    color: #FFFFFF;
-    box-shadow: 0 4px 14px rgba(255,255,255,0.08);
-}
-.stop-number-big { font-size: 4rem; font-weight: 900; color: #FFFFFF; line-height: 1; margin-bottom: 8px; }
-
-.camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }
-.camera-title { font-size: 1.05rem; font-weight: 800; color: #FFFFFF; text-transform: uppercase; }
-.camera-sub { font-size: 0.78rem; color: #FFFFFF; }
-
-div[data-testid="stCustomComponentV1"] { 
-    width: 100% !important;
-    border-radius: 16px;
-    border: 2px solid #FFFFFF;
-    background-color: #000000;
-    margin-bottom: 15px;
-    overflow: hidden;
-}
-
-div[data-testid="stExpander"] {
-    background-color: #000000 !important;
-    border: 1px solid #FFFFFF !important;
-    border-radius: 12px !important;
-    color: #FFFFFF !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# APLICAÇÃO DO CSS DINÂMICO
+css_style = (
+    "<style>"
+    ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
+    ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
+    
+    ".hero-card {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    padding: 24px 18px;"
+    "    border-radius: 20px;"
+    "    border: 2px solid " + t['border'] + ";"
+    "    text-align: center;"
+    "    box-shadow: 0 8px 24px " + t['shadow'] + ";"
+    "    margin-bottom: 18px;"
+    "}"
+    ".welcome-logo { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: " + t['logo_filter'] + "; }"
+    ".welcome-title { font-size: 1.7rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 1px; }"
+    ".welcome-subtitle { font-size: 0.75rem; color: " + t['subtext'] + "; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }"
+    
+    ".upload-card {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    padding: 20px;"
+    "    border-radius: 18px;"
+    "    border: 2px dashed " + t['border'] + ";"
+    "    text-align: center;"
+    "    margin-bottom: 14px;"
+    "}"
+    ".upload-title { font-size: 1.1rem; font-weight: 800; color: " + t['text_app'] + "; margin-bottom: 4px; }"
+    ".upload-sub { font-size: 0.8rem; color: " + t['subtext'] + "; margin-bottom: 6px; }"
+    ".upload-arrow { font-size: 1.6rem; animation: bounce 1.5s infinite; }"
+    
+    "@keyframes bounce {"
+    "    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }"
+    "    40% { transform: translateY(6px); }"
+    "    60% { transform: translateY(3px); }"
+    "}"
+    
+    ".stButton > button, div[data-testid='stFileUploader'] button, button[kind='secondary'], button[kind='primary'] {"
+    "    background-color: " + t['btn_bg'] + " !important;"
+    "    color: " + t['btn_text'] + " !important;"
+    "    border: 2px solid " + t['border'] + " !important;"
+    "    border-radius: 12px !important;"
+    "    font-weight: 900 !important;"
+    "    font-size: 0.95rem !important;"
+    "    box-shadow: 0 4px 12px " + t['shadow'] + " !important;"
+    "    transition: all 0.2s ease-in-out !important;"
+    "}"
+    
+    ".stat-banner {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    border-radius: 14px;"
+    "    padding: 14px 8px;"
+    "    border: 2px solid " + t['border'] + ";"
+    "    display: flex;"
+    "    justify-content: space-around;"
+    "    text-align: center;"
+    "    margin-bottom: 15px;"
+    "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
+    "}"
+    ".stat-item { flex: 1; }"
+    ".stat-value { font-size: 1.35rem; font-weight: 900; color: " + t['text_app'] + "; }"
+    ".stat-label { font-size: 0.68rem; color: " + t['subtext'] + "; font-weight: 900; margin-top: 2px; letter-spacing: 0.5px; }"
+    
+    ".custom-card {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    padding: 16px;"
+    "    border-radius: 14px;"
+    "    border: 2px solid " + t['border'] + ";"
+    "    margin-bottom: 15px;"
+    "    text-align: center;"
+    "    color: " + t['text_app'] + ";"
+    "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
+    "}"
+    ".stop-number-big { font-size: 4rem; font-weight: 900; color: " + t['text_app'] + "; line-height: 1; margin-bottom: 8px; }"
+    
+    ".camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }"
+    ".camera-title { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; text-transform: uppercase; }"
+    ".camera-sub { font-size: 0.78rem; color: " + t['subtext'] + "; }"
+    
+    "div[data-testid='stCustomComponentV1'] {"
+    "    width: 100% !important;"
+    "    border-radius: 16px;"
+    "    border: 2px solid " + t['border'] + ";"
+    "    background-color: #000000;"
+    "    margin-bottom: 15px;"
+    "    overflow: hidden;"
+    "}"
+    
+    "div[data-testid='stExpander'] {"
+    "    background-color: " + t['card_bg'] + " !important;"
+    "    border: 2px solid " + t['border'] + " !important;"
+    "    border-radius: 12px !important;"
+    "    color: " + t['text_app'] + " !important;"
+    "}"
+    "</style>"
+)
+st.markdown(css_style, unsafe_allow_html=True)
 
 # SCRIPT: FLASH E BEEP
-js_camera = """<script>
-function playBeep() {
-    try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        var osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.1);
-    } catch(e) {}
-}
-
-function aplicarMelhorias() {
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(frame) {
-        try {
-            var doc = frame.contentDocument || frame.contentWindow.document;
-            if (doc && doc.querySelector('video')) {
-                if (!doc.getElementById('btn-flash')) {
-                    var btn = doc.createElement('button');
-                    btn.id = 'btn-flash'; 
-                    btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFFFFF; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(255,255,255,0.3);';
-                    btn.onclick = async function() {
-                        try {
-                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
-                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                            if (capabilities.torch) {
-                                var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({advanced: [{torch: !on}]});
-                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                            }
-                        } catch(err) {}
-                    };
-                    doc.body.appendChild(btn);
-                }
-            }
-        } catch(e) {}
-    });
-}
-setInterval(aplicarMelhorias, 400);
-</script>"""
+js_camera = (
+    "<script>"
+    "function playBeep() {"
+    "    try {"
+    "        var ctx = new (window.AudioContext || window.webkitAudioContext)();"
+    "        var osc = ctx.createOscillator();"
+    "        osc.type = 'sine';"
+    "        osc.frequency.setValueAtTime(880, ctx.currentTime);"
+    "        osc.connect(ctx.destination);"
+    "        osc.start();"
+    "        osc.stop(ctx.currentTime + 0.1);"
+    "    } catch(e) {}"
+    "}"
+    "function aplicarMelhorias() {"
+    "    var iframes = window.parent.document.querySelectorAll('iframe');"
+    "    iframes.forEach(function(frame) {"
+    "        try {"
+    "            var doc = frame.contentDocument || frame.contentWindow.document;"
+    "            if (doc && doc.querySelector('video')) {"
+    "                if (!doc.getElementById('btn-flash')) {"
+    "                    var btn = doc.createElement('button');"
+    "                    btn.id = 'btn-flash';"
+    "                    btn.innerHTML = '🔦 Flash';"
+    "                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:" + t['btn_bg'] + "; color:" + t['btn_text'] + "; border:2px solid " + t['border'] + "; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px " + t['shadow'] + ";';"
+    "                    btn.onclick = async function() {"
+    "                        try {"
+    "                            var track = doc.querySelector('video').srcObject.getVideoTracks()[0];"
+    "                            var capabilities = track.getCapabilities ? track.getCapabilities() : {};"
+    "                            if (capabilities.torch) {"
+    "                                var on = btn.innerHTML.includes('ON');"
+    "                                await track.applyConstraints({advanced: [{torch: !on}]});"
+    "                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';"
+    "                            }"
+    "                        } catch(err) {}"
+    "                    };"
+    "                    doc.body.appendChild(btn);"
+    "                }"
+    "            }"
+    "        } catch(e) {}"
+    "    });"
+    "}"
+    "setInterval(aplicarMelhorias, 400);"
+    "</script>"
+)
 components.html(js_camera, height=0)
 
 # FUNÇÕES AUXILIARES
@@ -245,22 +243,24 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL COM MOTO ANIMADA
-st.markdown(f"""
-<div class="hero-card">
-    <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title"><img src="{IMG_MOTO}" style="width:34px; height:34px; vertical-align:-5px; margin-right:8px;">{NOME_DO_APP}</div>
-    <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
-</div>
-""", unsafe_allow_html=True)
+# TELA PRINCIPAL
+st.markdown(
+    '<div class="hero-card">'
+    '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
+    '<div class="welcome-title"><img src="' + IMG_MOTO + '" style="width:34px; height:34px; vertical-align:-5px; margin-right:8px;">' + NOME_DO_APP + '</div>'
+    '<div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>'
+    '</div>',
+    unsafe_allow_html=True
+)
 
-st.markdown("""
-<div class="upload-card">
-    <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-    <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-    <div class="upload-arrow">👇</div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="upload-card">'
+    '<div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>'
+    '<div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>'
+    '<div class="upload-arrow">👇</div>'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 arquivo_pdf = st.file_uploader(
     "Selecione o PDF da Rota", 
@@ -347,10 +347,13 @@ if arquivo_pdf:
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    st.markdown("""<div class="camera-header">
-        <div class="camera-title">📸 BIPAR PACOTE</div>
-        <div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="camera-header">'
+        '<div class="camera-title">📸 BIPAR PACOTE</div>'
+        '<div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     code = qrcode_scanner(key="s1")
     
@@ -384,16 +387,22 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            st.markdown(f'<div class="custom-card"><div class="stop-number-big">P{num_p}</div><div>📍 Pacote: {pacote_identificado}</div></div>', unsafe_allow_html=True)
+            card_html = (
+                '<div class="custom-card">'
+                '<div class="stop-number-big">P' + str(num_p) + '</div>'
+                '<div>📍 Pacote: ' + str(pacote_identificado) + '</div>'
+                '</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
             if outros_stops and not end_match.startswith("pacote_isolado_"):
-                st.warning(f"⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
+                st.warning("⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
 
             if usar_audio:
-                fala_texto = f"{num_p}"
+                fala_texto = str(num_p)
                 if outros_stops and not end_match.startswith("pacote_isolado_"):
-                    fala_texto += f" Atenção! Mesmo endereço da parada {outros_stops[0].replace('P', '')}!"
+                    fala_texto += " Atenção! Mesmo endereço da parada " + outros_stops[0].replace('P', '') + "!"
                     
                 pitch_val = "1.0"
                 rate_val = "1.0"
@@ -405,43 +414,46 @@ if arquivo_pdf:
                     pitch_val = "1.1"
                     rate_val = "1.35"
 
-                js_audio = f"""
-                <script>
-                (function() {{
-                    try {{
-                        window.speechSynthesis.cancel();
-                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
-                        msg.lang = 'pt-BR';
-                        msg.pitch = {pitch_val};
-                        msg.rate = {rate_val};
-                        window.speechSynthesis.speak(msg);
-                    }} catch(e) {{}}
-                }})();
-                </script>
-                """
+                js_audio = (
+                    "<script>"
+                    "(function() {"
+                    "    try {"
+                    "        window.speechSynthesis.cancel();"
+                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
+                    "        msg.lang = 'pt-BR';"
+                    "        msg.pitch = " + pitch_val + ";"
+                    "        msg.rate = " + rate_val + ";"
+                    "        window.speechSynthesis.speak(msg);"
+                    "    } catch(e) {}"
+                    "})();"
+                    "</script>"
+                )
                 components.html(js_audio, height=0)
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # Renderiza o contador instantâneo em Preto e Branco
+    # Renderiza o contador instantâneo em conformidade com o tema selecionado
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    banner_placeholder.markdown(f"""<div class="stat-banner">
-        <div class="stat-item">
-            <div class="stat-value-white">{bipados} / {total_pacotes}</div>
-            <div class="stat-label">PACOTES</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-white">{total_paradas}</div>
-            <div class="stat-label">PARADAS REAIS</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value-white">{faltam}</div>
-            <div class="stat-label">FALTAM</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-    
+    html_banner = (
+        '<div class="stat-banner">'
+        '    <div class="stat-item">'
+        '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
+        '        <div class="stat-label">PACOTES</div>'
+        '    </div>'
+        '    <div class="stat-item">'
+        '        <div class="stat-value">' + str(total_paradas) + '</div>'
+        '        <div class="stat-label">PARADAS REAIS</div>'
+        '    </div>'
+        '    <div class="stat-item">'
+        '        <div class="stat-value">' + str(faltam) + '</div>'
+        '        <div class="stat-label">FALTAM</div>'
+        '    </div>'
+        '</div>'
+    )
+    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
+            
