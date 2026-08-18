@@ -7,10 +7,10 @@ from pypdf import PdfReader
 from streamlit_qrcode_scanner import qrcode_scanner
 
 # Configuração da Página
-NOME_DO_APP = "PACOTE É MATO"
+NOME_DO_APP = "BIPAI"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
-CHAVE_PIX = "09354708595"
+CHAVE_PIX = "093.547.085-95"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -49,10 +49,10 @@ estilos_temas = {
 # MENU LATERAL
 with st.sidebar:
     st.markdown(
-        '<h3 style="margin-bottom:2px;"><img src="' + IMG_MOTO + '" style="width:28px; height:28px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h3>',
+        '<h2 style="margin-bottom:2px; font-weight:900; letter-spacing:1px;"><img src="' + IMG_MOTO + '" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h2>',
         unsafe_allow_html=True
     )
-    st.caption("Sistema Inteligente de Logística")
+    st.caption("Sistema Inteligente de Triagem e Logística")
     st.write("---")
     
     tema_cor = st.selectbox(
@@ -88,7 +88,7 @@ css_style = (
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
-    "    padding: 20px 18px;"
+    "    padding: 22px 18px;"
     "    border-radius: 20px;"
     "    border: 2px solid " + t['border'] + ";"
     "    text-align: center;"
@@ -96,8 +96,8 @@ css_style = (
     "    margin-bottom: 14px;"
     "}"
     ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }"
-    ".welcome-title { font-size: 1.6rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 1px; }"
-    ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }"
+    ".welcome-title { font-size: 2rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 2px; text-transform: uppercase; }"
+    ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }"
     
     ".clock-banner {"
     "    background-color: " + t['card_bg'] + ";"
@@ -166,20 +166,20 @@ css_style = (
     "    color: " + t['text_app'] + ";"
     "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
     "}"
-    ".stop-number-big { font-size: 4rem; font-weight: 900; color: " + t['text_app'] + "; line-height: 1; margin-bottom: 8px; }"
+    ".stop-number-big { font-size: 4.2rem; font-weight: 900; color: " + t['text_app'] + "; line-height: 1; margin-bottom: 8px; }"
     
     ".pix-card {"
     "    background-color: " + t['card_bg'] + ";"
     "    border: 1px solid " + t['border'] + ";"
     "    border-radius: 14px;"
-    "    padding: 12px;"
+    "    padding: 14px;"
     "    text-align: center;"
     "    margin-top: 20px;"
     "    box-shadow: 0 4px 12px " + t['shadow'] + ";"
     "}"
-    ".pix-title { font-size: 0.88rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 4px; }"
-    ".pix-desc { font-size: 0.76rem; color: " + t['subtext'] + "; margin-bottom: 6px; }"
-    ".pix-key { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; background: rgba(127,127,127,0.15); padding: 4px 8px; border-radius: 8px; display: inline-block; letter-spacing: 1px; }"
+    ".pix-title { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 4px; letter-spacing: 0.5px; }"
+    ".pix-desc { font-size: 0.78rem; color: " + t['subtext'] + "; margin-bottom: 8px; }"
+    ".pix-key { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; background: rgba(127,127,127,0.18); padding: 6px 12px; border-radius: 8px; display: inline-block; letter-spacing: 1px; }"
     
     ".camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }"
     ".camera-title { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; text-transform: uppercase; }"
@@ -270,11 +270,11 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL
+# TELA PRINCIPAL (BIPAI)
 st.markdown(
     '<div class="hero-card">'
     '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
-    '<div class="welcome-title"><img src="' + IMG_MOTO + '" style="width:34px; height:34px; vertical-align:-5px; margin-right:8px;">' + NOME_DO_APP + '</div>'
+    '<div class="welcome-title"><img src="' + IMG_MOTO + '" style="width:36px; height:36px; vertical-align:-6px; margin-right:8px;">' + NOME_DO_APP + '</div>'
     '<div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>'
     '</div>',
     unsafe_allow_html=True
@@ -296,13 +296,13 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX SÓ APARECE ANTES DO UPLOAD (SOME AUTOMATICAMENTE AO CARREGAR O PDF)
+# CARD DO PIX COM CPF FORMATADO (EXIBIDO SOMENTE ANTES DO UPLOAD)
 if not arquivo_pdf:
     st.markdown(
         '<div class="pix-card">'
-        '    <div class="pix-title">🤝 Fortaleça o Corre!</div>'
-        '    <div class="pix-desc">O app te ajudou a agilizar a rota? Faça uma contribuição de qualquer valor:</div>'
-        '    <div class="pix-key">🔑 Chave Pix: ' + CHAVE_PIX + '</div>'
+        '    <div class="pix-title">🚀 Fortaleça o Projeto ' + NOME_DO_APP + '!</div>'
+        '    <div class="pix-desc">O app agilizou sua rota e organização? Contribua com qualquer valor para manter o sistema online:</div>'
+        '    <div class="pix-key">🔑 Pix (CPF): ' + CHAVE_PIX + '</div>'
         '</div>',
         unsafe_allow_html=True
     )
@@ -501,4 +501,3 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-            
