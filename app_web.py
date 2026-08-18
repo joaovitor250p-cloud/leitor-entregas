@@ -7,6 +7,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 # Configuração da Página
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
+IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
@@ -20,15 +21,12 @@ if "pacotes_bipados" not in st.session_state:
 
 # MENU LATERAL
 with st.sidebar:
-    st.title(f"🚚 {NOME_DO_APP}")
+    st.markdown(
+        f'<h3 style="color:#FFFFFF;"><img src="{IMG_MOTO}" style="width:28px; height:28px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h3>',
+        unsafe_allow_html=True
+    )
     st.caption("Sistema Inteligente de Logística")
     st.write("---")
-    
-    tema_cor = st.selectbox(
-        "🎨 Cor do Tema",
-        ["Preto (Dark)", "Branco (Light)", "RGB Gamer 🌈", "Cinza", "Azul", "Vermelho"],
-        index=0
-    )
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -47,163 +45,138 @@ with st.sidebar:
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-# DEFINIÇÃO DAS PALETAS DE CORES
-estilos_temas = {
-    "Preto (Dark)": {
-        "bg_app": "#121212", "text_app": "#FFFFFF", "card_bg": "#1E1E1E", "border": "#333333", "accent": "#FF9500", "subtext": "#888888"
-    },
-    "Branco (Light)": {
-        "bg_app": "#F8F9FA", "text_app": "#1A1A1A", "card_bg": "#FFFFFF", "border": "#E2E8F0", "accent": "#0066FF", "subtext": "#64748B"
-    },
-    "RGB Gamer 🌈": {
-        "bg_app": "#0D0D11", "text_app": "#FFFFFF", "card_bg": "#16161D", "border": "#222230", "accent": "#00FFCC", "subtext": "#888888"
-    },
-    "Cinza": {
-        "bg_app": "#2C2C2E", "text_app": "#F2F2F7", "card_bg": "#3A3A3C", "border": "#48484A", "accent": "#FF9500", "subtext": "#AAAAAA"
-    },
-    "Azul": {
-        "bg_app": "#0B192C", "text_app": "#E0F2FE", "card_bg": "#1E3E62", "border": "#0087D1", "accent": "#38BDF8", "subtext": "#94A3B8"
-    },
-    "Vermelho": {
-        "bg_app": "#1A0000", "text_app": "#FFE5E5", "card_bg": "#330000", "border": "#800000", "accent": "#FF4D4D", "subtext": "#FFAAAA"
-    }
+# ESTILO VISUAL 100% PRETO E BRANCO (Fundo Preto com Texto Branco / Elementos Brancos com Texto Preto)
+st.markdown("""
+<style>
+/* FUNDO PRETO E TEXTO BRANCO NO APP */
+.stApp { 
+    background-color: #000000 !important; 
+    color: #FFFFFF !important; 
 }
 
-t = estilos_temas.get(tema_cor, estilos_temas["Preto (Dark)"])
-cor_accent = t["accent"]
-
-# ANIMAÇÃO CSS RGB
-css_rgb_anim = ""
-if tema_cor == "RGB Gamer 🌈":
-    css_rgb_anim = """
-    @keyframes rgbGlow {
-        0% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-        20% { border-color: #FF8800; color: #FF8800; box-shadow: 0 0 12px rgba(255,136,0,0.5); }
-        40% { border-color: #FFFF00; color: #FFFF00; box-shadow: 0 0 12px rgba(255,255,0,0.5); }
-        60% { border-color: #00FF66; color: #00FF66; box-shadow: 0 0 12px rgba(0,255,102,0.5); }
-        80% { border-color: #00CCFF; color: #00CCFF; box-shadow: 0 0 12px rgba(0,204,255,0.5); }
-        100% { border-color: #FF0000; color: #FF0000; box-shadow: 0 0 12px rgba(255,0,0,0.5); }
-    }
-    .welcome-title, .camera-title, .stop-number-big, .stat-value-orange, .stat-value-blue, .upload-title {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    .upload-card, div[data-testid="stCustomComponentV1"] {
-        animation: rgbGlow 6s infinite linear !important;
-    }
-    """
-
-# ESTILO VISUAL DINÂMICO
-st.markdown(f"""
-<style>
-.stApp {{ 
-    background-color: {t['bg_app']} !important; 
-    color: {t['text_app']} !important; 
-}}
-
-.block-container {{ 
+.block-container { 
     padding-top: 1.2rem !important; 
     padding-bottom: 2rem !important; 
-}}
+}
 
-.hero-card {{
-    background-color: {t['card_bg']};
+/* CARDS COM FUNDO PRETO, BORDA BRANCA E TEXTO BRANCO */
+.hero-card {
+    background-color: #000000;
     padding: 24px 18px;
     border-radius: 20px;
-    border: 1px solid {t['border']};
+    border: 1px solid #FFFFFF;
     text-align: center;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(255,255,255,0.05);
     margin-bottom: 18px;
-}}
-.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }}
-.welcome-title {{ font-size: 1.7rem; font-weight: 900; color: {t['accent']}; letter-spacing: 1px; }}
-.welcome-subtitle {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+}
+.welcome-logo { 
+    width: 80px; 
+    height: 80px; 
+    object-fit: contain; 
+    margin-bottom: 10px; 
+    filter: grayscale(100%) brightness(200%);
+}
+.welcome-title { 
+    font-size: 1.7rem; 
+    font-weight: 900; 
+    color: #FFFFFF; 
+    letter-spacing: 1px; 
+}
+.welcome-subtitle { 
+    font-size: 0.75rem; 
+    color: #FFFFFF; 
+    font-weight: 700; 
+    letter-spacing: 1.5px; 
+    text-transform: uppercase; 
+}
 
-.upload-card {{
-    background-color: {t['card_bg']};
+.upload-card {
+    background-color: #000000;
     padding: 20px;
     border-radius: 18px;
-    border: 2px dashed {t['accent']};
+    border: 2px dashed #FFFFFF;
     text-align: center;
     margin-bottom: 14px;
-}}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
-.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 6px; }}
-.upload-arrow {{ font-size: 1.6rem; animation: bounce 1.5s infinite; }}
+}
+.upload-title { font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin-bottom: 4px; }
+.upload-sub { font-size: 0.8rem; color: #FFFFFF; margin-bottom: 6px; }
+.upload-arrow { font-size: 1.6rem; animation: bounce 1.5s infinite; }
 
-@keyframes bounce {{
-    0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
-    40% {{ transform: translateY(6px); }}
-    60% {{ transform: translateY(3px); }}
-}}
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(6px); }
+    60% { transform: translateY(3px); }
+}
 
-/* BOTÕES BRANCOS */
+/* ELEMENTOS BRANCOS COM TEXTO PRETO */
 .stButton > button, 
 div[data-testid="stFileUploader"] button,
 button[kind="secondary"],
-button[kind="primary"] {{
+button[kind="primary"] {
     background-color: #FFFFFF !important;
     color: #000000 !important;
     border: 1px solid #FFFFFF !important;
     border-radius: 12px !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
     font-size: 0.95rem !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    box-shadow: 0 4px 12px rgba(255,255,255,0.2) !important;
     transition: all 0.2s ease-in-out !important;
-}}
+}
 
 .stButton > button:hover, 
-div[data-testid="stFileUploader"] button:hover {{
-    background-color: #E6E6E6 !important;
+div[data-testid="stFileUploader"] button:hover {
+    background-color: #E0E0E0 !important;
     color: #000000 !important;
     transform: scale(1.02);
-}}
+}
 
-.stat-banner {{ 
-    background-color: {t['card_bg']}; 
+/* BANNER DE ESTATÍSTICAS */
+.stat-banner { 
+    background-color: #000000; 
     border-radius: 14px; 
     padding: 14px 8px; 
-    border: 1px solid {t['border']}; 
+    border: 1px solid #FFFFFF; 
     display: flex; 
     justify-content: space-around; 
     text-align: center; 
     margin-bottom: 15px; 
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}}
-.stat-item {{ flex: 1; }}
-.stat-value-green {{ font-size: 1.35rem; font-weight: bold; color: #28a745; }}
-.stat-value-blue {{ font-size: 1.35rem; font-weight: bold; color: {t['accent']}; }}
-.stat-value-orange {{ font-size: 1.35rem; font-weight: bold; color: #FF9500; }}
-.stat-label {{ font-size: 0.68rem; color: {t['subtext']}; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }}
+    box-shadow: 0 4px 14px rgba(255,255,255,0.05);
+}
+.stat-item { flex: 1; }
+.stat-value-white { font-size: 1.35rem; font-weight: 900; color: #FFFFFF; }
+.stat-label { font-size: 0.68rem; color: #FFFFFF; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }
 
-.custom-card {{ 
-    background-color: {t['card_bg']}; 
+.custom-card { 
+    background-color: #000000; 
     padding: 16px; 
     border-radius: 14px; 
-    border-left: 6px solid #28a745; 
+    border: 2px solid #FFFFFF; 
     margin-bottom: 15px; 
-    border-top: 1px solid {t['border']}; 
-    border-right: 1px solid {t['border']}; 
-    border-bottom: 1px solid {t['border']}; 
     text-align: center; 
-    color: {t['text_app']};
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}}
-.stop-number-big {{ font-size: 3.8rem; font-weight: 900; color: {t['accent']}; line-height: 1; margin-bottom: 8px; }}
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(255,255,255,0.08);
+}
+.stop-number-big { font-size: 4rem; font-weight: 900; color: #FFFFFF; line-height: 1; margin-bottom: 8px; }
 
-.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
-.camera-title {{ font-size: 1.05rem; font-weight: 800; color: {t['accent']}; text-transform: uppercase; }}
-.camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
+.camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }
+.camera-title { font-size: 1.05rem; font-weight: 800; color: #FFFFFF; text-transform: uppercase; }
+.camera-sub { font-size: 0.78rem; color: #FFFFFF; }
 
-div[data-testid="stCustomComponentV1"] {{ 
+div[data-testid="stCustomComponentV1"] { 
     width: 100% !important;
     border-radius: 16px;
-    border: 2px solid {t['accent']};
+    border: 2px solid #FFFFFF;
     background-color: #000000;
     margin-bottom: 15px;
     overflow: hidden;
-}}
+}
 
-{css_rgb_anim}
+div[data-testid="stExpander"] {
+    background-color: #000000 !important;
+    border: 1px solid #FFFFFF !important;
+    border-radius: 12px !important;
+    color: #FFFFFF !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -231,7 +204,7 @@ function aplicarMelhorias() {
                     var btn = doc.createElement('button');
                     btn.id = 'btn-flash'; 
                     btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFF; padding:6px 14px; border-radius:18px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:#FFFFFF; color:#000000; border:1px solid #FFFFFF; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(255,255,255,0.3);';
                     btn.onclick = async function() {
                         try {
                             var track = doc.querySelector('video').srcObject.getVideoTracks()[0];
@@ -249,7 +222,6 @@ function aplicarMelhorias() {
         } catch(e) {}
     });
 }
-var ACCENT_COLOR = '""" + cor_accent + """';
 setInterval(aplicarMelhorias, 400);
 </script>"""
 components.html(js_camera, height=0)
@@ -273,11 +245,11 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL
+# TELA PRINCIPAL COM MOTO ANIMADA
 st.markdown(f"""
 <div class="hero-card">
     <img src="{URL_DO_LOGO}" class="welcome-logo">
-    <div class="welcome-title">{NOME_DO_APP}</div>
+    <div class="welcome-title"><img src="{IMG_MOTO}" style="width:34px; height:34px; vertical-align:-5px; margin-right:8px;">{NOME_DO_APP}</div>
     <div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>
 </div>
 """, unsafe_allow_html=True)
@@ -452,7 +424,7 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # Renderiza o contador instantâneo
+    # Renderiza o contador instantâneo em Preto e Branco
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
@@ -460,15 +432,15 @@ if arquivo_pdf:
     
     banner_placeholder.markdown(f"""<div class="stat-banner">
         <div class="stat-item">
-            <div class="stat-value-green">{bipados} / {total_pacotes}</div>
+            <div class="stat-value-white">{bipados} / {total_pacotes}</div>
             <div class="stat-label">PACOTES</div>
         </div>
         <div class="stat-item">
-            <div class="stat-value-blue">{total_paradas}</div>
+            <div class="stat-value-white">{total_paradas}</div>
             <div class="stat-label">PARADAS REAIS</div>
         </div>
         <div class="stat-item">
-            <div class="stat-value-orange">{faltam}</div>
+            <div class="stat-value-white">{faltam}</div>
             <div class="stat-label">FALTAM</div>
         </div>
     </div>""", unsafe_allow_html=True)
