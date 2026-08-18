@@ -80,8 +80,8 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO
-css_style = (
+# CSS E JS DINÂMICO
+css_js = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
     ".block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }"
@@ -179,7 +179,7 @@ css_style = (
     "}"
     ".pix-title { font-size: 0.95rem; font-weight: 900; color: " + t['text_app'] + "; margin-bottom: 6px; letter-spacing: 0.5px; }"
     ".pix-desc { font-size: 0.82rem; color: " + t['subtext'] + "; margin-bottom: 12px; line-height: 1.4; }"
-    ".pix-key { font-size: 0.9rem; font-weight: 800; color: " + t['text_app'] + "; background: rgba(127,127,127,0.18); padding: 6px 10px; border-radius: 8px; display: inline-block; }"
+    ".pix-key { font-size: 1.0rem; font-weight: 900; color: " + t['text_app'] + "; background: rgba(127,127,127,0.18); padding: 8px 12px; border-radius: 8px; display: inline-block; }"
     
     ".camera-header { text-align: center; margin-top: 5px; margin-bottom: 8px; }"
     ".camera-title { font-size: 1.05rem; font-weight: 900; color: " + t['text_app'] + "; text-transform: uppercase; }"
@@ -201,11 +201,7 @@ css_style = (
     "    color: " + t['text_app'] + " !important;"
     "}"
     "</style>"
-)
-st.markdown(css_style, unsafe_allow_html=True)
-
-# SCRIPT: FLASH E BEEP
-js_camera = (
+    
     "<script>"
     "function playBeep() {"
     "    try {"
@@ -217,6 +213,13 @@ js_camera = (
     "        osc.start();"
     "        osc.stop(ctx.currentTime + 0.1);"
     "    } catch(e) {}"
+    "}"
+    "function updateClock() {"
+    "    var el = document.getElementById('live-clock');"
+    "    if (el) {"
+    "        var now = new Date().toLocaleTimeString('pt-BR', {timeZone: 'America/Sao_Paulo', hour12: false});"
+    "        el.innerHTML = '🕒 HORÁRIO: ' + now;"
+    "    }"
     "}"
     "function aplicarMelhorias() {"
     "    var iframes = window.parent.document.querySelectorAll('iframe');"
@@ -247,9 +250,10 @@ js_camera = (
     "    });"
     "}"
     "setInterval(aplicarMelhorias, 400);"
+    "setInterval(updateClock, 1000);"
     "</script>"
 )
-components.html(js_camera, height=0)
+st.markdown(css_js, unsafe_allow_html=True)
 
 # FUNÇÕES AUXILIARES
 def extrair_codigo_chave(texto):
@@ -319,61 +323,37 @@ if arquivo_pdf:
     linhas = texto.split('\n')
     
     seq_stop_auto = 0
-    termos_ignorar = [
-        "ADDRESS", "NOTES", "CIRCUIT", "OPTIMIZED", "STOP", 
-        "DELIVERY", "ROUTE", "DISPATCH", "TOTAL", "PACKAGE"
-    ]
+    termos_ignorar = ["ADDRESS", "NOTES", "CIRCUIT", "OPTIMIZED", "STOP", "DELIVERY", "ROUTE", "DISPATCH", "TOTAL", "PACKAGE"]
     
     for idx, linha in enumerate(linhas):
         linha_str = linha.strip()
-        if not linha_str:
-            continue
-            
+        if not linha_str: continue
         cods_validos = re.findall(r'BR[A-Za-z0-9]{10,20}', linha_str, re.IGNORECASE)
-        
         if not cods_validos:
             candidatos = re.findall(r'\b[A-Za-z0-9]{10,22}\b', linha_str)
             for c in candidatos:
                 c_up = c.upper()
-                if (
-                    not c.isdigit() 
-                    and not c.isalpha() 
-                    and not any(t in c_up for t in termos_ignorar)
-                ):
+                if not c.isdigit() and not c.isalpha() and not any(t in c_up for t in termos_ignorar):
                     cods_validos.append(c)
-        
         cods_validos = [c.upper() for c in cods_validos]
-        
         if cods_validos:
             seq_stop_auto += 1
-            
             m_num = re.match(r'^(\d{1,3})\b', linha_str)
-            if m_num:
-                stop_num = int(m_num.group(1))
-            else:
-                m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
-                if m_num_ant:
-                    stop_num = int(m_num_ant.group(1))
-                else:
-                    stop_num = seq_stop_auto
-            
+            stop_num = int(m_num.group(1)) if m_num else seq_stop_auto
             end_key = normalizar_endereco(linha_str)
-            if not end_key or len(end_key) < 3:
-                end_key = f"pacote_isolado_{cods_validos[0]}"
-                
+            if not end_key or len(end_key) < 3: end_key = f"pacote_isolado_{cods_validos[0]}"
             if end_key not in mapa_rotas:
                 mapa_rotas[end_key] = []
                 nome_exibicao[end_key] = linha_str[:45]
-                
             for c in cods_validos:
                 todos_pacotes.add(c)
-                if c not in mapa_rotas[end_key]:
-                    mapa_rotas[end_key].append(c)
+                if c not in mapa_rotas[end_key]: mapa_rotas[end_key].append(c)
                 stop_correspondente[c] = stop_num
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
-    banner_placeholder = st.empty()
+    # BANNER DO RELÓGIO (AGORA ATUALIZADO PELO JS)
+    st.markdown('<div class="clock-banner" id="live-clock">🕒 Carregando...</div>', unsafe_allow_html=True)
     
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
         encontrou_duplo = False
@@ -382,123 +362,33 @@ if arquivo_pdf:
                 encontrou_duplo = True
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
                 st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})")
-        if not encontrou_duplo:
-            st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
+        if not encontrou_duplo: st.info("Nenhum endereço com múltiplos pacotes.")
 
-    st.markdown(
-        '<div class="camera-header">'
-        '<div class="camera-title">📸 BIPAR PACOTE</div>'
-        '<div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
+    st.markdown('<div class="camera-header"><div class="camera-title">📸 BIPAR PACOTE</div></div>', unsafe_allow_html=True)
     code = qrcode_scanner(key="s1")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
-    
     bruto = code or input_code
     
     if bruto:
         cod_limpo = extrair_codigo_chave(bruto)
-        achou = False
-        pacote_identificado = None
-        
-        for cod_registrado in todos_pacotes:
-            if cod_registrado == cod_limpo or cod_registrado in bruto.upper() or cod_limpo in cod_registrado:
-                pacote_identificado = cod_registrado
-                achou = True
-                break
+        pacote_identificado = next((c for c in todos_pacotes if c == cod_limpo or c in bruto.upper()), None)
                 
-        if achou and pacote_identificado:
+        if pacote_identificado:
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
-            
-            end_match = ""
-            lista_duplos = []
-            for end, pacs in mapa_rotas.items():
-                if pacote_identificado in pacs:
-                    end_match = end
-                    lista_duplos = pacs
-                    break
-
             components.html("<script>playBeep();</script>", height=0)
+            st.markdown('<div class="custom-card"><div class="stop-number-big">P' + str(num_p) + '</div><div>📍 Pacote: ' + str(pacote_identificado) + '</div></div>', unsafe_allow_html=True)
             
-            card_html = (
-                '<div class="custom-card">'
-                '<div class="stop-number-big">P' + str(num_p) + '</div>'
-                '<div>📍 Pacote: ' + str(pacote_identificado) + '</div>'
-                '</div>'
-            )
-            st.markdown(card_html, unsafe_allow_html=True)
-            
-            outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
-            if outros_stops and not end_match.startswith("pacote_isolado_"):
-                st.warning("⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
-
             if usar_audio:
-                fala_texto = str(num_p)
-                if outros_stops and not end_match.startswith("pacote_isolado_"):
-                    fala_texto += " Atenção! Mesmo endereço da parada " + outros_stops[0].replace('P', '') + "!"
-                    
-                pitch_val = "1.0"
-                rate_val = "1.0"
-                
-                if "Masculina" in tipo_voz:
-                    pitch_val = "0.6"
-                    rate_val = "0.95"
-                elif "Rápida" in tipo_voz:
-                    pitch_val = "1.1"
-                    rate_val = "1.35"
-
-                js_audio = (
-                    "<script>"
-                    "(function() {"
-                    "    try {"
-                    "        window.speechSynthesis.cancel();"
-                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
-                    "        msg.lang = 'pt-BR';"
-                    "        msg.pitch = " + pitch_val + ";"
-                    "        msg.rate = " + rate_val + ";"
-                    "        window.speechSynthesis.speak(msg);"
-                    "    } catch(e) {}"
-                    "})();"
-                    "</script>"
-                )
+                js_audio = "<script>window.speechSynthesis.speak(new SpeechSynthesisUtterance('Parada " + str(num_p) + "'));</script>"
                 components.html(js_audio, height=0)
         else:
-            st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
-            st.caption(f"Valor bruto lido: `{bruto}`")
+            st.error(f"❌ Código não encontrado!")
 
-    # HORÁRIO OFICIAL DO BRASIL (FUSO SÃO PAULO)
-    fuso_br = ZoneInfo("America/Sao_Paulo")
-    hora_atual_str = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
-    
+    # ESTATÍSTICAS
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
-    faltam = max(0, total_pacotes - bipados)
-    total_paradas = len(mapa_rotas)
-    
-    # BANNER COM RELÓGIO E ESTATÍSTICAS
-    html_banner = (
-        '<div class="clock-banner">'
-        '    🕒 HORÁRIO: ' + hora_atual_str +
-        '</div>'
-        '<div class="stat-banner">'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
-        '        <div class="stat-label">PACOTES</div>'
-        '    </div>'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(total_paradas) + '</div>'
-        '        <div class="stat-label">PARADAS REAIS</div>'
-        '    </div>'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(faltam) + '</div>'
-        '        <div class="stat-label">FALTAM</div>'
-        '    </div>'
-        '</div>'
-    )
-    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
+    st.markdown(f'<div class="stat-banner"><div class="stat-item"><div class="stat-value">{bipados} / {total_pacotes}</div><div class="stat-label">PACOTES</div></div><div class="stat-item"><div class="stat-value">{len(mapa_rotas)}</div><div class="stat-label">PARADAS</div></div><div class="stat-item"><div class="stat-value">{max(0, total_pacotes - bipados)}</div><div class="stat-label">FALTAM</div></div></div>', unsafe_allow_html=True)
             
