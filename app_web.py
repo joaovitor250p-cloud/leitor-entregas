@@ -1,4 +1,6 @@
+import datetime
 import re
+import time
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -15,9 +17,13 @@ st.set_page_config(
     layout="centered"
 )
 
-# Memória de Bipados
+# Memória de Bipados e Métricas de Ritmo
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
+if "inicio_triagem" not in st.session_state:
+    st.session_state.inicio_triagem = None
+if "ultimo_bip_time" not in st.session_state:
+    st.session_state.ultimo_bip_time = None
 
 # DEFINIÇÃO DOS TEMAS PRETO & BRANCO
 estilos_temas = {
@@ -73,11 +79,13 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
+        st.session_state.inicio_triagem = None
+        st.session_state.ultimo_bip_time = None
         st.rerun()
 
 t = estilos_temas[tema_cor]
 
-# APLICAÇÃO DO CSS DINÂMICO COM O LOGO EM CORES ORIGINAIS
+# CSS DINÂMICO PRETO E BRANCO
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
@@ -85,16 +93,30 @@ css_style = (
     
     ".hero-card {"
     "    background-color: " + t['card_bg'] + ";"
-    "    padding: 24px 18px;"
+    "    padding: 20px 18px;"
     "    border-radius: 20px;"
     "    border: 2px solid " + t['border'] + ";"
     "    text-align: center;"
     "    box-shadow: 0 8px 24px " + t['shadow'] + ";"
-    "    margin-bottom: 18px;"
+    "    margin-bottom: 14px;"
     "}"
-    ".welcome-logo { width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }"
-    ".welcome-title { font-size: 1.7rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 1px; }"
-    ".welcome-subtitle { font-size: 0.75rem; color: " + t['subtext'] + "; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }"
+    ".welcome-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 8px; }"
+    ".welcome-title { font-size: 1.6rem; font-weight: 900; color: " + t['text_app'] + "; letter-spacing: 1px; }"
+    ".welcome-subtitle { font-size: 0.72rem; color: " + t['subtext'] + "; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }"
+    
+    ".clock-banner {"
+    "    background-color: " + t['card_bg'] + ";"
+    "    border-radius: 12px;"
+    "    padding: 8px 12px;"
+    "    border: 1px solid " + t['border'] + ";"
+    "    display: flex;"
+    "    justify-content: space-between;"
+    "    align-items: center;"
+    "    margin-bottom: 12px;"
+    "    font-weight: 800;"
+    "    font-size: 0.88rem;"
+    "    color: " + t['text_app'] + ";"
+    "}"
     
     ".upload-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -128,17 +150,17 @@ css_style = (
     ".stat-banner {"
     "    background-color: " + t['card_bg'] + ";"
     "    border-radius: 14px;"
-    "    padding: 14px 8px;"
+    "    padding: 12px 6px;"
     "    border: 2px solid " + t['border'] + ";"
     "    display: flex;"
     "    justify-content: space-around;"
     "    text-align: center;"
-    "    margin-bottom: 15px;"
+    "    margin-bottom: 12px;"
     "    box-shadow: 0 4px 14px " + t['shadow'] + ";"
     "}"
     ".stat-item { flex: 1; }"
-    ".stat-value { font-size: 1.35rem; font-weight: 900; color: " + t['text_app'] + "; }"
-    ".stat-label { font-size: 0.68rem; color: " + t['subtext'] + "; font-weight: 900; margin-top: 2px; letter-spacing: 0.5px; }"
+    ".stat-value { font-size: 1.25rem; font-weight: 900; color: " + t['text_app'] + "; }"
+    ".stat-label { font-size: 0.65rem; color: " + t['subtext'] + "; font-weight: 900; margin-top: 2px; letter-spacing: 0.5px; }"
     
     ".custom-card {"
     "    background-color: " + t['card_bg'] + ";"
@@ -241,7 +263,7 @@ def normalizar_endereco(texto):
         return f"{rua_limpa}_{num_limpo}"
     return re.sub(r'[^a-zA-Z0-9]', '', texto)[:35].lower()
 
-# TELA PRINCIPAL (LOGO COM SUAS CORES ORIGINAIS)
+# TELA PRINCIPAL
 st.markdown(
     '<div class="hero-card">'
     '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
@@ -372,6 +394,12 @@ if arquivo_pdf:
                 break
                 
         if achou and pacote_identificado:
+            # Controle de tempo do indicador de ritmo
+            agora_ts = time.time()
+            if st.session_state.inicio_triagem is None:
+                st.session_state.inicio_triagem = agora_ts
+            st.session_state.ultimo_bip_time = agora_ts
+            
             st.session_state.pacotes_bipados.add(pacote_identificado)
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
@@ -431,13 +459,33 @@ if arquivo_pdf:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
             st.caption(f"Valor bruto lido: `{bruto}`")
 
-    # Renderiza o contador instantâneo em conformidade com o tema selecionado
+    # CÁLCULOS DO RITMO, TEMPO E HORÁRIO
+    hora_atual_str = datetime.datetime.now().strftime("%H:%M:%S")
     bipados = len(st.session_state.pacotes_bipados)
     total_pacotes = len(todos_pacotes)
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
+    ritmo_str = "0.0/min"
+    estimativa_str = "--"
+    if st.session_state.inicio_triagem and bipados > 0:
+        tempo_decorrido = time.time() - st.session_state.inicio_triagem
+        minutos = tempo_decorrido / 60.0
+        if minutos > 0.05:
+            ppm = bipados / minutos
+            ritmo_str = f"{ppm:.1f}/min"
+            if ppm > 0 and faltam > 0:
+                minutos_restantes = faltam / ppm
+                estimativa_str = f"{int(minutos_restantes)}m" if minutos_restantes >= 1 else "<1m"
+            elif faltam == 0:
+                estimativa_str = "Concluído!"
+
+    # Renderiza o Relógio em tempo real + Painel de Ritmo + Contadores
     html_banner = (
+        '<div class="clock-banner">'
+        '    <div>🕒 ' + hora_atual_str + '</div>'
+        '    <div>⚡ Ritmo: ' + ritmo_str + ' | Término: ~' + estimativa_str + '</div>'
+        '</div>'
         '<div class="stat-banner">'
         '    <div class="stat-item">'
         '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
@@ -454,3 +502,4 @@ if arquivo_pdf:
         '</div>'
     )
     banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
+    
