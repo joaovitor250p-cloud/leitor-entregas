@@ -20,7 +20,7 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# DEFINIÇÃO DOS TEMAS PRETO & BRANCO
+# DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
     "Preto (Dark)": {
         "bg_app": "#000000",
@@ -41,6 +41,16 @@ estilos_temas = {
         "btn_text": "#FFFFFF",
         "subtext": "#555555",
         "shadow": "rgba(0,0,0,0.15)"
+    },
+    "Cinza (Gray)": {
+        "bg_app": "#1C1C1E",
+        "text_app": "#F2F2F7",
+        "card_bg": "#2C2C2E",
+        "border": "#8E8E93",
+        "btn_bg": "#48484A",
+        "btn_text": "#FFFFFF",
+        "subtext": "#AEAEB2",
+        "shadow": "rgba(0,0,0,0.35)"
     }
 }
 
@@ -55,7 +65,7 @@ with st.sidebar:
     
     tema_cor = st.selectbox(
         "🎨 Modo de Cor",
-        ["Preto (Dark)", "Branco (Light)"],
+        ["Preto (Dark)", "Branco (Light)", "Cinza (Gray)"],
         index=0
     )
     
@@ -78,7 +88,7 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO PRETO E BRANCO
+# CSS DINÂMICO
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
@@ -358,7 +368,6 @@ if arquivo_pdf:
 
 # TELA DE EXECUÇÃO
 if arquivo_pdf:
-    # BANNER DE ESTATÍSTICAS ACIMA DA CÂMERA (ATUALIZAÇÃO DINÂMICA)
     stats_placeholder = st.empty()
 
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
@@ -480,4 +489,3 @@ if arquivo_pdf:
         '</div>'
     )
     stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
-    
