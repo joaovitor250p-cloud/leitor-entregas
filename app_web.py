@@ -22,27 +22,100 @@ st.set_page_config(
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# DEFINIÇÃO DOS TEMAS PRETO & BRANCO
-estilos_temas = {
-    "Preto (Dark)": {
-        "bg_app": "#000000",
-        "text_app": "#FFFFFF",
-        "card_bg": "#0B0B0B",
-        "border": "#FFFFFF",
-        "btn_bg": "#FFFFFF",
-        "btn_text": "#000000",
-        "subtext": "#AAAAAA",
-        "shadow": "rgba(255,255,255,0.12)"
+# TRADUÇÕES DO SISTEMA (PT / ES / EN)
+TRADUCOES = {
+    "Português 🇧🇷": {
+        "lang_code": "pt-BR",
+        "subtitulo": "SISTEMA INTELIGENTE DE LOGÍSTICA",
+        "cor_modo": "🎨 Modo de Cor",
+        "opcao_preto": "Preto (Dark)",
+        "opcao_branco": "Branco (Light)",
+        "falar_toggle": "🔊 Falar Número da Parada",
+        "estilo_voz": "🎙️ Estilo da Voz",
+        "vozes": ["Feminina / Normal", "Masculina / Grave", "Rápida / Ágil"],
+        "btn_zerar": "🔄 Zerar Rota Atual",
+        "upload_titulo": "📄 CARREGAR ROTA DA ENTREGA",
+        "upload_sub": "Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera",
+        "pix_titulo": "🚀 Fortaleça o Projeto BIPAI!",
+        "pix_desc": "O app agilizou sua rota e organização? Contribua com qualquer valor para manter o sistema online:",
+        "pix_rotulo": "🔑 Pix (CPF):",
+        "duplos_titulo": "🤖 Ver pacotes no mesmo endereço / duplos",
+        "nenhum_duplo": "Nenhum endereço com múltiplos pacotes nesta rota.",
+        "camera_titulo": "📸 BIPAR PACOTE",
+        "camera_sub": "Aponte a câmera para o QR Code do pacote",
+        "digitar_manual": "⌨️ Digitar código manualmente",
+        "placeholder_input": "Digite ou cole o código aqui...",
+        "pacote_rotulo": "📍 Pacote: ",
+        "alerta_duplo": "⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): ",
+        "fala_atencao": " Atenção! Mesmo endereço da parada ",
+        "erro_nao_encontrado": "❌ Código `{code}` não encontrado no PDF!",
+        "valor_bruto": "Valor bruto lido: `{bruto}`",
+        "horario": "🕒 HORÁRIO: ",
+        "card_pacotes": "PACOTES",
+        "card_paradas": "PARADAS REAIS",
+        "card_faltam": "FALTAM"
     },
-    "Branco (Light)": {
-        "bg_app": "#FFFFFF",
-        "text_app": "#000000",
-        "card_bg": "#F5F5F7",
-        "border": "#000000",
-        "btn_bg": "#000000",
-        "btn_text": "#FFFFFF",
-        "subtext": "#555555",
-        "shadow": "rgba(0,0,0,0.15)"
+    "Español 🇪🇸": {
+        "lang_code": "es-ES",
+        "subtitulo": "SISTEMA INTELIGENTE DE LOGÍSTICA",
+        "cor_modo": "🎨 Modo de Color",
+        "opcao_preto": "Negro (Dark)",
+        "opcao_branco": "Blanco (Light)",
+        "falar_toggle": "🔊 Decir Número de Parada",
+        "estilo_voz": "🎙️ Estilo de Voz",
+        "vozes": ["Femenina / Normal", "Masculina / Grave", "Rápida / Ágil"],
+        "btn_zerar": "🔄 Reiniciar Ruta Actual",
+        "upload_titulo": "📄 CARGAR RUTA DE ENTREGA",
+        "upload_sub": "Envía el archivo PDF de tu ruta abajo para habilitar la cámara",
+        "pix_titulo": "🚀 ¡Apoya el Proyecto BIPAI!",
+        "pix_desc": "¿La app agilizó tu ruta y organización? Contribuye con cualquier monto para mantener el sistema activo:",
+        "pix_rotulo": "🔑 Pix (Brasil):",
+        "duplos_titulo": "🤖 Ver paquetes en la misma dirección / dobles",
+        "nenhum_duplo": "Ninguna dirección con múltiples paquetes en esta ruta.",
+        "camera_titulo": "📸 ESCANEAR PAQUETE",
+        "camera_sub": "Apunta la cámara al código QR del paquete",
+        "digitar_manual": "⌨️ Escribir código manualmente",
+        "placeholder_input": "Escribe o pega el código aquí...",
+        "pacote_rotulo": "📍 Paquete: ",
+        "alerta_duplo": "⚠️ **¡MISMA DIRECCIÓN!** Esta ubicación también tiene el/los paquete(s): ",
+        "fala_atencao": " ¡Atención! ¡Misma dirección que la parada ",
+        "erro_nao_encontrado": "❌ ¡Código `{code}` no encontrado en el PDF!",
+        "valor_bruto": "Valor bruto leído: `{bruto}`",
+        "horario": "🕒 HORA: ",
+        "card_pacotes": "PAQUETES",
+        "card_paradas": "PARADAS REALES",
+        "card_faltam": "FALTAN"
+    },
+    "English 🇺🇸": {
+        "lang_code": "en-US",
+        "subtitulo": "INTELLIGENT LOGISTICS SYSTEM",
+        "cor_modo": "🎨 Color Mode",
+        "opcao_preto": "Black (Dark)",
+        "opcao_branco": "White (Light)",
+        "falar_toggle": "🔊 Speak Stop Number",
+        "estilo_voz": "🎙️ Voice Style",
+        "vozes": ["Female / Normal", "Male / Deep", "Fast / Agile"],
+        "btn_zerar": "🔄 Reset Current Route",
+        "upload_titulo": "📄 UPLOAD DELIVERY ROUTE",
+        "upload_sub": "Upload your route PDF file below to unlock the camera scanner",
+        "pix_titulo": "🚀 Support the BIPAI Project!",
+        "pix_desc": "Did the app speed up your route? Contribute any amount to keep the system online:",
+        "pix_rotulo": "🔑 Pix (Brazil):",
+        "duplos_titulo": "🤖 View packages at same address / duplicates",
+        "nenhum_duplo": "No multiple packages found for the same address.",
+        "camera_titulo": "📸 SCAN PACKAGE",
+        "camera_sub": "Point your camera at the package QR Code",
+        "digitar_manual": "⌨️ Type code manually",
+        "placeholder_input": "Type or paste tracking code here...",
+        "pacote_rotulo": "📍 Package: ",
+        "alerta_duplo": "⚠️ **SAME ADDRESS!** This location also includes package(s): ",
+        "fala_atencao": " Attention! Same address as stop ",
+        "erro_nao_encontrado": "❌ Code `{code}` not found in PDF!",
+        "valor_bruto": "Raw scanned value: `{bruto}`",
+        "horario": "🕒 TIME: ",
+        "card_pacotes": "PACKAGES",
+        "card_paradas": "REAL STOPS",
+        "card_faltam": "REMAINING"
     }
 }
 
@@ -52,35 +125,63 @@ with st.sidebar:
         '<h2 style="margin-bottom:2px; font-weight:900;"><img src="' + IMG_MOTO + '" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> ' + NOME_DO_APP + '</h2>',
         unsafe_allow_html=True
     )
-    st.caption("Sistema Inteligente de Triagem e Logística")
-    st.write("---")
     
-    tema_cor = st.selectbox(
-        "🎨 Modo de Cor",
-        ["Preto (Dark)", "Branco (Light)"],
+    idioma = st.selectbox(
+        "🌐 Idioma / Language",
+        ["Português 🇧🇷", "Español 🇪🇸", "English 🇺🇸"],
         index=0
     )
     
-    usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
-    tipo_voz = "Feminina / Normal"
+    t_lang = TRADUCOES[idioma]
+    st.caption(t_lang["subtitulo"])
+    st.write("---")
+    
+    modo_cor_opcao = st.selectbox(
+        t_lang["cor_modo"],
+        [t_lang["opcao_preto"], t_lang["opcao_branco"]],
+        index=0
+    )
+    tema_escuro = (modo_cor_opcao == t_lang["opcao_preto"])
+    
+    usar_audio = st.toggle(t_lang["falar_toggle"], value=True)
+    tipo_voz_index = 0
     if usar_audio:
         tipo_voz = st.selectbox(
-            "🎙️ Estilo da Voz", 
-            [
-                "Feminina / Normal", 
-                "Masculina / Grave", 
-                "Rápida / Ágil"
-            ]
+            t_lang["estilo_voz"], 
+            t_lang["vozes"]
         )
+        tipo_voz_index = t_lang["vozes"].index(tipo_voz)
         
     st.write("---")
-    if st.button("🔄 Zerar Rota Atual"):
+    if st.button(t_lang["btn_zerar"]):
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
-t = estilos_temas[tema_cor]
+# PALETA PRETO & BRANCO
+if tema_escuro:
+    t = {
+        "bg_app": "#000000",
+        "text_app": "#FFFFFF",
+        "card_bg": "#0B0B0B",
+        "border": "#FFFFFF",
+        "btn_bg": "#FFFFFF",
+        "btn_text": "#000000",
+        "subtext": "#AAAAAA",
+        "shadow": "rgba(255,255,255,0.12)"
+    }
+else:
+    t = {
+        "bg_app": "#FFFFFF",
+        "text_app": "#000000",
+        "card_bg": "#F5F5F7",
+        "border": "#000000",
+        "btn_bg": "#000000",
+        "btn_text": "#FFFFFF",
+        "subtext": "#555555",
+        "shadow": "rgba(0,0,0,0.15)"
+    }
 
-# CSS DINÂMICO PRETO E BRANCO
+# CSS DINÂMICO
 css_style = (
     "<style>"
     ".stApp { background-color: " + t['bg_app'] + " !important; color: " + t['text_app'] + " !important; }"
@@ -275,15 +376,15 @@ st.markdown(
     '<div class="hero-card">'
     '<img src="' + URL_DO_LOGO + '" class="welcome-logo">'
     '<div class="welcome-title"><img src="' + IMG_MOTO + '" style="width:36px; height:36px; vertical-align:-6px; margin-right:8px;">' + NOME_DO_APP + '</div>'
-    '<div class="welcome-subtitle">SISTEMA INTELIGENTE DE LOGÍSTICA</div>'
+    '<div class="welcome-subtitle">' + t_lang["subtitulo"] + '</div>'
     '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="upload-card">'
-    '<div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>'
-    '<div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>'
+    '<div class="upload-title">' + t_lang["upload_titulo"] + '</div>'
+    '<div class="upload-sub">' + t_lang["upload_sub"] + '</div>'
     '<div class="upload-arrow">👇</div>'
     '</div>',
     unsafe_allow_html=True
@@ -296,13 +397,13 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# CARD DO PIX COM CPF (APARECE ANTES DO UPLOAD)
+# CARD DO PIX (SOME AO CARREGAR O PDF)
 if not arquivo_pdf:
     st.markdown(
         '<div class="pix-card">'
-        '    <div class="pix-title">🚀 Fortaleça o Projeto ' + NOME_DO_APP + '!</div>'
-        '    <div class="pix-desc">O app agilizou sua rota e organização? Contribua com qualquer valor para manter o sistema online:</div>'
-        '    <div class="pix-key">🔑 Pix (CPF): ' + CHAVE_PIX + '</div>'
+        '    <div class="pix-title">' + t_lang["pix_titulo"] + '</div>'
+        '    <div class="pix-desc">' + t_lang["pix_desc"] + '</div>'
+        '    <div class="pix-key">' + t_lang["pix_rotulo"] + ' ' + CHAVE_PIX + '</div>'
         '</div>',
         unsafe_allow_html=True
     )
@@ -371,11 +472,11 @@ if arquivo_pdf:
                     mapa_rotas[end_key].append(c)
                 stop_correspondente[c] = stop_num
 
-# TELA DE EXECUÇÃO
+# TELA DE EXECUÇÃO (CÂMERA E LEITURA)
 if arquivo_pdf:
     banner_placeholder = st.empty()
     
-    with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
+    with st.expander(t_lang["duplos_titulo"]):
         encontrou_duplo = False
         for end, pacotes in mapa_rotas.items():
             if len(pacotes) > 1 and not end.startswith("pacote_isolado_"):
@@ -383,122 +484,15 @@ if arquivo_pdf:
                 numeros_stops = ", ".join([f"P{stop_correspondente.get(p)}" for p in pacotes])
                 st.markdown(f"🚨 **{nome_exibicao.get(end, end).title()}**: `{len(pacotes)} pcts` ({numeros_stops})")
         if not encontrou_duplo:
-            st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
+            st.info(t_lang["nenhum_duplo"])
 
     st.markdown(
         '<div class="camera-header">'
-        '<div class="camera-title">📸 BIPAR PACOTE</div>'
-        '<div class="camera-sub">Aponte a câmera para o QR Code do pacote</div>'
+        '<div class="camera-title">' + t_lang["camera_titulo"] + '</div>'
+        '<div class="camera-sub">' + t_lang["camera_sub"] + '</div>'
         '</div>',
         unsafe_allow_html=True
     )
 
     code = qrcode_scanner(key="s1")
-    
-    st.markdown("#### ⌨️ Digitar código manualmente")
-    input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
-    
-    bruto = code or input_code
-    
-    if bruto:
-        cod_limpo = extrair_codigo_chave(bruto)
-        achou = False
-        pacote_identificado = None
-        
-        for cod_registrado in todos_pacotes:
-            if cod_registrado == cod_limpo or cod_registrado in bruto.upper() or cod_limpo in cod_registrado:
-                pacote_identificado = cod_registrado
-                achou = True
-                break
                 
-        if achou and pacote_identificado:
-            st.session_state.pacotes_bipados.add(pacote_identificado)
-            num_p = stop_correspondente.get(pacote_identificado, "?")
-            
-            end_match = ""
-            lista_duplos = []
-            for end, pacs in mapa_rotas.items():
-                if pacote_identificado in pacs:
-                    end_match = end
-                    lista_duplos = pacs
-                    break
-
-            components.html("<script>playBeep();</script>", height=0)
-            
-            card_html = (
-                '<div class="custom-card">'
-                '<div class="stop-number-big">P' + str(num_p) + '</div>'
-                '<div>📍 Pacote: ' + str(pacote_identificado) + '</div>'
-                '</div>'
-            )
-            st.markdown(card_html, unsafe_allow_html=True)
-            
-            outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
-            if outros_stops and not end_match.startswith("pacote_isolado_"):
-                st.warning("⚠️ **MESMO ENDEREÇO!** Este local também tem o(s) pacote(s): " + ", ".join(outros_stops))
-
-            if usar_audio:
-                fala_texto = str(num_p)
-                if outros_stops and not end_match.startswith("pacote_isolado_"):
-                    fala_texto += " Atenção! Mesmo endereço da parada " + outros_stops[0].replace('P', '') + "!"
-                    
-                pitch_val = "1.0"
-                rate_val = "1.0"
-                
-                if "Masculina" in tipo_voz:
-                    pitch_val = "0.6"
-                    rate_val = "0.95"
-                elif "Rápida" in tipo_voz:
-                    pitch_val = "1.1"
-                    rate_val = "1.35"
-
-                js_audio = (
-                    "<script>"
-                    "(function() {"
-                    "    try {"
-                    "        window.speechSynthesis.cancel();"
-                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
-                    "        msg.lang = 'pt-BR';"
-                    "        msg.pitch = " + pitch_val + ";"
-                    "        msg.rate = " + rate_val + ";"
-                    "        window.speechSynthesis.speak(msg);"
-                    "    } catch(e) {}"
-                    "})();"
-                    "</script>"
-                )
-                components.html(js_audio, height=0)
-        else:
-            st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
-            st.caption(f"Valor bruto lido: `{bruto}`")
-
-    # HORÁRIO OFICIAL DO BRASIL (FUSO SÃO PAULO)
-    fuso_br = ZoneInfo("America/Sao_Paulo")
-    hora_atual_str = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
-    
-    bipados = len(st.session_state.pacotes_bipados)
-    total_pacotes = len(todos_pacotes)
-    faltam = max(0, total_pacotes - bipados)
-    total_paradas = len(mapa_rotas)
-    
-    # BANNER COM RELÓGIO EXATO
-    html_banner = (
-        '<div class="clock-banner">'
-        '    🕒 HORÁRIO: ' + hora_atual_str +
-        '</div>'
-        '<div class="stat-banner">'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
-        '        <div class="stat-label">PACOTES</div>'
-        '    </div>'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(total_paradas) + '</div>'
-        '        <div class="stat-label">PARADAS REAIS</div>'
-        '    </div>'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(faltam) + '</div>'
-        '        <div class="stat-label">FALTAM</div>'
-        '    </div>'
-        '</div>'
-    )
-    banner_placeholder.markdown(html_banner, unsafe_allow_html=True)
-                    
