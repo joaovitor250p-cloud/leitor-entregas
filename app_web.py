@@ -10,7 +10,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 NOME_DO_APP = "PACOTE É MATO"
 URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
-CHAVE_PIX = "09354708595"
+CHAVE_PIX = "093.547.085-95"
 
 st.set_page_config(
     page_title=NOME_DO_APP,
