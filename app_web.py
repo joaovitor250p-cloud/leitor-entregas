@@ -1,3 +1,6 @@
+import os
+import json
+import hashlib
 import re
 import streamlit as st
 import streamlit.components.v1 as components
@@ -37,9 +40,12 @@ requestWakeLock();
 """
 components.html(js_wake_lock, height=0)
 
-# Memória de Bipados
+# Memória de Bipados e Arquivo Atual
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
+
+if "arquivo_salvo_atual" not in st.session_state:
+    st.session_state.arquivo_salvo_atual = None
 
 # DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
@@ -107,6 +113,8 @@ with st.sidebar:
     st.write("---")
     if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
+        if st.session_state.arquivo_salvo_atual and os.path.exists(st.session_state.arquivo_salvo_atual):
+            os.remove(st.session_state.arquivo_salvo_atual)
         st.rerun()
 
 t = estilos_temas[tema_cor]
@@ -223,7 +231,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: TROCA EFETIVA DA CÂMERA (FRONTAL / TRASEIRA), FLASH E BEEP
+# SCRIPT: FORÇAR CÂMERA, FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -251,12 +259,10 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                // Se a lente atual for diferente da selecionada no menu
                 if (video && video.dataset.sensorAtivo !== "{modo_cam_js}") {{
                     trocandoSensor = true;
                     video.dataset.sensorAtivo = "{modo_cam_js}";
                     
-                    // Interrompe faixas antigas
                     if (video.srcObject) {{
                         video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
                     }}
@@ -281,7 +287,6 @@ async function forcarCamera() {{
                     }}
                 }}
                 
-                // Flash só para câmera traseira
                 if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
@@ -384,8 +389,21 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF
+# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA DO HISTÓRICO
 if arquivo_pdf:
+    pdf_bytes = arquivo_pdf.getvalue()
+    hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
+    nome_salvamento = f"progresso_{hash_pdf}.json"
+    st.session_state.arquivo_salvo_atual = nome_salvamento
+
+    # Se já existir progresso salvo desse PDF, restaura automaticamente
+    if os.path.exists(nome_salvamento) and not st.session_state.pacotes_bipados:
+        try:
+            with open(nome_salvamento, "r", encoding="utf-8") as f:
+                st.session_state.pacotes_bipados = set(json.load(f))
+        except Exception:
+            pass
+
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
     linhas = texto.split('\n')
@@ -487,6 +505,15 @@ if arquivo_pdf:
                 
         if achou and pacote_identificado:
             st.session_state.pacotes_bipados.add(pacote_identificado)
+            
+            # Grava no disco imediatamente
+            if st.session_state.arquivo_salvo_atual:
+                try:
+                    with open(st.session_state.arquivo_salvo_atual, "w", encoding="utf-8") as f:
+                        json.dump(list(st.session_state.pacotes_bipados), f)
+                except Exception:
+                    pass
+
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
             end_match = ""
