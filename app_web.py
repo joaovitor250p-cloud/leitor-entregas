@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import re
 import streamlit as st
 import streamlit.components.v1 as components
@@ -12,7 +13,7 @@ URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
 CHAVE_PIX = "Pacoteemato@gmail.com"
 
-# Arquivos de persistência (salvam no servidor para nunca perder ao atualizar)
+# Arquivos de persistência para não perder nada ao atualizar
 ARQ_ROTA_SALVA = "rota_ativa.json"
 ARQ_BIPADOS_SALVOS = "bipados_ativos.json"
 
@@ -43,7 +44,7 @@ requestWakeLock();
 """
 components.html(js_wake_lock, height=0)
 
-# Memória de Bipados
+# Memória de Bipados e Estados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
@@ -119,19 +120,12 @@ with st.sidebar:
         )
         
     st.write("---")
-    if st.button("🔄 Zerar Bipagens (Manter Rota)", use_container_width=True):
+    # ZERA APENAS A CONTAGEM DOS BIPADOS (MANTÉM O PDF E A ROTA NA TELA)
+    if st.button("🔄 Zerar Bipagens (0/Total)", use_container_width=True):
         st.session_state.pacotes_bipados = set()
         if os.path.exists(ARQ_BIPADOS_SALVOS):
             with open(ARQ_BIPADOS_SALVOS, "w", encoding="utf-8") as f:
                 json.dump([], f)
-        st.rerun()
-
-    if st.button("🗑️ Trocar / Excluir Rota", use_container_width=True):
-        st.session_state.pacotes_bipados = set()
-        if os.path.exists(ARQ_ROTA_SALVA):
-            os.remove(ARQ_ROTA_SALVA)
-        if os.path.exists(ARQ_BIPADOS_SALVOS):
-            os.remove(ARQ_BIPADOS_SALVOS)
         st.rerun()
 
 t = estilos_temas[tema_cor]
@@ -333,122 +327,134 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    """
+    <div class="upload-card">
+        <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
+        <div class="upload-sub">Envie ou troque o arquivo PDF da sua rota logo abaixo</div>
+        <div class="upload-arrow">👇</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+arquivo_pdf = st.file_uploader(
+    "Selecione o PDF da Rota", 
+    type=["pdf"], 
+    key="pdf_main", 
+    label_visibility="collapsed"
+)
+
 mapa_rotas = {}
 stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# VERIFICA SE JÁ EXISTE ROTA ATIVA CARREGADA
-tem_rota_salva = os.path.exists(ARQ_ROTA_SALVA)
+# SE ENVIAR NOVO PDF, PROCESSA E ATUALIZA A ROTA NO DISCO
+if arquivo_pdf:
+    pdf_bytes = arquivo_pdf.getvalue()
+    hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
+    
+    # Se for um PDF novo, zera a lista de bipados automaticamente
+    if "hash_pdf_atual" not in st.session_state or st.session_state.hash_pdf_atual != hash_pdf:
+        st.session_state.hash_pdf_atual = hash_pdf
+        st.session_state.pacotes_bipados = set()
+        if os.path.exists(ARQ_BIPADOS_SALVOS):
+            with open(ARQ_BIPADOS_SALVOS, "w", encoding="utf-8") as f:
+                json.dump([], f)
 
-if not tem_rota_salva:
+    leitor = PdfReader(arquivo_pdf)
+    texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
+    linhas = texto.split('\n')
+    
+    seq_stop_auto = 0
+    termos_ignorar = [
+        "ADDRESS", "NOTES", "CIRCUIT", "OPTIMIZED", "STOP", 
+        "DELIVERY", "ROUTE", "DISPATCH", "TOTAL", "PACKAGE"
+    ]
+    
+    for idx, linha in enumerate(linhas):
+        linha_str = linha.strip()
+        if not linha_str:
+            continue
+            
+        cods_validos = re.findall(r'BR[A-Za-z0-9]{10,20}', linha_str, re.IGNORECASE)
+        
+        if not cods_validos:
+            candidatos = re.findall(r'\b[A-Za-z0-9]{10,22}\b', linha_str)
+            for c in candidatos:
+                c_up = c.upper()
+                if (
+                    not c.isdigit() 
+                    and not c.isalpha() 
+                    and not any(t in c_up for t in termos_ignorar)
+                ):
+                    cods_validos.append(c)
+        
+        cods_validos = [c.upper() for c in cods_validos]
+        
+        if cods_validos:
+            seq_stop_auto += 1
+            
+            m_num = re.match(r'^(\d{1,3})\b', linha_str)
+            if m_num:
+                stop_num = int(m_num.group(1))
+            else:
+                m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
+                if m_num_ant:
+                    stop_num = int(m_num_ant.group(1))
+                else:
+                    stop_num = seq_stop_auto
+            
+            end_key = normalizar_endereco(linha_str)
+            if not end_key or len(end_key) < 3:
+                end_key = f"pacote_isolado_{cods_validos[0]}"
+                
+            if end_key not in mapa_rotas:
+                mapa_rotas[end_key] = []
+                nome_exibicao[end_key] = linha_str[:45]
+                
+            for c in cods_validos:
+                todos_pacotes.add(c)
+                if c not in mapa_rotas[end_key]:
+                    mapa_rotas[end_key].append(c)
+                stop_correspondente[c] = stop_num
+
+    # Salva rota no disco para manter na tela caso a página dê reload
+    with open(ARQ_ROTA_SALVA, "w", encoding="utf-8") as f:
+        json.dump({
+            "mapa_rotas": mapa_rotas,
+            "stop_correspondente": stop_correspondente,
+            "nome_exibicao": nome_exibicao,
+            "todos_pacotes": list(todos_pacotes)
+        }, f)
+
+# SE NÃO HOUVER UPLOAD NA SESSÃO ATUAL, CARREGA A ROTA SALVA ANTERIORMENTE
+elif os.path.exists(ARQ_ROTA_SALVA):
+    try:
+        with open(ARQ_ROTA_SALVA, "r", encoding="utf-8") as f:
+            dados_salvos = json.load(f)
+            mapa_rotas = dados_salvos["mapa_rotas"]
+            stop_correspondente = dados_salvos["stop_correspondente"]
+            nome_exibicao = dados_salvos["nome_exibicao"]
+            todos_pacotes = set(dados_salvos["todos_pacotes"])
+    except Exception:
+        pass
+
+# CARD DO PIX (EXIBE SE NENHUMA ROTA ESTIVER CARREGADA)
+if not mapa_rotas:
     st.markdown(
-        """
-        <div class="upload-card">
-            <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-            <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
-            <div class="upload-arrow">👇</div>
+        f"""
+        <div class="pix-card">
+            <div class="pix-title">🚀 O app te ajudou no corre?</div>
+            <div class="pix-desc">Fortaleça o projeto! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>
+            <div class="pix-key">🔑 Pix: {CHAVE_PIX}</div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    arquivo_pdf = st.file_uploader(
-        "Selecione o PDF da Rota", 
-        type=["pdf"], 
-        key="pdf_main", 
-        label_visibility="collapsed"
-    )
-
-    if not arquivo_pdf:
-        st.markdown(
-            f"""
-            <div class="pix-card">
-                <div class="pix-title">🚀 O app te ajudou no corre?</div>
-                <div class="pix-desc">Fortaleça o projeto! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>
-                <div class="pix-key">🔑 Pix: {CHAVE_PIX}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        leitor = PdfReader(arquivo_pdf)
-        texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
-        linhas = texto.split('\n')
-        
-        seq_stop_auto = 0
-        termos_ignorar = [
-            "ADDRESS", "NOTES", "CIRCUIT", "OPTIMIZED", "STOP", 
-            "DELIVERY", "ROUTE", "DISPATCH", "TOTAL", "PACKAGE"
-        ]
-        
-        for idx, linha in enumerate(linhas):
-            linha_str = linha.strip()
-            if not linha_str:
-                continue
-                
-            cods_validos = re.findall(r'BR[A-Za-z0-9]{10,20}', linha_str, re.IGNORECASE)
-            
-            if not cods_validos:
-                candidatos = re.findall(r'\b[A-Za-z0-9]{10,22}\b', linha_str)
-                for c in candidatos:
-                    c_up = c.upper()
-                    if (
-                        not c.isdigit() 
-                        and not c.isalpha() 
-                        and not any(t in c_up for t in termos_ignorar)
-                    ):
-                        cods_validos.append(c)
-            
-            cods_validos = [c.upper() for c in cods_validos]
-            
-            if cods_validos:
-                seq_stop_auto += 1
-                
-                m_num = re.match(r'^(\d{1,3})\b', linha_str)
-                if m_num:
-                    stop_num = int(m_num.group(1))
-                else:
-                    m_num_ant = re.match(r'^(\d{1,3})$', linhas[idx-1].strip()) if idx > 0 else None
-                    if m_num_ant:
-                        stop_num = int(m_num_ant.group(1))
-                    else:
-                        stop_num = seq_stop_auto
-                
-                end_key = normalizar_endereco(linha_str)
-                if not end_key or len(end_key) < 3:
-                    end_key = f"pacote_isolado_{cods_validos[0]}"
-                    
-                if end_key not in mapa_rotas:
-                    mapa_rotas[end_key] = []
-                    nome_exibicao[end_key] = linha_str[:45]
-                    
-                for c in cods_validos:
-                    todos_pacotes.add(c)
-                    if c not in mapa_rotas[end_key]:
-                        mapa_rotas[end_key].append(c)
-                    stop_correspondente[c] = stop_num
-
-        # Salva rota no disco para manter na tela mesmo atualizando a página
-        with open(ARQ_ROTA_SALVA, "w", encoding="utf-8") as f:
-            json.dump({
-                "mapa_rotas": mapa_rotas,
-                "stop_correspondente": stop_correspondente,
-                "nome_exibicao": nome_exibicao,
-                "todos_pacotes": list(todos_pacotes)
-            }, f)
-        st.rerun()
-
-else:
-    # Carrega automaticamente a rota que já foi enviada
-    with open(ARQ_ROTA_SALVA, "r", encoding="utf-8") as f:
-        dados_salvos = json.load(f)
-        mapa_rotas = dados_salvos["mapa_rotas"]
-        stop_correspondente = dados_salvos["stop_correspondente"]
-        nome_exibicao = dados_salvos["nome_exibicao"]
-        todos_pacotes = set(dados_salvos["todos_pacotes"])
-
-# TELA DE EXECUÇÃO (QUANDO A ROTA ESTÁ ATIVA)
+# TELA DE EXECUÇÃO
 if mapa_rotas:
     stats_placeholder = st.empty()
 
