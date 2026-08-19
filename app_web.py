@@ -78,7 +78,7 @@ estilos_temas = {
     }
 }
 
-# MENU LATERAL (TODAS AS OPÇÕES REUNIDAS)
+# MENU LATERAL
 with st.sidebar:
     st.markdown(
         f'<h2 style="margin-bottom:2px; font-weight:900;"><img src="{IMG_MOTO}" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h2>',
@@ -217,6 +217,7 @@ css_style = f"""
 
 div[data-testid='stCustomComponentV1'] {{
     width: 100% !important;
+    min-height: 250px !important;
     border-radius: 16px;
     border: 2px solid {t['border']};
     background-color: #000000;
@@ -234,7 +235,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: CONTROLE DE CÂMERA, CORREÇÃO DE TELA PRETA, FLASH E BEEP
+# SCRIPT: CÂMERA SEGURA SEM APAGÃO, FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -250,7 +251,11 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
+var isSwitching = false;
+
 async function forcarCamera() {{
+    if (isSwitching) return;
+    
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
@@ -258,40 +263,31 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                // Se a câmera atual não é a solicitada ou perdeu o sinal
-                var tracks = video.srcObject ? video.srcObject.getVideoTracks() : [];
-                var streamAtivo = tracks.length > 0 && tracks[0].readyState === 'live';
-                
-                if (!streamAtivo || video.dataset.modeApplied !== "{modo_cam_js}") {{
+                if (video && video.dataset.modeApplied !== "{modo_cam_js}") {{
+                    isSwitching = true;
                     video.dataset.modeApplied = "{modo_cam_js}";
-                    
-                    // Encerra faixas antigas para evitar travamento e tela preta no celular
-                    if (video.srcObject) {{
-                        tracks.forEach(function(t) {{ t.stop(); }});
-                    }}
                     
                     try {{
                         var stream = await navigator.mediaDevices.getUserMedia({{
                             video: {{ facingMode: "{modo_cam_js}" }},
                             audio: false
                         }});
+                        
+                        if (video.srcObject) {{
+                            video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
+                        }}
+                        
                         video.srcObject = stream;
                         video.setAttribute("playsinline", "true");
-                        video.play();
-                    }} catch(err) {{
-                        try {{
-                            var fallbackStream = await navigator.mediaDevices.getUserMedia({{
-                                video: true,
-                                audio: false
-                            }});
-                            video.srcObject = fallbackStream;
-                            video.setAttribute("playsinline", "true");
-                            video.play();
-                        }} catch(e) {{}}
+                        await video.play();
+                    }} catch (err) {{
+                        console.log("Erro na troca de camera:", err);
+                    }} finally {{
+                        isSwitching = false;
                     }}
                 }}
                 
-                // Botão Flash só na câmera traseira
+                // Botão Flash na câmera traseira
                 if ("{modo_cam_js}" === "environment") {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
@@ -316,7 +312,9 @@ async function forcarCamera() {{
                     if (flashBtn) flashBtn.remove();
                 }}
             }}
-        }} catch(e) {{}}
+        }} catch(e) {{
+            isSwitching = false;
+        }}
     }}
 }}
 
