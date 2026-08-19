@@ -37,12 +37,9 @@ requestWakeLock();
 """
 components.html(js_wake_lock, height=0)
 
-# Memória de Bipados e Estados
+# Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
-
-if "cam_reload" not in st.session_state:
-    st.session_state.cam_reload = 0
 
 # DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
@@ -78,7 +75,7 @@ estilos_temas = {
     }
 }
 
-# MENU LATERAL COM CONTROLES
+# MENU LATERAL
 with st.sidebar:
     st.markdown(
         f'<h2 style="margin-bottom:2px; font-weight:900;"><img src="{IMG_MOTO}" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h2>',
@@ -93,17 +90,9 @@ with st.sidebar:
         index=0
     )
     
-    st.write("---")
-    st.markdown("### 📷 Câmera")
     usar_frontal = st.toggle("🤳 Câmera Frontal (Selfie)", value=False)
     
-    if st.button("🔄 Destravar Câmera", use_container_width=True):
-        st.session_state.cam_reload += 1
-        st.rerun()
-    
-    st.write("---")
-    st.markdown("### 🔊 Áudio")
-    usar_audio = st.toggle("Falar Número da Parada", value=True)
+    usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
     if usar_audio:
         tipo_voz = st.selectbox(
@@ -116,7 +105,7 @@ with st.sidebar:
         )
         
     st.write("---")
-    if st.button("🗑️ Zerar Rota Atual", use_container_width=True):
+    if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
         st.rerun()
 
@@ -217,7 +206,6 @@ css_style = f"""
 
 div[data-testid='stCustomComponentV1'] {{
     width: 100% !important;
-    min-height: 250px !important;
     border-radius: 16px;
     border: 2px solid {t['border']};
     background-color: #000000;
@@ -235,7 +223,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: TROCA PRECISA DE CÂMERA SEM LOOP TRAVANTE
+# SCRIPT: FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -251,84 +239,41 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
-var cameraEmTroca = false;
-
-async function aplicarCamera() {{
-    if (cameraEmTroca) return;
-    
+async function forcarCamera() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
-            var video = doc ? doc.querySelector('video') : null;
-            
-            if (video && video.dataset.sensorAtual !== "{modo_cam_js}") {{
-                cameraEmTroca = true;
-                video.dataset.sensorAtual = "{modo_cam_js}";
+            if (doc && doc.querySelector('video')) {{
+                var video = doc.querySelector('video');
                 
-                // 1. Libera totalmente a câmera anterior
-                if (video.srcObject) {{
-                    var tracks = video.srcObject.getTracks();
-                    tracks.forEach(function(t) {{ t.stop(); }});
-                    video.srcObject = null;
-                }}
-                
-                // 2. Aguarda 150ms para o Android liberar o hardware
-                await new Promise(r => setTimeout(r, 150));
-                
-                try {{
-                    var stream = await navigator.mediaDevices.getUserMedia({{
-                        video: {{ facingMode: "{modo_cam_js}" }},
-                        audio: false
-                    }});
-                    video.srcObject = stream;
-                    video.setAttribute("playsinline", "true");
-                    await video.play();
-                }} catch (e) {{
-                    var fallback = await navigator.mediaDevices.getUserMedia({{
-                        video: true,
-                        audio: false
-                    }});
-                    video.srcObject = fallback;
-                    video.setAttribute("playsinline", "true");
-                    await video.play();
-                }} finally {{
-                    cameraEmTroca = false;
+                // Flash só para câmera traseira
+                if ("{modo_cam_js}" === "environment") {{
+                    if (!doc.getElementById('btn-flash')) {{
+                        var btn = doc.createElement('button');
+                        btn.id = 'btn-flash';
+                        btn.innerHTML = '🔦 Flash';
+                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
+                        btn.onclick = async function() {{
+                            try {{
+                                var track = video.srcObject.getVideoTracks()[0];
+                                var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
+                                if (capabilities.torch) {{
+                                    var on = btn.innerHTML.includes('ON');
+                                    await track.applyConstraints({{advanced: [{{torch: !on}}]}});
+                                    btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                                }}
+                            }} catch(err) {{}}
+                        }};
+                        doc.body.appendChild(btn);
+                    }}
                 }}
             }}
-            
-            // Botão Flash na câmera traseira
-            if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
-                if (!doc.getElementById('btn-flash')) {{
-                    var btn = doc.createElement('button');
-                    btn.id = 'btn-flash';
-                    btn.innerHTML = '🔦 Flash';
-                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
-                    btn.onclick = async function() {{
-                        try {{
-                            var track = video.srcObject.getVideoTracks()[0];
-                            var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
-                            if (capabilities.torch) {{
-                                var on = btn.innerHTML.includes('ON');
-                                await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                            }}
-                        }} catch(err) {{}}
-                    }};
-                    doc.body.appendChild(btn);
-                }}
-            }} else if (doc) {{
-                var flashBtn = doc.getElementById('btn-flash');
-                if (flashBtn) flashBtn.remove();
-            }}
-        }} catch(e) {{
-            cameraEmTroca = false;
-        }}
+        }} catch(e) {{}}
     }}
 }}
 
-// Executa a checagem com intervalo seguro sem spammar o hardware
-setInterval(aplicarCamera, 1200);
+setInterval(forcarCamera, 500);
 </script>
 """
 components.html(js_camera, height=0)
@@ -483,7 +428,7 @@ if arquivo_pdf:
         unsafe_allow_html=True
     )
 
-    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}_{st.session_state.cam_reload}")
+    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
