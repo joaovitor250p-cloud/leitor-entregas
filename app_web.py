@@ -203,7 +203,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: WAKE LOCK (TELA SEMPRE ACESA), FLASH, BEEP E CÂMERA
+# SCRIPT: WAKE LOCK, FLASH, BEEP E CÂMERA
 modo_cam_js = "user" if usar_frontal else "environment"
 habilitar_wake_lock = "true" if manter_tela_ligada else "false"
 
@@ -219,7 +219,6 @@ async function requestWakeLock() {{
     }}
 }}
 
-// Reativa se o motorista alternar entre apps e voltar
 document.addEventListener('visibilitychange', async () => {{
     if (wakeLock !== null && document.visibilityState === 'visible') {{
         await requestWakeLock();
@@ -485,12 +484,12 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            card_html = (
-                '<div class="custom-card">'
-                '<div class="stop-number-big">P' + str(num_p) + '</div>'
-                '<div>📍 Pacote: ' + str(pacote_identificado) + '</div>'
-                '</div>'
-            )
+            card_html = f"""
+            <div class="custom-card">
+                <div class="stop-number-big">P{num_p}</div>
+                <div>📍 Pacote: {pacote_identificado}</div>
+            </div>
+            """
             st.markdown(card_html, unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
@@ -512,20 +511,20 @@ if arquivo_pdf:
                     pitch_val = "1.1"
                     rate_val = "1.35"
 
-                js_audio = (
-                    "<script>"
-                    "(function() {"
-                    "    try {"
-                    "        window.speechSynthesis.cancel();"
-                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
-                    "        msg.lang = 'pt-BR';"
-                    "        msg.pitch = " + pitch_val + ";"
-                    "        msg.rate = " + rate_val + ";"
-                    "        window.speechSynthesis.speak(msg);"
-                    "    } catch(e) {}"
-                    "})();"
-                    "</script>"
-                )
+                js_audio = f"""
+                <script>
+                (function() {{
+                    try {{
+                        window.speechSynthesis.cancel();
+                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                        msg.lang = 'pt-BR';
+                        msg.pitch = {pitch_val};
+                        msg.rate = {rate_val};
+                        window.speechSynthesis.speak(msg);
+                    }} catch(e) {{}}
+                }})();
+                </script>
+                """
                 components.html(js_audio, height=0)
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
@@ -537,11 +536,16 @@ if arquivo_pdf:
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    html_stats = (
-        '<div class="stat-banner">'
-        '    <div class="stat-item">'
-        '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
-        '        <div class="stat-label">PACOTES</div>'
-        '    </div>'
-        '    <div class="stat-item">'
-       
+    html_stats = f"""
+    <div class="stat-banner">
+        <div class="stat-item">
+            <div class="stat-value">{bipados} / {total_pacotes}</div>
+            <div class="stat-label">PACOTES</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{total_paradas}</div>
+            <div class="stat-label">PARADAS REAIS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{faltam}</div>
+            <div class="stat-label">F
