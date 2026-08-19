@@ -78,7 +78,7 @@ estilos_temas = {
     }
 }
 
-# MENU LATERAL
+# MENU LATERAL COM CONTROLES
 with st.sidebar:
     st.markdown(
         f'<h2 style="margin-bottom:2px; font-weight:900;"><img src="{IMG_MOTO}" style="width:30px; height:30px; vertical-align:-5px; margin-right:6px;"> {NOME_DO_APP}</h2>',
@@ -94,10 +94,10 @@ with st.sidebar:
     )
     
     st.write("---")
-    st.markdown("### 📷 Controle da Câmera")
+    st.markdown("### 📷 Câmera")
     usar_frontal = st.toggle("🤳 Câmera Frontal (Selfie)", value=False)
     
-    if st.button("🔄 Destravar / Atualizar Câmera", use_container_width=True):
+    if st.button("🔄 Destravar Câmera", use_container_width=True):
         st.session_state.cam_reload += 1
         st.rerun()
     
@@ -217,6 +217,7 @@ css_style = f"""
 
 div[data-testid='stCustomComponentV1'] {{
     width: 100% !important;
+    min-height: 250px !important;
     border-radius: 16px;
     border: 2px solid {t['border']};
     background-color: #000000;
@@ -234,7 +235,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT DE GERENCIAMENTO DA CÂMERA (FRONTAL/TRASEIRA DIRETO NO CONTEXTO DO LEITOR)
+# SCRIPT: TROCA PRECISA DE CÂMERA SEM LOOP TRAVANTE
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -250,78 +251,84 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
-async function forcarCamera() {{
+var cameraEmTroca = false;
+
+async function aplicarCamera() {{
+    if (cameraEmTroca) return;
+    
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
-            var win = iframes[i].contentWindow;
-            var doc = iframes[i].contentDocument || win.document;
-            if (doc && doc.querySelector('video')) {{
-                var video = doc.querySelector('video');
+            var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+            var video = doc ? doc.querySelector('video') : null;
+            
+            if (video && video.dataset.sensorAtual !== "{modo_cam_js}") {{
+                cameraEmTroca = true;
+                video.dataset.sensorAtual = "{modo_cam_js}";
                 
-                // Aplica a câmera desejada sem travar o stream
-                if (video && video.dataset.activeFacing !== "{modo_cam_js}") {{
-                    video.dataset.activeFacing = "{modo_cam_js}";
-                    
-                    var mediaDev = (win.navigator && win.navigator.mediaDevices) ? win.navigator.mediaDevices : navigator.mediaDevices;
-                    
-                    if (mediaDev && mediaDev.getUserMedia) {{
-                        try {{
-                            var stream = await mediaDev.getUserMedia({{
-                                video: {{ facingMode: "{modo_cam_js}" }},
-                                audio: false
-                            }});
-                            
-                            if (video.srcObject) {{
-                                var tracks = video.srcObject.getTracks();
-                                tracks.forEach(function(t) {{ t.stop(); }});
-                            }}
-                            
-                            video.srcObject = stream;
-                            video.setAttribute("playsinline", "true");
-                            video.play();
-                        }} catch (err) {{
-                            console.log("Tentando fallback de camera...", err);
-                            try {{
-                                var fallback = await mediaDev.getUserMedia({{ video: true, audio: false }});
-                                video.srcObject = fallback;
-                                video.setAttribute("playsinline", "true");
-                                video.play();
-                            }} catch(e) {{}}
-                        }}
-                    }}
+                // 1. Libera totalmente a câmera anterior
+                if (video.srcObject) {{
+                    var tracks = video.srcObject.getTracks();
+                    tracks.forEach(function(t) {{ t.stop(); }});
+                    video.srcObject = null;
                 }}
                 
-                // Botão Flash na traseira
-                if ("{modo_cam_js}" === "environment") {{
-                    if (!doc.getElementById('btn-flash')) {{
-                        var btn = doc.createElement('button');
-                        btn.id = 'btn-flash';
-                        btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
-                        btn.onclick = async function() {{
-                            try {{
-                                var track = video.srcObject.getVideoTracks()[0];
-                                var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
-                                if (capabilities.torch) {{
-                                    var on = btn.innerHTML.includes('ON');
-                                    await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                    btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                                }}
-                            }} catch(err) {{}}
-                        }};
-                        doc.body.appendChild(btn);
-                    }}
-                }} else {{
-                    var flashBtn = doc.getElementById('btn-flash');
-                    if (flashBtn) flashBtn.remove();
+                // 2. Aguarda 150ms para o Android liberar o hardware
+                await new Promise(r => setTimeout(r, 150));
+                
+                try {{
+                    var stream = await navigator.mediaDevices.getUserMedia({{
+                        video: {{ facingMode: "{modo_cam_js}" }},
+                        audio: false
+                    }});
+                    video.srcObject = stream;
+                    video.setAttribute("playsinline", "true");
+                    await video.play();
+                }} catch (e) {{
+                    var fallback = await navigator.mediaDevices.getUserMedia({{
+                        video: true,
+                        audio: false
+                    }});
+                    video.srcObject = fallback;
+                    video.setAttribute("playsinline", "true");
+                    await video.play();
+                }} finally {{
+                    cameraEmTroca = false;
                 }}
             }}
-        }} catch(e) {{}}
+            
+            // Botão Flash na câmera traseira
+            if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
+                if (!doc.getElementById('btn-flash')) {{
+                    var btn = doc.createElement('button');
+                    btn.id = 'btn-flash';
+                    btn.innerHTML = '🔦 Flash';
+                    btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
+                    btn.onclick = async function() {{
+                        try {{
+                            var track = video.srcObject.getVideoTracks()[0];
+                            var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
+                            if (capabilities.torch) {{
+                                var on = btn.innerHTML.includes('ON');
+                                await track.applyConstraints({{advanced: [{{torch: !on}}]}});
+                                btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                            }}
+                        }} catch(err) {{}}
+                    }};
+                    doc.body.appendChild(btn);
+                }}
+            }} else if (doc) {{
+                var flashBtn = doc.getElementById('btn-flash');
+                if (flashBtn) flashBtn.remove();
+            }}
+        }} catch(e) {{
+            cameraEmTroca = false;
+        }}
     }}
 }}
 
-setInterval(forcarCamera, 500);
+// Executa a checagem com intervalo seguro sem spammar o hardware
+setInterval(aplicarCamera, 1200);
 </script>
 """
 components.html(js_camera, height=0)
