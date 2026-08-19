@@ -16,6 +16,27 @@ st.set_page_config(
     layout="centered"
 )
 
+# --- 1. SISTEMA DE TELA SEMPRE LIGADA (WAKE LOCK) ---
+js_wake = """
+<script>
+let wakeLock = null;
+async function keepAwake() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+        } catch(e) {}
+    }
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        keepAwake();
+    }
+});
+keepAwake();
+</script>
+"""
+components.html(js_wake, height=0)
+
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
@@ -202,7 +223,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FORÇAR CÂMERA FRONTAL/TRASEIRA, FLASH E BEEP
+# --- 2. SCRIPT: CÂMERA INTELIGENTE COM ANTI-TRAVA, FLASH E BEEP ---
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -225,9 +246,10 @@ async function forcarCamera() {{
             var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
+                var streamAtivo = video.srcObject && video.srcObject.getTracks()[0].readyState === 'live';
                 
-                // Se o modo desejado for frontal e a câmera ainda estiver na traseira
-                if (!video.dataset.modeApplied || video.dataset.modeApplied !== "{modo_cam_js}") {{
+                // Se a câmera perdeu sinal ao trocar de app ou o modo mudou
+                if (!streamAtivo || video.dataset.modeApplied !== "{modo_cam_js}") {{
                     video.dataset.modeApplied = "{modo_cam_js}";
                     
                     if (video.srcObject) {{
@@ -245,7 +267,6 @@ async function forcarCamera() {{
                         video.srcObject = stream;
                         video.play();
                     }} catch(err) {{
-                        // Fallback se "exact" falhar
                         var fallbackStream = await navigator.mediaDevices.getUserMedia({{
                             video: {{ facingMode: "{modo_cam_js}" }},
                             audio: false
@@ -280,6 +301,13 @@ async function forcarCamera() {{
         }} catch(e) {{}}
     }}
 }}
+
+// Reconecta na hora ao voltar do WhatsApp / trocar de aba
+document.addEventListener('visibilitychange', () => {{
+    if (document.visibilityState === 'visible') {{
+        forcarCamera();
+    }}
+}});
 
 setInterval(forcarCamera, 500);
 </script>
