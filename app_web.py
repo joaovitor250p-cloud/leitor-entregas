@@ -223,7 +223,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH E BEEP
+# SCRIPT: TROCA EFETIVA DA CÂMERA (FRONTAL / TRASEIRA), FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -239,7 +239,11 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
+var trocandoSensor = false;
+
 async function forcarCamera() {{
+    if (trocandoSensor) return;
+    
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
@@ -247,8 +251,38 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
+                // Se a lente atual for diferente da selecionada no menu
+                if (video && video.dataset.sensorAtivo !== "{modo_cam_js}") {{
+                    trocandoSensor = true;
+                    video.dataset.sensorAtivo = "{modo_cam_js}";
+                    
+                    // Interrompe faixas antigas
+                    if (video.srcObject) {{
+                        video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
+                    }}
+                    
+                    try {{
+                        var stream = await navigator.mediaDevices.getUserMedia({{
+                            video: {{ facingMode: "{modo_cam_js}" }},
+                            audio: false
+                        }});
+                        video.srcObject = stream;
+                        video.setAttribute("playsinline", "true");
+                        await video.play();
+                    }} catch(err) {{
+                        try {{
+                            var fallback = await navigator.mediaDevices.getUserMedia({{ video: true, audio: false }});
+                            video.srcObject = fallback;
+                            video.setAttribute("playsinline", "true");
+                            await video.play();
+                        }} catch(e) {{}}
+                    }} finally {{
+                        trocandoSensor = false;
+                    }}
+                }}
+                
                 // Flash só para câmera traseira
-                if ("{modo_cam_js}" === "environment") {{
+                if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
                         btn.id = 'btn-flash';
@@ -267,9 +301,14 @@ async function forcarCamera() {{
                         }};
                         doc.body.appendChild(btn);
                     }}
+                }} else if (doc) {{
+                    var flashBtn = doc.getElementById('btn-flash');
+                    if (flashBtn) flashBtn.remove();
                 }}
             }}
-        }} catch(e) {{}}
+        }} catch(e) {{
+            trocandoSensor = false;
+        }}
     }}
 }}
 
