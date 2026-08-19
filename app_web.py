@@ -131,7 +131,7 @@ def obter_estilo_parada(num_parada):
     elif 200 <= n <= 209:
         return {"cor": "#84CC16", "bg": "rgba(132, 204, 22, 0.18)", "nome": "Verde Oliva Vibrante (200-209)"}
     elif 210 <= n <= 219:
-        return {"cor": "#2563EB", "bg": "rgba(37, 99, 235, 0.18)", "nome": "Azul Royal (210-219)"}
+        return {"cor": "#2563EB", "bg": "rgba(37, 99, 255, 0.18)", "nome": "Azul Royal (210-219)"}
     elif 220 <= n <= 229:
         return {"cor": "#EA580C", "bg": "rgba(234, 88, 12, 0.18)", "nome": "Âmbar Queimado (220-229)"}
     elif 230 <= n <= 239:
@@ -169,10 +169,14 @@ with st.sidebar:
         )
         
     st.write("---")
-    if st.button("🔄 Zerar Rota Atual"):
+    if st.button("🔄 Zerar Bipagens (Manter Rota)"):
         st.session_state.pacotes_bipados = set()
-        if st.session_state.arquivo_salvo_atual and os.path.exists(st.session_state.arquivo_salvo_atual):
-            os.remove(st.session_state.arquivo_salvo_atual)
+        if st.session_state.arquivo_salvo_atual:
+            try:
+                with open(st.session_state.arquivo_salvo_atual, "w", encoding="utf-8") as f:
+                    json.dump([], f)
+            except Exception:
+                pass
         st.rerun()
 
 t = estilos_temas[tema_cor]
