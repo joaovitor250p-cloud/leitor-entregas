@@ -47,7 +47,7 @@ if "pacotes_bipados" not in st.session_state:
 if "arquivo_salvo_atual" not in st.session_state:
     st.session_state.arquivo_salvo_atual = None
 
-# DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
+# DEFINIÇÃO DOS TEMAS GERAIS
 estilos_temas = {
     "Preto (Dark)": {
         "bg_app": "#000000",
@@ -81,6 +81,64 @@ estilos_temas = {
     }
 }
 
+# FUNÇÃO DE CORES PERSONALIZADAS ATÉ A PARADA 250
+def obter_estilo_parada(num_parada):
+    try:
+        n = int(num_parada)
+    except Exception:
+        return {"cor": "#00FF66", "bg": "rgba(0, 255, 102, 0.12)", "nome": "Faixa Padrão"}
+
+    if 1 <= n <= 9:
+        return {"cor": "#00FF66", "bg": "rgba(0, 255, 102, 0.15)", "nome": "Verde Limão (1-9)"}
+    elif 10 <= n <= 19:
+        return {"cor": "#007BFF", "bg": "rgba(0, 123, 255, 0.18)", "nome": "Azul Cobalto (10-19)"}
+    elif 20 <= n <= 29:
+        return {"cor": "#FF6B00", "bg": "rgba(255, 107, 0, 0.18)", "nome": "Laranja Elétrico (20-29)"}
+    elif 30 <= n <= 39:
+        return {"cor": "#A855F7", "bg": "rgba(168, 85, 247, 0.18)", "nome": "Roxo Neon (30-39)"}
+    elif 40 <= n <= 49:
+        return {"cor": "#FFD600", "bg": "rgba(255, 214, 0, 0.18)", "nome": "Amarelo Ouro (40-49)"}
+    elif 50 <= n <= 59:
+        return {"cor": "#FF003C", "bg": "rgba(255, 0, 60, 0.18)", "nome": "Vermelho Fogo (50-59)"}
+    elif 60 <= n <= 69:
+        return {"cor": "#00E5FF", "bg": "rgba(0, 229, 255, 0.18)", "nome": "Turquesa (60-69)"}
+    elif 70 <= n <= 79:
+        return {"cor": "#FF1493", "bg": "rgba(255, 20, 147, 0.18)", "nome": "Rosa Choque (70-79)"}
+    elif 80 <= n <= 89:
+        return {"cor": "#D97706", "bg": "rgba(217, 119, 6, 0.18)", "nome": "Cobre Metálico (80-89)"}
+    elif 90 <= n <= 99:
+        return {"cor": "#E2E8F0", "bg": "rgba(226, 232, 240, 0.18)", "nome": "Branco Gelo (90-99)"}
+    elif 100 <= n <= 109:
+        return {"cor": "#10B981", "bg": "rgba(16, 185, 129, 0.18)", "nome": "Verde Menta (100-109)"}
+    elif 110 <= n <= 119:
+        return {"cor": "#3B82F6", "bg": "rgba(59, 130, 246, 0.18)", "nome": "Azul Marinho Neon (110-119)"}
+    elif 120 <= n <= 129:
+        return {"cor": "#FB7185", "bg": "rgba(251, 113, 133, 0.18)", "nome": "Coral Intenso (120-129)"}
+    elif 130 <= n <= 139:
+        return {"cor": "#8B5CF6", "bg": "rgba(139, 92, 246, 0.18)", "nome": "Uva / Violeta (130-139)"}
+    elif 140 <= n <= 149:
+        return {"cor": "#FACC15", "bg": "rgba(250, 204, 21, 0.18)", "nome": "Amarelo Neon (140-149)"}
+    elif 150 <= n <= 159:
+        return {"cor": "#E11D48", "bg": "rgba(225, 29, 72, 0.18)", "nome": "Carmesim (150-159)"}
+    elif 160 <= n <= 169:
+        return {"cor": "#06B6D4", "bg": "rgba(6, 182, 212, 0.18)", "nome": "Azul Piscina (160-169)"}
+    elif 170 <= n <= 179:
+        return {"cor": "#C026D3", "bg": "rgba(192, 38, 211, 0.18)", "nome": "Magenta (170-179)"}
+    elif 180 <= n <= 189:
+        return {"cor": "#B45309", "bg": "rgba(180, 83, 9, 0.18)", "nome": "Caramelo (180-189)"}
+    elif 190 <= n <= 199:
+        return {"cor": "#94A3B8", "bg": "rgba(148, 163, 184, 0.18)", "nome": "Prata Metálico (190-199)"}
+    elif 200 <= n <= 209:
+        return {"cor": "#84CC16", "bg": "rgba(132, 204, 22, 0.18)", "nome": "Verde Oliva Vibrante (200-209)"}
+    elif 210 <= n <= 219:
+        return {"cor": "#2563EB", "bg": "rgba(37, 99, 235, 0.18)", "nome": "Azul Royal (210-219)"}
+    elif 220 <= n <= 229:
+        return {"cor": "#EA580C", "bg": "rgba(234, 88, 12, 0.18)", "nome": "Âmbar Queimado (220-229)"}
+    elif 230 <= n <= 239:
+        return {"cor": "#4F46E5", "bg": "rgba(79, 70, 229, 0.18)", "nome": "Índigo Puro (230-239)"}
+    else:
+        return {"cor": "#FFD700", "bg": "rgba(255, 215, 0, 0.20)", "nome": "Ouro Real (240-250+)"}
+
 # MENU LATERAL
 with st.sidebar:
     st.markdown(
@@ -91,7 +149,7 @@ with st.sidebar:
     st.write("---")
     
     tema_cor = st.selectbox(
-        "🎨 Modo de Cor",
+        "🎨 Modo de Cor do App",
         ["Preto (Dark)", "Branco (Light)", "Cinza (Gray)"],
         index=0
     )
@@ -183,17 +241,15 @@ css_style = f"""
 .stat-value {{ font-size: 1.6rem; font-weight: 900; color: {t['text_app']}; line-height: 1.1; }}
 .stat-label {{ font-size: 0.78rem; color: {t['subtext']}; font-weight: 900; margin-top: 4px; letter-spacing: 0.8px; text-transform: uppercase; }}
 
-.custom-card {{
-    background-color: {t['card_bg']};
-    padding: 16px;
-    border-radius: 14px;
-    border: 2px solid {t['border']};
+.custom-card-dinamico {{
+    padding: 20px 16px;
+    border-radius: 16px;
     margin-bottom: 15px;
     text-align: center;
-    color: {t['text_app']};
-    box-shadow: 0 4px 14px {t['shadow']};
+    transition: all 0.3s ease;
 }}
-.stop-number-big {{ font-size: 4.2rem; font-weight: 900; color: {t['text_app']}; line-height: 1; margin-bottom: 8px; }}
+.stop-number-big {{ font-size: 4.8rem; font-weight: 900; line-height: 1; margin-bottom: 6px; }}
+.tag-faixa {{ font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }}
 
 .pix-card {{
     background-color: {t['card_bg']};
@@ -389,14 +445,13 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA DO HISTÓRICO
+# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA
 if arquivo_pdf:
     pdf_bytes = arquivo_pdf.getvalue()
     hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
     nome_salvamento = f"progresso_{hash_pdf}.json"
     st.session_state.arquivo_salvo_atual = nome_salvamento
 
-    # Se já existir progresso salvo desse PDF, restaura automaticamente
     if os.path.exists(nome_salvamento) and not st.session_state.pacotes_bipados:
         try:
             with open(nome_salvamento, "r", encoding="utf-8") as f:
@@ -506,7 +561,6 @@ if arquivo_pdf:
         if achou and pacote_identificado:
             st.session_state.pacotes_bipados.add(pacote_identificado)
             
-            # Grava no disco imediatamente
             if st.session_state.arquivo_salvo_atual:
                 try:
                     with open(st.session_state.arquivo_salvo_atual, "w", encoding="utf-8") as f:
@@ -515,6 +569,7 @@ if arquivo_pdf:
                     pass
 
             num_p = stop_correspondente.get(pacote_identificado, "?")
+            estilo_p = obter_estilo_parada(num_p)
             
             end_match = ""
             lista_duplos = []
@@ -527,9 +582,10 @@ if arquivo_pdf:
             components.html("<script>playBeep();</script>", height=0)
             
             card_html = f"""
-            <div class="custom-card">
-                <div class="stop-number-big">P{num_p}</div>
-                <div>📍 Pacote: {pacote_identificado}</div>
+            <div class="custom-card-dinamico" style="background-color: {estilo_p['bg']}; border: 3px solid {estilo_p['cor']}; box-shadow: 0 0 20px {estilo_p['cor']}44;">
+                <div class="tag-faixa" style="color: {estilo_p['cor']};">🎨 {estilo_p['nome']}</div>
+                <div class="stop-number-big" style="color: {estilo_p['cor']}; text-shadow: 0 0 10px {estilo_p['cor']}66;">P{num_p}</div>
+                <div style="font-weight: 900; font-size: 1rem; color: #FFFFFF; letter-spacing: 0.5px;">📍 Pacote: {pacote_identificado}</div>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
