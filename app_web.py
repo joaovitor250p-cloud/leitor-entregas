@@ -217,7 +217,6 @@ css_style = f"""
 
 div[data-testid='stCustomComponentV1'] {{
     width: 100% !important;
-    min-height: 250px !important;
     border-radius: 16px;
     border: 2px solid {t['border']};
     background-color: #000000;
@@ -235,7 +234,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: CÂMERA SEGURA SEM APAGÃO, FLASH E BEEP
+# SCRIPT DE GERENCIAMENTO DA CÂMERA (FRONTAL/TRASEIRA DIRETO NO CONTEXTO DO LEITOR)
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -251,43 +250,49 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
-var isSwitching = false;
-
 async function forcarCamera() {{
-    if (isSwitching) return;
-    
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
-            var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+            var win = iframes[i].contentWindow;
+            var doc = iframes[i].contentDocument || win.document;
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                if (video && video.dataset.modeApplied !== "{modo_cam_js}") {{
-                    isSwitching = true;
-                    video.dataset.modeApplied = "{modo_cam_js}";
+                // Aplica a câmera desejada sem travar o stream
+                if (video && video.dataset.activeFacing !== "{modo_cam_js}") {{
+                    video.dataset.activeFacing = "{modo_cam_js}";
                     
-                    try {{
-                        var stream = await navigator.mediaDevices.getUserMedia({{
-                            video: {{ facingMode: "{modo_cam_js}" }},
-                            audio: false
-                        }});
-                        
-                        if (video.srcObject) {{
-                            video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
+                    var mediaDev = (win.navigator && win.navigator.mediaDevices) ? win.navigator.mediaDevices : navigator.mediaDevices;
+                    
+                    if (mediaDev && mediaDev.getUserMedia) {{
+                        try {{
+                            var stream = await mediaDev.getUserMedia({{
+                                video: {{ facingMode: "{modo_cam_js}" }},
+                                audio: false
+                            }});
+                            
+                            if (video.srcObject) {{
+                                var tracks = video.srcObject.getTracks();
+                                tracks.forEach(function(t) {{ t.stop(); }});
+                            }}
+                            
+                            video.srcObject = stream;
+                            video.setAttribute("playsinline", "true");
+                            video.play();
+                        }} catch (err) {{
+                            console.log("Tentando fallback de camera...", err);
+                            try {{
+                                var fallback = await mediaDev.getUserMedia({{ video: true, audio: false }});
+                                video.srcObject = fallback;
+                                video.setAttribute("playsinline", "true");
+                                video.play();
+                            }} catch(e) {{}}
                         }}
-                        
-                        video.srcObject = stream;
-                        video.setAttribute("playsinline", "true");
-                        await video.play();
-                    }} catch (err) {{
-                        console.log("Erro na troca de camera:", err);
-                    }} finally {{
-                        isSwitching = false;
                     }}
                 }}
                 
-                // Botão Flash na câmera traseira
+                // Botão Flash na traseira
                 if ("{modo_cam_js}" === "environment") {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
@@ -312,9 +317,7 @@ async function forcarCamera() {{
                     if (flashBtn) flashBtn.remove();
                 }}
             }}
-        }} catch(e) {{
-            isSwitching = false;
-        }}
+        }} catch(e) {{}}
     }}
 }}
 
