@@ -16,30 +16,33 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 1. SISTEMA DE TELA SEMPRE LIGADA (WAKE LOCK) ---
-js_wake = """
+# --- SISTEMA DE TELA LIGADA (WAKE LOCK) ---
+js_wake_lock = """
 <script>
 let wakeLock = null;
-async function keepAwake() {
+async function requestWakeLock() {
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-        } catch(e) {}
+        } catch (err) {}
     }
 }
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        keepAwake();
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
     }
 });
-keepAwake();
+requestWakeLock();
 </script>
 """
-components.html(js_wake, height=0)
+components.html(js_wake_lock, height=0)
 
-# Memória de Bipados
+# Memória de Bipados e Recarregamento da Câmera
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
+
+if "cam_reload" not in st.session_state:
+    st.session_state.cam_reload = 0
 
 # DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
@@ -223,7 +226,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# --- 2. SCRIPT: CÂMERA INTELIGENTE COM ANTI-TRAVA, FLASH E BEEP ---
+# SCRIPT: FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -246,35 +249,6 @@ async function forcarCamera() {{
             var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
-                var streamAtivo = video.srcObject && video.srcObject.getTracks()[0].readyState === 'live';
-                
-                // Se a câmera perdeu sinal ao trocar de app ou o modo mudou
-                if (!streamAtivo || video.dataset.modeApplied !== "{modo_cam_js}") {{
-                    video.dataset.modeApplied = "{modo_cam_js}";
-                    
-                    if (video.srcObject) {{
-                        var tracks = video.srcObject.getTracks();
-                        tracks.forEach(function(track) {{ track.stop(); }});
-                    }}
-                    
-                    var constraints = {{
-                        video: {{ facingMode: {{ exact: "{modo_cam_js}" }} }},
-                        audio: false
-                    }};
-                    
-                    try {{
-                        var stream = await navigator.mediaDevices.getUserMedia(constraints);
-                        video.srcObject = stream;
-                        video.play();
-                    }} catch(err) {{
-                        var fallbackStream = await navigator.mediaDevices.getUserMedia({{
-                            video: {{ facingMode: "{modo_cam_js}" }},
-                            audio: false
-                        }});
-                        video.srcObject = fallbackStream;
-                        video.play();
-                    }}
-                }}
                 
                 // Flash só para câmera traseira
                 if ("{modo_cam_js}" === "environment") {{
@@ -301,13 +275,6 @@ async function forcarCamera() {{
         }} catch(e) {{}}
     }}
 }}
-
-// Reconecta na hora ao voltar do WhatsApp / trocar de aba
-document.addEventListener('visibilitychange', () => {{
-    if (document.visibilityState === 'visible') {{
-        forcarCamera();
-    }}
-}});
 
 setInterval(forcarCamera, 500);
 </script>
@@ -454,17 +421,23 @@ if arquivo_pdf:
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    st.markdown(
-        f"""
-        <div class="camera-header">
-            <div class="camera-title">📸 BIPAR PACOTE ({'FRONTAL' if usar_frontal else 'TRASEIRA'})</div>
-            <div class="camera-sub">Aponte o QR Code para a câmera</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    col_cam_header, col_cam_reset = st.columns([5, 1])
+    with col_cam_header:
+        st.markdown(
+            f"""
+            <div class="camera-header" style="text-align: left;">
+                <div class="camera-title">📸 BIPAR PACOTE ({'FRONTAL' if usar_frontal else 'TRASEIRA'})</div>
+                <div class="camera-sub">Aponte o QR Code para a câmera</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_cam_reset:
+        if st.button("🔄", help="Destravar Câmera"):
+            st.session_state.cam_reload += 1
+            st.rerun()
 
-    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}")
+    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}_{st.session_state.cam_reload}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
