@@ -15,6 +15,27 @@ st.set_page_config(
     page_icon=URL_DO_LOGO,
     layout="centered"
 )
+# --- SISTEMA DE TELA LIGADA ---
+js_wake_lock = """
+<script>
+let wakeLock = null;
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) { console.log("Wake Lock negado"); }
+    }
+}
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+    }
+});
+requestWakeLock();
+</script>
+"""
+components.html(js_wake_lock, height=0)
+
 
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
