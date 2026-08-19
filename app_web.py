@@ -70,6 +70,7 @@ with st.sidebar:
     )
     
     usar_frontal = st.toggle("🤳 Câmera Frontal (Selfie)", value=False)
+    manter_tela_ligada = st.toggle("💡 Manter Tela Sempre Ligada", value=True)
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -202,10 +203,31 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FORÇAR CÂMERA FRONTAL/TRASEIRA, FLASH E BEEP
+# SCRIPT: WAKE LOCK (TELA SEMPRE ACESA), FLASH, BEEP E CÂMERA
 modo_cam_js = "user" if usar_frontal else "environment"
-js_camera = f"""
+habilitar_wake_lock = "true" if manter_tela_ligada else "false"
+
+js_core = f"""
 <script>
+let wakeLock = null;
+
+async function requestWakeLock() {{
+    if ({habilitar_wake_lock} && 'wakeLock' in navigator) {{
+        try {{
+            wakeLock = await navigator.wakeLock.request('screen');
+        }} catch (err) {{}}
+    }}
+}}
+
+// Reativa se o motorista alternar entre apps e voltar
+document.addEventListener('visibilitychange', async () => {{
+    if (wakeLock !== null && document.visibilityState === 'visible') {{
+        await requestWakeLock();
+    }}
+}});
+
+requestWakeLock();
+
 function playBeep() {{
     try {{
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -226,7 +248,6 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                // Se o modo desejado for frontal e a câmera ainda estiver na traseira
                 if (!video.dataset.modeApplied || video.dataset.modeApplied !== "{modo_cam_js}") {{
                     video.dataset.modeApplied = "{modo_cam_js}";
                     
@@ -235,17 +256,14 @@ async function forcarCamera() {{
                         tracks.forEach(function(track) {{ track.stop(); }});
                     }}
                     
-                    var constraints = {{
-                        video: {{ facingMode: {{ exact: "{modo_cam_js}" }} }},
-                        audio: false
-                    }};
-                    
                     try {{
-                        var stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        var stream = await navigator.mediaDevices.getUserMedia({{
+                            video: {{ facingMode: {{ exact: "{modo_cam_js}" }} }},
+                            audio: false
+                        }});
                         video.srcObject = stream;
                         video.play();
                     }} catch(err) {{
-                        // Fallback se "exact" falhar
                         var fallbackStream = await navigator.mediaDevices.getUserMedia({{
                             video: {{ facingMode: "{modo_cam_js}" }},
                             audio: false
@@ -255,7 +273,6 @@ async function forcarCamera() {{
                     }}
                 }}
                 
-                // Flash só para câmera traseira
                 if ("{modo_cam_js}" === "environment") {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
@@ -284,7 +301,7 @@ async function forcarCamera() {{
 setInterval(forcarCamera, 500);
 </script>
 """
-components.html(js_camera, height=0)
+components.html(js_core, height=0)
 
 # FUNÇÕES AUXILIARES
 def extrair_codigo_chave(texto):
@@ -468,12 +485,12 @@ if arquivo_pdf:
 
             components.html("<script>playBeep();</script>", height=0)
             
-            card_html = f"""
-            <div class="custom-card">
-                <div class="stop-number-big">P{num_p}</div>
-                <div>📍 Pacote: {pacote_identificado}</div>
-            </div>
-            """
+            card_html = (
+                '<div class="custom-card">'
+                '<div class="stop-number-big">P' + str(num_p) + '</div>'
+                '<div>📍 Pacote: ' + str(pacote_identificado) + '</div>'
+                '</div>'
+            )
             st.markdown(card_html, unsafe_allow_html=True)
             
             outros_stops = [f"P{stop_correspondente.get(p, '?')}" for p in lista_duplos if p != pacote_identificado]
@@ -495,20 +512,20 @@ if arquivo_pdf:
                     pitch_val = "1.1"
                     rate_val = "1.35"
 
-                js_audio = f"""
-                <script>
-                (function() {{
-                    try {{
-                        window.speechSynthesis.cancel();
-                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
-                        msg.lang = 'pt-BR';
-                        msg.pitch = {pitch_val};
-                        msg.rate = {rate_val};
-                        window.speechSynthesis.speak(msg);
-                    }} catch(e) {{}}
-                }})();
-                </script>
-                """
+                js_audio = (
+                    "<script>"
+                    "(function() {"
+                    "    try {"
+                    "        window.speechSynthesis.cancel();"
+                    "        var msg = new SpeechSynthesisUtterance('" + fala_texto + "');"
+                    "        msg.lang = 'pt-BR';"
+                    "        msg.pitch = " + pitch_val + ";"
+                    "        msg.rate = " + rate_val + ";"
+                    "        window.speechSynthesis.speak(msg);"
+                    "    } catch(e) {}"
+                    "})();"
+                    "</script>"
+                )
                 components.html(js_audio, height=0)
         else:
             st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
@@ -520,20 +537,11 @@ if arquivo_pdf:
     faltam = max(0, total_pacotes - bipados)
     total_paradas = len(mapa_rotas)
     
-    html_stats = f"""
-    <div class="stat-banner">
-        <div class="stat-item">
-            <div class="stat-value">{bipados} / {total_pacotes}</div>
-            <div class="stat-label">PACOTES</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{total_paradas}</div>
-            <div class="stat-label">PARADAS REAIS</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{faltam}</div>
-            <div class="stat-label">FALTAM</div>
-        </div>
-    </div>
-    """
-    stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
+    html_stats = (
+        '<div class="stat-banner">'
+        '    <div class="stat-item">'
+        '        <div class="stat-value">' + str(bipados) + ' / ' + str(total_pacotes) + '</div>'
+        '        <div class="stat-label">PACOTES</div>'
+        '    </div>'
+        '    <div class="stat-item">'
+       
