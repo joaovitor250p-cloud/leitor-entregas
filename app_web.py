@@ -13,10 +13,6 @@ URL_DO_LOGO = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
 IMG_MOTO = "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3cd_fe0f/512.gif"
 CHAVE_PIX = "Pacoteemato@gmail.com"
 
-# Arquivos de persistência para não perder nada ao atualizar
-ARQ_ROTA_SALVA = "rota_ativa.json"
-ARQ_BIPADOS_SALVOS = "bipados_ativos.json"
-
 st.set_page_config(
     page_title=NOME_DO_APP,
     page_icon=URL_DO_LOGO,
@@ -44,17 +40,12 @@ requestWakeLock();
 """
 components.html(js_wake_lock, height=0)
 
-# Memória de Bipados e Estados
+# Memória de Bipados e Arquivo Atual
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
-# Recupera bipados salvos no disco se a página atualizou
-if os.path.exists(ARQ_BIPADOS_SALVOS) and not st.session_state.pacotes_bipados:
-    try:
-        with open(ARQ_BIPADOS_SALVOS, "r", encoding="utf-8") as f:
-            st.session_state.pacotes_bipados = set(json.load(f))
-    except Exception:
-        pass
+if "arquivo_salvo_atual" not in st.session_state:
+    st.session_state.arquivo_salvo_atual = None
 
 # DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
@@ -120,12 +111,10 @@ with st.sidebar:
         )
         
     st.write("---")
-    # ZERA APENAS A CONTAGEM DOS BIPADOS (MANTÉM O PDF E A ROTA NA TELA)
-    if st.button("🔄 Zerar Bipagens (0/Total)", use_container_width=True):
+    if st.button("🔄 Zerar Rota Atual"):
         st.session_state.pacotes_bipados = set()
-        if os.path.exists(ARQ_BIPADOS_SALVOS):
-            with open(ARQ_BIPADOS_SALVOS, "w", encoding="utf-8") as f:
-                json.dump([], f)
+        if st.session_state.arquivo_salvo_atual and os.path.exists(st.session_state.arquivo_salvo_atual):
+            os.remove(st.session_state.arquivo_salvo_atual)
         st.rerun()
 
 t = estilos_temas[tema_cor]
@@ -242,7 +231,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH E BEEP
+# SCRIPT: FORÇAR CÂMERA, FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -258,7 +247,11 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
+var trocandoSensor = false;
+
 async function forcarCamera() {{
+    if (trocandoSensor) return;
+    
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
@@ -266,7 +259,35 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
-                if ("{modo_cam_js}" === "environment") {{
+                if (video && video.dataset.sensorAtivo !== "{modo_cam_js}") {{
+                    trocandoSensor = true;
+                    video.dataset.sensorAtivo = "{modo_cam_js}";
+                    
+                    if (video.srcObject) {{
+                        video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
+                    }}
+                    
+                    try {{
+                        var stream = await navigator.mediaDevices.getUserMedia({{
+                            video: {{ facingMode: "{modo_cam_js}" }},
+                            audio: false
+                        }});
+                        video.srcObject = stream;
+                        video.setAttribute("playsinline", "true");
+                        await video.play();
+                    }} catch(err) {{
+                        try {{
+                            var fallback = await navigator.mediaDevices.getUserMedia({{ video: true, audio: false }});
+                            video.srcObject = fallback;
+                            video.setAttribute("playsinline", "true");
+                            await video.play();
+                        }} catch(e) {{}}
+                    }} finally {{
+                        trocandoSensor = false;
+                    }}
+                }}
+                
+                if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
                         btn.id = 'btn-flash';
@@ -285,9 +306,14 @@ async function forcarCamera() {{
                         }};
                         doc.body.appendChild(btn);
                     }}
+                }} else if (doc) {{
+                    var flashBtn = doc.getElementById('btn-flash');
+                    if (flashBtn) flashBtn.remove();
                 }}
             }}
-        }} catch(e) {{}}
+        }} catch(e) {{
+            trocandoSensor = false;
+        }}
     }}
 }}
 
@@ -331,7 +357,7 @@ st.markdown(
     """
     <div class="upload-card">
         <div class="upload-title">📄 CARREGAR ROTA DA ENTREGA</div>
-        <div class="upload-sub">Envie ou troque o arquivo PDF da sua rota logo abaixo</div>
+        <div class="upload-sub">Envie o arquivo PDF da sua rota logo abaixo para liberar a câmera</div>
         <div class="upload-arrow">👇</div>
     </div>
     """,
@@ -345,23 +371,38 @@ arquivo_pdf = st.file_uploader(
     label_visibility="collapsed"
 )
 
+# CARD DO PIX
+if not arquivo_pdf:
+    st.markdown(
+        f"""
+        <div class="pix-card">
+            <div class="pix-title">🚀 O app te ajudou no corre?</div>
+            <div class="pix-desc">Fortaleça o projeto! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>
+            <div class="pix-key">🔑 Pix: {CHAVE_PIX}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 mapa_rotas = {}
 stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# SE ENVIAR NOVO PDF, PROCESSA E ATUALIZA A ROTA NO DISCO
+# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA DO HISTÓRICO
 if arquivo_pdf:
     pdf_bytes = arquivo_pdf.getvalue()
     hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
-    
-    # Se for um PDF novo, zera a lista de bipados automaticamente
-    if "hash_pdf_atual" not in st.session_state or st.session_state.hash_pdf_atual != hash_pdf:
-        st.session_state.hash_pdf_atual = hash_pdf
-        st.session_state.pacotes_bipados = set()
-        if os.path.exists(ARQ_BIPADOS_SALVOS):
-            with open(ARQ_BIPADOS_SALVOS, "w", encoding="utf-8") as f:
-                json.dump([], f)
+    nome_salvamento = f"progresso_{hash_pdf}.json"
+    st.session_state.arquivo_salvo_atual = nome_salvamento
+
+    # Se já existir progresso salvo desse PDF, restaura automaticamente
+    if os.path.exists(nome_salvamento) and not st.session_state.pacotes_bipados:
+        try:
+            with open(nome_salvamento, "r", encoding="utf-8") as f:
+                st.session_state.pacotes_bipados = set(json.load(f))
+        except Exception:
+            pass
 
     leitor = PdfReader(arquivo_pdf)
     texto = "\n".join([p.extract_text() or "" for p in leitor.pages])
@@ -420,42 +461,8 @@ if arquivo_pdf:
                     mapa_rotas[end_key].append(c)
                 stop_correspondente[c] = stop_num
 
-    # Salva rota no disco para manter na tela caso a página dê reload
-    with open(ARQ_ROTA_SALVA, "w", encoding="utf-8") as f:
-        json.dump({
-            "mapa_rotas": mapa_rotas,
-            "stop_correspondente": stop_correspondente,
-            "nome_exibicao": nome_exibicao,
-            "todos_pacotes": list(todos_pacotes)
-        }, f)
-
-# SE NÃO HOUVER UPLOAD NA SESSÃO ATUAL, CARREGA A ROTA SALVA ANTERIORMENTE
-elif os.path.exists(ARQ_ROTA_SALVA):
-    try:
-        with open(ARQ_ROTA_SALVA, "r", encoding="utf-8") as f:
-            dados_salvos = json.load(f)
-            mapa_rotas = dados_salvos["mapa_rotas"]
-            stop_correspondente = dados_salvos["stop_correspondente"]
-            nome_exibicao = dados_salvos["nome_exibicao"]
-            todos_pacotes = set(dados_salvos["todos_pacotes"])
-    except Exception:
-        pass
-
-# CARD DO PIX (EXIBE SE NENHUMA ROTA ESTIVER CARREGADA)
-if not mapa_rotas:
-    st.markdown(
-        f"""
-        <div class="pix-card">
-            <div class="pix-title">🚀 O app te ajudou no corre?</div>
-            <div class="pix-desc">Fortaleça o projeto! Qualquer valor ajuda a manter o sistema rodando liso na rua. Tamo junto!</div>
-            <div class="pix-key">🔑 Pix: {CHAVE_PIX}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
 # TELA DE EXECUÇÃO
-if mapa_rotas:
+if arquivo_pdf:
     stats_placeholder = st.empty()
 
     with st.expander("🤖 Ver pacotes no mesmo endereço / duplos"):
@@ -499,9 +506,13 @@ if mapa_rotas:
         if achou and pacote_identificado:
             st.session_state.pacotes_bipados.add(pacote_identificado)
             
-            # Salva o progresso dos bipados imediatamente
-            with open(ARQ_BIPADOS_SALVOS, "w", encoding="utf-8") as f:
-                json.dump(list(st.session_state.pacotes_bipados), f)
+            # Grava no disco imediatamente
+            if st.session_state.arquivo_salvo_atual:
+                try:
+                    with open(st.session_state.arquivo_salvo_atual, "w", encoding="utf-8") as f:
+                        json.dump(list(st.session_state.pacotes_bipados), f)
+                except Exception:
+                    pass
 
             num_p = stop_correspondente.get(pacote_identificado, "?")
             
