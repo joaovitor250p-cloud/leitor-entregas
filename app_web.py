@@ -37,12 +37,15 @@ requestWakeLock();
 """
 components.html(js_wake_lock, height=0)
 
-# Memória de Bipados e Recarregamento da Câmera
+# Memória de Bipados e Estados da Câmera
 if "pacotes_bipados" not in st.session_state:
     st.session_state.pacotes_bipados = set()
 
 if "cam_reload" not in st.session_state:
     st.session_state.cam_reload = 0
+
+if "usar_frontal" not in st.session_state:
+    st.session_state.usar_frontal = False
 
 # DEFINIÇÃO DOS TEMAS (PRETO, BRANCO E CINZA)
 estilos_temas = {
@@ -92,8 +95,6 @@ with st.sidebar:
         ["Preto (Dark)", "Branco (Light)", "Cinza (Gray)"],
         index=0
     )
-    
-    usar_frontal = st.toggle("🤳 Câmera Frontal (Selfie)", value=False)
     
     usar_audio = st.toggle("🔊 Falar Número da Parada", value=True)
     tipo_voz = "Feminina / Normal"
@@ -203,7 +204,7 @@ css_style = f"""
 .pix-desc {{ font-size: 0.82rem; color: {t['subtext']}; margin-bottom: 12px; line-height: 1.4; }}
 .pix-key {{ font-size: 0.9rem; font-weight: 800; color: {t['text_app']}; background: rgba(127,127,127,0.18); padding: 6px 10px; border-radius: 8px; display: inline-block; }}
 
-.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
+.camera-header {{ text-align: left; margin-top: 5px; margin-bottom: 8px; }}
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
@@ -226,8 +227,8 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH E BEEP
-modo_cam_js = "user" if usar_frontal else "environment"
+# SCRIPT: FORÇAR CÂMERA FRONTAL/TRASEIRA, FLASH E BEEP
+modo_cam_js = "user" if st.session_state.usar_frontal else "environment"
 js_camera = f"""
 <script>
 function playBeep() {{
@@ -250,6 +251,34 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
+                // Força a troca de lente (Frontal vs Traseira)
+                if (!video.dataset.modeApplied || video.dataset.modeApplied !== "{modo_cam_js}") {{
+                    video.dataset.modeApplied = "{modo_cam_js}";
+                    
+                    if (video.srcObject) {{
+                        var tracks = video.srcObject.getTracks();
+                        tracks.forEach(function(track) {{ track.stop(); }});
+                    }}
+                    
+                    var constraints = {{
+                        video: {{ facingMode: {{ exact: "{modo_cam_js}" }} }},
+                        audio: false
+                    }};
+                    
+                    try {{
+                        var stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        video.srcObject = stream;
+                        video.play();
+                    }} catch(err) {{
+                        var fallbackStream = await navigator.mediaDevices.getUserMedia({{
+                            video: {{ facingMode: "{modo_cam_js}" }},
+                            audio: false
+                        }});
+                        video.srcObject = fallbackStream;
+                        video.play();
+                    }}
+                }}
+                
                 // Flash só para câmera traseira
                 if ("{modo_cam_js}" === "environment") {{
                     if (!doc.getElementById('btn-flash')) {{
@@ -270,13 +299,16 @@ async function forcarCamera() {{
                         }};
                         doc.body.appendChild(btn);
                     }}
+                }} else {{
+                    var flashBtn = doc.getElementById('btn-flash');
+                    if (flashBtn) flashBtn.remove();
                 }}
             }}
         }} catch(e) {{}}
     }}
 }}
 
-setInterval(forcarCamera, 500);
+setInterval(forcarCamera, 400);
 </script>
 """
 components.html(js_camera, height=0)
@@ -421,23 +453,29 @@ if arquivo_pdf:
         if not encontrou_duplo:
             st.info("Nenhum endereço com múltiplos pacotes nesta rota.")
 
-    col_cam_header, col_cam_reset = st.columns([5, 1])
+    # CABEÇALHO DA CÂMERA COM BOTÕES DIRETOS (VIRAR E RECARREGAR)
+    col_cam_header, col_cam_flip, col_cam_reset = st.columns([4, 1, 1])
     with col_cam_header:
         st.markdown(
             f"""
-            <div class="camera-header" style="text-align: left;">
-                <div class="camera-title">📸 BIPAR PACOTE ({'FRONTAL' if usar_frontal else 'TRASEIRA'})</div>
+            <div class="camera-header">
+                <div class="camera-title">📸 BIPAR PACOTE ({'FRONTAL' if st.session_state.usar_frontal else 'TRASEIRA'})</div>
                 <div class="camera-sub">Aponte o QR Code para a câmera</div>
             </div>
             """,
             unsafe_allow_html=True
         )
+    with col_cam_flip:
+        if st.button("🤳", help="Alternar Câmera Frontal / Traseira"):
+            st.session_state.usar_frontal = not st.session_state.usar_frontal
+            st.session_state.cam_reload += 1
+            st.rerun()
     with col_cam_reset:
         if st.button("🔄", help="Destravar Câmera"):
             st.session_state.cam_reload += 1
             st.rerun()
 
-    code = qrcode_scanner(key=f"scanner_{'front' if usar_frontal else 'back'}_{st.session_state.cam_reload}")
+    code = qrcode_scanner(key=f"scanner_{'front' if st.session_state.usar_frontal else 'back'}_{st.session_state.cam_reload}")
     
     st.markdown("#### ⌨️ Digitar código manualmente")
     input_code = st.text_input("", placeholder="Digite ou cole o código aqui...", label_visibility="collapsed")
