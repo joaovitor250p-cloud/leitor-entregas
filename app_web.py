@@ -15,6 +15,13 @@ st.set_page_config(
     page_icon=URL_DO_LOGO,
     layout="centered"
 )
+# --- SISTEMA DE TELA LIGADA ---
+js_wake = """<script>
+async function keepAwake() { if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (e) {} } }
+document.addEventListener('visibilitychange', keepAwake);
+keepAwake();
+</script>"""
+components.html(js_wake, height=0)
 
 # Memória de Bipados
 if "pacotes_bipados" not in st.session_state:
