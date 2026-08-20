@@ -119,37 +119,37 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO
+# CSS DINÂMICO - CÂMERA GRANDE E EXPANDIDA
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
-.block-container {{ padding-top: 3.2rem !important; padding-bottom: 2rem !important; }}
+.block-container {{ padding-top: 3rem !important; padding-bottom: 2rem !important; }}
 
 .hero-card {{
     background-color: {t['card_bg']};
-    padding: 20px 16px;
+    padding: 18px 14px;
     border-radius: 20px;
     border: 2px solid {t['border']};
     text-align: center;
     box-shadow: 0 8px 24px {t['shadow']};
-    margin-top: 4px;
-    margin-bottom: 12px;
+    margin-top: 2px;
+    margin-bottom: 10px;
 }}
-.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-top: 2px; margin-bottom: 8px; }}
-.welcome-title {{ font-size: 1.9rem; font-weight: 900; color: {t['text_app']}; letter-spacing: 2px; text-transform: uppercase; }}
-.welcome-subtitle {{ font-size: 0.72rem; color: {t['subtext']}; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }}
+.welcome-logo {{ width: 75px; height: 75px; object-fit: contain; margin-bottom: 6px; }}
+.welcome-title {{ font-size: 1.8rem; font-weight: 900; color: {t['text_app']}; letter-spacing: 2px; text-transform: uppercase; }}
+.welcome-subtitle {{ font-size: 0.7rem; color: {t['subtext']}; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }}
 
 .upload-card {{
     background-color: {t['card_bg']};
-    padding: 18px;
+    padding: 16px;
     border-radius: 18px;
     border: 2px dashed {t['border']};
     text-align: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }}
-.upload-title {{ font-size: 1.1rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
-.upload-sub {{ font-size: 0.8rem; color: {t['subtext']}; margin-bottom: 6px; }}
-.upload-arrow {{ font-size: 1.6rem; animation: bounce 1.5s infinite; }}
+.upload-title {{ font-size: 1.05rem; font-weight: 800; color: {t['text_app']}; margin-bottom: 4px; }}
+.upload-sub {{ font-size: 0.78rem; color: {t['subtext']}; margin-bottom: 4px; }}
+.upload-arrow {{ font-size: 1.4rem; animation: bounce 1.5s infinite; }}
 
 @keyframes bounce {{
     0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }}
@@ -171,29 +171,29 @@ css_style = f"""
 .stat-banner {{
     background-color: {t['card_bg']};
     border-radius: 16px;
-    padding: 16px 8px;
+    padding: 14px 8px;
     border: 2px solid {t['border']};
     display: flex;
     justify-content: space-around;
     text-align: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     box-shadow: 0 6px 18px {t['shadow']};
 }}
 .stat-item {{ flex: 1; }}
-.stat-value {{ font-size: 1.6rem; font-weight: 900; color: {t['text_app']}; line-height: 1.1; }}
-.stat-label {{ font-size: 0.78rem; color: {t['subtext']}; font-weight: 900; margin-top: 4px; letter-spacing: 0.8px; text-transform: uppercase; }}
+.stat-value {{ font-size: 1.5rem; font-weight: 900; color: {t['text_app']}; line-height: 1.1; }}
+.stat-label {{ font-size: 0.75rem; color: {t['subtext']}; font-weight: 900; margin-top: 4px; letter-spacing: 0.8px; text-transform: uppercase; }}
 
 .custom-card {{
     background-color: {t['card_bg']};
-    padding: 18px;
+    padding: 16px;
     border-radius: 14px;
     border: 2px solid {t['border']};
-    margin-bottom: 15px;
+    margin-bottom: 14px;
     text-align: center;
     color: {t['text_app']};
     box-shadow: 0 4px 14px {t['shadow']};
 }}
-.stop-number-big {{ font-size: 4.5rem; font-weight: 900; color: {t['text_app']}; line-height: 1; margin-bottom: 8px; }}
+.stop-number-big {{ font-size: 4.5rem; font-weight: 900; color: {t['text_app']}; line-height: 1; margin-bottom: 6px; }}
 
 .pix-card {{
     background-color: {t['card_bg']};
@@ -201,26 +201,28 @@ css_style = f"""
     border-radius: 14px;
     padding: 16px;
     text-align: center;
-    margin-top: 20px;
+    margin-top: 18px;
     box-shadow: 0 4px 12px {t['shadow']};
 }}
 .pix-title {{ font-size: 0.95rem; font-weight: 900; color: {t['text_app']}; margin-bottom: 6px; letter-spacing: 0.5px; }}
 .pix-desc {{ font-size: 0.82rem; color: {t['subtext']}; margin-bottom: 12px; line-height: 1.4; }}
 .pix-key {{ font-size: 0.9rem; font-weight: 800; color: {t['text_app']}; background: rgba(127,127,127,0.18); padding: 6px 10px; border-radius: 8px; display: inline-block; }}
 
-.camera-header {{ text-align: center; margin-top: 4px; margin-bottom: 8px; }}
+.camera-header {{ text-align: center; margin-top: 2px; margin-bottom: 6px; }}
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
+/* CÂMERA GIGANTE NA TELA DO CELULAR */
 div[data-testid='stCustomComponentV1'],
-div[data-testid='stCustomComponentV1'] > iframe {{
+div[data-testid='stCustomComponentV1'] > iframe,
+iframe[title*='qrcode_scanner'] {{
     width: 100% !important;
-    height: 480px !important;
-    min-height: 480px !important;
-    border-radius: 18px !important;
-    border: 2px solid {t['border']} !important;
+    height: 560px !important;
+    min-height: 560px !important;
+    border-radius: 20px !important;
+    border: 2.5px solid {t['border']} !important;
     background-color: #000000 !important;
-    margin-bottom: 15px !important;
+    margin-bottom: 14px !important;
     overflow: hidden !important;
     display: block !important;
 }}
@@ -235,7 +237,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH, BEEP E AJUSTE DE ALTURA DO VÍDEO
+# SCRIPT: AMPLIAÇÃO DA ÁREA DE ENQUADRAMENTO E FLASH
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -251,57 +253,79 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
-async function ajustarLayoutCamera() {{
+async function expandirCameraEAreaDeBip() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             var ifr = iframes[i];
-            ifr.style.height = '480px';
-            ifr.style.minHeight = '480px';
+            ifr.style.height = '560px';
+            ifr.style.minHeight = '560px';
             
             var doc = ifr.contentDocument || ifr.contentWindow.document;
             if (doc) {{
                 doc.body.style.margin = "0";
                 doc.body.style.padding = "0";
                 doc.body.style.height = "100%";
+                doc.body.style.width = "100%";
                 
                 var video = doc.querySelector('video');
                 if (video) {{
                     video.style.height = '100%';
                     video.style.width = '100%';
-                    video.style.minHeight = '480px';
+                    video.style.minHeight = '560px';
                     video.style.objectFit = 'cover';
-                    
-                    if ("{modo_cam_js}" === "environment" && video.srcObject) {{
-                        if (!doc.getElementById('btn-flash')) {{
-                            var btn = doc.createElement('button');
-                            btn.id = 'btn-flash';
-                            btn.innerHTML = '🔦 Flash';
-                            btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:99999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
-                            btn.onclick = async function() {{
-                                try {{
-                                    var track = video.srcObject.getVideoTracks()[0];
-                                    var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
-                                    if (capabilities.torch) {{
-                                        var on = btn.innerHTML.includes('ON');
-                                        await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                                    }}
-                                }} catch(err) {{}}
-                            }};
-                            doc.body.appendChild(btn);
-                        }}
-                    }} else {{
-                        var flashBtn = doc.getElementById('btn-flash');
-                        if (flashBtn) flashBtn.remove();
+                    video.style.display = 'block';
+                }}
+                
+                // Amplia a mira/área quadrada branca de leitura na tela
+                var svgOverlay = doc.querySelector('svg');
+                if (svgOverlay) {{
+                    svgOverlay.style.width = '88%';
+                    svgOverlay.style.height = '80%';
+                    svgOverlay.style.maxWidth = '360px';
+                    svgOverlay.style.maxHeight = '360px';
+                }}
+                
+                var divs = doc.querySelectorAll('div');
+                divs.forEach(function(d) {{
+                    if (d.style && (d.style.border || d.style.borderColor || d.className.includes('overlay') || d.className.includes('finder'))) {{
+                        d.style.width = '88%';
+                        d.style.height = '80%';
+                        d.style.maxWidth = '360px';
+                        d.style.maxHeight = '360px';
                     }}
+                }});
+
+                // Flash na câmera traseira
+                if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
+                    if (!doc.getElementById('btn-flash')) {{
+                        var btn = doc.createElement('button');
+                        btn.id = 'btn-flash';
+                        btn.innerHTML = '🔦 Flash';
+                        btn.style.cssText = 'position:absolute; top:14px; right:14px; z-index:99999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 18px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 3px 12px {t['shadow']};';
+                        btn.onclick = async function() {{
+                            try {{
+                                var track = video.srcObject.getVideoTracks()[0];
+                                var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
+                                if (capabilities.torch) {{
+                                    var on = btn.innerHTML.includes('ON');
+                                    await track.applyConstraints({{advanced: [{{torch: !on}}]}});
+                                    btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                                }}
+                            }} catch(err) {{}}
+                        }};
+                        doc.body.appendChild(btn);
+                    }}
+                }} else {{
+                    var flashBtn = doc.getElementById('btn-flash');
+                    if (flashBtn) flashBtn.remove();
                 }}
             }}
         }} catch(e) {{}}
     }}
 }}
 
-setInterval(ajustarLayoutCamera, 350);
+setInterval(expandirCameraEAreaDeBip, 350);
 </script>
 """
 components.html(js_camera, height=0)
