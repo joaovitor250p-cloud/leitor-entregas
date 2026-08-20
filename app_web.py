@@ -119,29 +119,29 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO
+# CSS DINÂMICO (CÂMERA EXPANDIDA E MAIOR ÁREA VISUAL)
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
-.block-container {{ padding-top: 3.8rem !important; padding-bottom: 2rem !important; }}
+.block-container {{ padding-top: 3.2rem !important; padding-bottom: 2rem !important; }}
 
 .hero-card {{
     background-color: {t['card_bg']};
-    padding: 24px 18px;
+    padding: 20px 16px;
     border-radius: 20px;
     border: 2px solid {t['border']};
     text-align: center;
     box-shadow: 0 8px 24px {t['shadow']};
-    margin-top: 8px;
-    margin-bottom: 14px;
+    margin-top: 4px;
+    margin-bottom: 12px;
 }}
-.welcome-logo {{ width: 85px; height: 85px; object-fit: contain; margin-top: 4px; margin-bottom: 12px; }}
-.welcome-title {{ font-size: 2rem; font-weight: 900; color: {t['text_app']}; letter-spacing: 2px; text-transform: uppercase; }}
+.welcome-logo {{ width: 80px; height: 80px; object-fit: contain; margin-top: 2px; margin-bottom: 8px; }}
+.welcome-title {{ font-size: 1.9rem; font-weight: 900; color: {t['text_app']}; letter-spacing: 2px; text-transform: uppercase; }}
 .welcome-subtitle {{ font-size: 0.72rem; color: {t['subtext']}; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }}
 
 .upload-card {{
     background-color: {t['card_bg']};
-    padding: 20px;
+    padding: 18px;
     border-radius: 18px;
     border: 2px dashed {t['border']};
     text-align: center;
@@ -176,7 +176,7 @@ css_style = f"""
     display: flex;
     justify-content: space-around;
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     box-shadow: 0 6px 18px {t['shadow']};
 }}
 .stat-item {{ flex: 1; }}
@@ -185,7 +185,7 @@ css_style = f"""
 
 .custom-card {{
     background-color: {t['card_bg']};
-    padding: 16px;
+    padding: 18px;
     border-radius: 14px;
     border: 2px solid {t['border']};
     margin-bottom: 15px;
@@ -193,7 +193,7 @@ css_style = f"""
     color: {t['text_app']};
     box-shadow: 0 4px 14px {t['shadow']};
 }}
-.stop-number-big {{ font-size: 4.2rem; font-weight: 900; color: {t['text_app']}; line-height: 1; margin-bottom: 8px; }}
+.stop-number-big {{ font-size: 4.5rem; font-weight: 900; color: {t['text_app']}; line-height: 1; margin-bottom: 8px; }}
 
 .pix-card {{
     background-color: {t['card_bg']};
@@ -208,13 +208,15 @@ css_style = f"""
 .pix-desc {{ font-size: 0.82rem; color: {t['subtext']}; margin-bottom: 12px; line-height: 1.4; }}
 .pix-key {{ font-size: 0.9rem; font-weight: 800; color: {t['text_app']}; background: rgba(127,127,127,0.18); padding: 6px 10px; border-radius: 8px; display: inline-block; }}
 
-.camera-header {{ text-align: center; margin-top: 5px; margin-bottom: 8px; }}
+.camera-header {{ text-align: center; margin-top: 4px; margin-bottom: 8px; }}
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
+/* AUMENTO DA ALTURA E ÁREA DA CÂMERA */
 div[data-testid='stCustomComponentV1'] {{
     width: 100% !important;
-    border-radius: 16px;
+    min-height: 380px !important;
+    border-radius: 18px;
     border: 2px solid {t['border']};
     background-color: #000000;
     margin-bottom: 15px;
@@ -231,7 +233,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FORÇAR CÂMERA, FLASH E BEEP
+# SCRIPT: RESOLUÇÃO HD (ALTO ALCANCE), FLASH E BEEP
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -249,7 +251,7 @@ function playBeep() {{
 
 var trocandoSensor = false;
 
-async function forcarCamera() {{
+async function otimizarCamera() {{
     if (trocandoSensor) return;
     
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -259,6 +261,11 @@ async function forcarCamera() {{
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
                 
+                // Ajusta estilos internos do iframe para tela cheia
+                video.style.width = "100%";
+                video.style.height = "100%";
+                video.style.objectFit = "cover";
+                
                 if (video && video.dataset.sensorAtivo !== "{modo_cam_js}") {{
                     trocandoSensor = true;
                     video.dataset.sensorAtivo = "{modo_cam_js}";
@@ -267,11 +274,19 @@ async function forcarCamera() {{
                         video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
                     }}
                     
+                    // Força Alta Resolução (1080p) e foco contínuo para leitura de longe
+                    var constraints = {{
+                        video: {{
+                            facingMode: "{modo_cam_js}",
+                            width: {{ ideal: 1920, min: 1280 }},
+                            height: {{ ideal: 1080, min: 720 }},
+                            focusMode: "continuous"
+                        }},
+                        audio: false
+                    }};
+                    
                     try {{
-                        var stream = await navigator.mediaDevices.getUserMedia({{
-                            video: {{ facingMode: "{modo_cam_js}" }},
-                            audio: false
-                        }});
+                        var stream = await navigator.mediaDevices.getUserMedia(constraints);
                         video.srcObject = stream;
                         video.setAttribute("playsinline", "true");
                         await video.play();
@@ -287,12 +302,13 @@ async function forcarCamera() {{
                     }}
                 }}
                 
+                // Botão de Flash na câmera traseira
                 if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
                         btn.id = 'btn-flash';
                         btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:10px; right:10px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
+                        btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
                         btn.onclick = async function() {{
                             try {{
                                 var track = video.srcObject.getVideoTracks()[0];
@@ -317,7 +333,7 @@ async function forcarCamera() {{
     }}
 }}
 
-setInterval(forcarCamera, 500);
+setInterval(otimizarCamera, 500);
 </script>
 """
 components.html(js_camera, height=0)
@@ -389,14 +405,13 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA DO HISTÓRICO
+# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA
 if arquivo_pdf:
     pdf_bytes = arquivo_pdf.getvalue()
     hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
     nome_salvamento = f"progresso_{hash_pdf}.json"
     st.session_state.arquivo_salvo_atual = nome_salvamento
 
-    # Se já existir progresso salvo desse PDF, restaura automaticamente
     if os.path.exists(nome_salvamento) and not st.session_state.pacotes_bipados:
         try:
             with open(nome_salvamento, "r", encoding="utf-8") as f:
@@ -506,7 +521,6 @@ if arquivo_pdf:
         if achou and pacote_identificado:
             st.session_state.pacotes_bipados.add(pacote_identificado)
             
-            # Grava no disco imediatamente
             if st.session_state.arquivo_salvo_atual:
                 try:
                     with open(st.session_state.arquivo_salvo_atual, "w", encoding="utf-8") as f:
