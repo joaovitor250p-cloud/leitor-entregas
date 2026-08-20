@@ -119,7 +119,7 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO - CORREÇÃO DEFINITIVA DA ALTURA DA CÂMERA
+# CSS DINÂMICO - CÂMERA COM ALTURA FORÇADA
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
@@ -212,12 +212,12 @@ css_style = f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
-/* FORÇA A EXPANSÃO REAL DO CONTAINER E DO IFRAME DA CÂMERA */
-div[data-testid='stCustomComponentV1'], 
-div[data-testid='stCustomComponentV1'] > iframe {{
+/* FORÇA ABERTURA TOTAL DA CÂMERA */
+div[data-testid='stCustomComponentV1'],
+div[data-testid='stCustomComponentV1'] iframe {{
     width: 100% !important;
-    height: 380px !important;
-    min-height: 380px !important;
+    height: 420px !important;
+    min-height: 420px !important;
     border-radius: 18px !important;
     border: 2px solid {t['border']} !important;
     background-color: #000000 !important;
@@ -236,7 +236,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: EXPANSÃO DO VÍDEO NO DISPLAY, FLASH E BEEP
+# SCRIPT: FLASH, BEEP E AJUSTE DE TAMANHO INTERNO DO VÍDEO
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -252,60 +252,27 @@ function playBeep() {{
     }} catch(e) {{}}
 }}
 
-var trocandoSensor = false;
-
-async function forcarCamera() {{
+async function ajustarLayoutCamera() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
+            iframes[i].style.height = '420px';
+            iframes[i].style.minHeight = '420px';
+            
             var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
             if (doc && doc.querySelector('video')) {{
                 var video = doc.querySelector('video');
+                video.style.height = '100%';
+                video.style.width = '100%';
+                video.style.objectFit = 'cover';
                 
-                // Força o container e o iframe a manterem 380px de altura
-                iframes[i].style.height = "380px";
-                iframes[i].style.minHeight = "380px";
-                
-                // Estica o vídeo para cobrir todo o visor
-                video.style.width = "100%";
-                video.style.height = "100%";
-                video.style.objectFit = "cover";
-                
-                if (video && video.dataset.sensorAtivo !== "{modo_cam_js}" && !trocandoSensor) {{
-                    trocandoSensor = true;
-                    video.dataset.sensorAtivo = "{modo_cam_js}";
-                    
-                    if (video.srcObject) {{
-                        video.srcObject.getTracks().forEach(function(t) {{ t.stop(); }});
-                    }}
-                    
-                    try {{
-                        var stream = await navigator.mediaDevices.getUserMedia({{
-                            video: {{ facingMode: "{modo_cam_js}" }},
-                            audio: false
-                        }});
-                        video.srcObject = stream;
-                        video.setAttribute("playsinline", "true");
-                        await video.play();
-                    }} catch(err) {{
-                        try {{
-                            var fallback = await navigator.mediaDevices.getUserMedia({{ video: true, audio: false }});
-                            video.srcObject = fallback;
-                            video.setAttribute("playsinline", "true");
-                            await video.play();
-                        }} catch(e) {{}}
-                    }} finally {{
-                        trocandoSensor = false;
-                    }}
-                }}
-                
-                // Flash só para câmera traseira
-                if ("{modo_cam_js}" === "environment" && video && video.srcObject) {{
+                // Botão Flash na câmera traseira
+                if ("{modo_cam_js}" === "environment" && video.srcObject) {{
                     if (!doc.getElementById('btn-flash')) {{
                         var btn = doc.createElement('button');
                         btn.id = 'btn-flash';
                         btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:99999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:6px 14px; border-radius:18px; font-weight:900; font-size:12px; cursor:pointer; box-shadow:0 2px 8px {t['shadow']};';
+                        btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
                         btn.onclick = async function() {{
                             try {{
                                 var track = video.srcObject.getVideoTracks()[0];
@@ -319,18 +286,16 @@ async function forcarCamera() {{
                         }};
                         doc.body.appendChild(btn);
                     }}
-                }} else if (doc) {{
+                }} else {{
                     var flashBtn = doc.getElementById('btn-flash');
                     if (flashBtn) flashBtn.remove();
                 }}
             }}
-        }} catch(e) {{
-            trocandoSensor = false;
-        }}
+        }} catch(e) {{}}
     }}
 }}
 
-setInterval(forcarCamera, 500);
+setInterval(ajustarLayoutCamera, 400);
 </script>
 """
 components.html(js_camera, height=0)
@@ -402,7 +367,7 @@ stop_correspondente = {}
 nome_exibicao = {}
 todos_pacotes = set()
 
-# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA DO HISTÓRICO
+# PROCESSAMENTO DO PDF E RECUPERAÇÃO AUTOMÁTICA
 if arquivo_pdf:
     pdf_bytes = arquivo_pdf.getvalue()
     hash_pdf = hashlib.md5(pdf_bytes).hexdigest()
