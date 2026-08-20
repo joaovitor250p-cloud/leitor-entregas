@@ -119,7 +119,7 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO - CÂMERA EXPANDIDA
+# CSS DINÂMICO
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
@@ -212,14 +212,11 @@ css_style = f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
-/* FORÇA O ENQUADRAMENTO COMPLETO DA CÂMERA */
 div[data-testid='stCustomComponentV1'],
-div[data-testid='stCustomComponentV1'] > iframe,
-iframe[title*='qrcode_scanner'] {{
+div[data-testid='stCustomComponentV1'] > iframe {{
     width: 100% !important;
     height: 480px !important;
     min-height: 480px !important;
-    max-height: 480px !important;
     border-radius: 18px !important;
     border: 2px solid {t['border']} !important;
     background-color: #000000 !important;
@@ -238,7 +235,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: DESTRAVA ALTURA TOTAL E POSICIONA O FLASH
+# SCRIPT: FLASH, BEEP E AJUSTE DE ALTURA DO VÍDEO
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -257,62 +254,51 @@ function playBeep() {{
 async function ajustarLayoutCamera() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {
+        try {{
             var ifr = iframes[i];
-            if (ifr.title && ifr.title.includes('qrcode_scanner') || ifr.srcdoc === "" || ifr.offsetHeight < 450) {
-                ifr.style.height = '480px';
-                ifr.style.minHeight = '480px';
-                ifr.style.maxHeight = '480px';
-            }
+            ifr.style.height = '480px';
+            ifr.style.minHeight = '480px';
             
             var doc = ifr.contentDocument || ifr.contentWindow.document;
-            if (doc) {
+            if (doc) {{
                 doc.body.style.margin = "0";
                 doc.body.style.padding = "0";
                 doc.body.style.height = "100%";
-                doc.body.style.overflow = "hidden";
-                
-                var allDivs = doc.querySelectorAll('div');
-                allDivs.forEach(function(d) {
-                    d.style.height = "100%";
-                });
                 
                 var video = doc.querySelector('video');
-                if (video) {
+                if (video) {{
                     video.style.height = '100%';
                     video.style.width = '100%';
                     video.style.minHeight = '480px';
                     video.style.objectFit = 'cover';
-                    video.style.display = 'block';
                     
-                    // Botão Flash na câmera traseira
-                    if ("{modo_cam_js}" === "environment" && video.srcObject) {
-                        if (!doc.getElementById('btn-flash')) {
+                    if ("{modo_cam_js}" === "environment" && video.srcObject) {{
+                        if (!doc.getElementById('btn-flash')) {{
                             var btn = doc.createElement('button');
                             btn.id = 'btn-flash';
                             btn.innerHTML = '🔦 Flash';
                             btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:99999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
-                            btn.onclick = async function() {
-                                try {
+                            btn.onclick = async function() {{
+                                try {{
                                     var track = video.srcObject.getVideoTracks()[0];
-                                    var capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                                    if (capabilities.torch) {
+                                    var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
+                                    if (capabilities.torch) {{
                                         var on = btn.innerHTML.includes('ON');
-                                        await track.applyConstraints({advanced: [{torch: !on}]});
+                                        await track.applyConstraints({{advanced: [{{torch: !on}}]}});
                                         btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                                    }
-                                } catch(err) {}
-                            };
+                                    }}
+                                }} catch(err) {{}}
+                            }};
                             doc.body.appendChild(btn);
-                        }
-                    } else {
+                        }}
+                    }} else {{
                         var flashBtn = doc.getElementById('btn-flash');
                         if (flashBtn) flashBtn.remove();
-                    }
-                }
-            }
-        } catch(e) {}
-    }
+                    }}
+                }}
+            }}
+        }} catch(e) {{}}
+    }}
 }}
 
 setInterval(ajustarLayoutCamera, 350);
