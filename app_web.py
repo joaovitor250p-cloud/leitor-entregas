@@ -547,4 +547,51 @@ if arquivo_pdf:
                 rate_val = "1.0"
                 
                 if "Masculina" in tipo_voz:
-                    pitc
+                    pitch_val = "0.6"
+                    rate_val = "0.95"
+                elif "Rápida" in tipo_voz:
+                    pitch_val = "1.1"
+                    rate_val = "1.35"
+
+                js_audio = f"""
+                <script>
+                (function() {{
+                    try {{
+                        window.speechSynthesis.cancel();
+                        var msg = new SpeechSynthesisUtterance('{fala_texto}');
+                        msg.lang = 'pt-BR';
+                        msg.pitch = {pitch_val};
+                        msg.rate = {rate_val};
+                        window.speechSynthesis.speak(msg);
+                    }} catch(e) {{}}
+                }})();
+                </script>
+                """
+                components.html(js_audio, height=0)
+        else:
+            st.error(f"❌ Código `{cod_limpo or bruto}` não encontrado no PDF!")
+            st.caption(f"Valor bruto lido: `{bruto}`")
+
+    # ATUALIZAÇÃO DOS CONTADORES ACIMA DA CÂMERA
+    bipados = len(st.session_state.pacotes_bipados)
+    total_pacotes = len(todos_pacotes)
+    faltam = max(0, total_pacotes - bipados)
+    total_paradas = len(mapa_rotas)
+    
+    html_stats = f"""
+    <div class="stat-banner">
+        <div class="stat-item">
+            <div class="stat-value">{bipados} / {total_pacotes}</div>
+            <div class="stat-label">PACOTES</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{total_paradas}</div>
+            <div class="stat-label">PARADAS REAIS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{faltam}</div>
+            <div class="stat-label">FALTAM</div>
+        </div>
+    </div>
+    """
+    stats_placeholder.markdown(html_stats, unsafe_allow_html=True)
