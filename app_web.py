@@ -119,7 +119,7 @@ with st.sidebar:
 
 t = estilos_temas[tema_cor]
 
-# CSS DINÂMICO - CÂMERA COM ALTURA FORÇADA
+# CSS DINÂMICO - CÂMERA EXPANDIDA
 css_style = f"""
 <style>
 .stApp {{ background-color: {t['bg_app']} !important; color: {t['text_app']} !important; }}
@@ -212,12 +212,14 @@ css_style = f"""
 .camera-title {{ font-size: 1.05rem; font-weight: 900; color: {t['text_app']}; text-transform: uppercase; }}
 .camera-sub {{ font-size: 0.78rem; color: {t['subtext']}; }}
 
-/* FORÇA ABERTURA TOTAL DA CÂMERA */
+/* FORÇA O ENQUADRAMENTO COMPLETO DA CÂMERA */
 div[data-testid='stCustomComponentV1'],
-div[data-testid='stCustomComponentV1'] iframe {{
+div[data-testid='stCustomComponentV1'] > iframe,
+iframe[title*='qrcode_scanner'] {{
     width: 100% !important;
-    height: 420px !important;
-    min-height: 420px !important;
+    height: 480px !important;
+    min-height: 480px !important;
+    max-height: 480px !important;
     border-radius: 18px !important;
     border: 2px solid {t['border']} !important;
     background-color: #000000 !important;
@@ -236,7 +238,7 @@ div[data-testid='stExpander'] {{
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# SCRIPT: FLASH, BEEP E AJUSTE DE TAMANHO INTERNO DO VÍDEO
+# SCRIPT: DESTRAVA ALTURA TOTAL E POSICIONA O FLASH
 modo_cam_js = "user" if usar_frontal else "environment"
 js_camera = f"""
 <script>
@@ -255,47 +257,65 @@ function playBeep() {{
 async function ajustarLayoutCamera() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{
-            iframes[i].style.height = '420px';
-            iframes[i].style.minHeight = '420px';
+        try {
+            var ifr = iframes[i];
+            if (ifr.title && ifr.title.includes('qrcode_scanner') || ifr.srcdoc === "" || ifr.offsetHeight < 450) {
+                ifr.style.height = '480px';
+                ifr.style.minHeight = '480px';
+                ifr.style.maxHeight = '480px';
+            }
             
-            var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
-            if (doc && doc.querySelector('video')) {{
-                var video = doc.querySelector('video');
-                video.style.height = '100%';
-                video.style.width = '100%';
-                video.style.objectFit = 'cover';
+            var doc = ifr.contentDocument || ifr.contentWindow.document;
+            if (doc) {
+                doc.body.style.margin = "0";
+                doc.body.style.padding = "0";
+                doc.body.style.height = "100%";
+                doc.body.style.overflow = "hidden";
                 
-                // Botão Flash na câmera traseira
-                if ("{modo_cam_js}" === "environment" && video.srcObject) {{
-                    if (!doc.getElementById('btn-flash')) {{
-                        var btn = doc.createElement('button');
-                        btn.id = 'btn-flash';
-                        btn.innerHTML = '🔦 Flash';
-                        btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:9999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
-                        btn.onclick = async function() {{
-                            try {{
-                                var track = video.srcObject.getVideoTracks()[0];
-                                var capabilities = track.getCapabilities ? track.getCapabilities() : {{}};
-                                if (capabilities.torch) {{
-                                    var on = btn.innerHTML.includes('ON');
-                                    await track.applyConstraints({{advanced: [{{torch: !on}}]}});
-                                    btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
-                                }}
-                            }} catch(err) {{}}
-                        }};
-                        doc.body.appendChild(btn);
-                    }}
-                }} else {{
-                    var flashBtn = doc.getElementById('btn-flash');
-                    if (flashBtn) flashBtn.remove();
-                }}
-            }}
-        }} catch(e) {{}}
-    }}
+                var allDivs = doc.querySelectorAll('div');
+                allDivs.forEach(function(d) {
+                    d.style.height = "100%";
+                });
+                
+                var video = doc.querySelector('video');
+                if (video) {
+                    video.style.height = '100%';
+                    video.style.width = '100%';
+                    video.style.minHeight = '480px';
+                    video.style.objectFit = 'cover';
+                    video.style.display = 'block';
+                    
+                    // Botão Flash na câmera traseira
+                    if ("{modo_cam_js}" === "environment" && video.srcObject) {
+                        if (!doc.getElementById('btn-flash')) {
+                            var btn = doc.createElement('button');
+                            btn.id = 'btn-flash';
+                            btn.innerHTML = '🔦 Flash';
+                            btn.style.cssText = 'position:absolute; top:12px; right:12px; z-index:99999; background:{t['btn_bg']}; color:{t['btn_text']}; border:2px solid {t['border']}; padding:8px 16px; border-radius:20px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 10px {t['shadow']};';
+                            btn.onclick = async function() {
+                                try {
+                                    var track = video.srcObject.getVideoTracks()[0];
+                                    var capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                                    if (capabilities.torch) {
+                                        var on = btn.innerHTML.includes('ON');
+                                        await track.applyConstraints({advanced: [{torch: !on}]});
+                                        btn.innerHTML = !on ? '⚡ Flash ON' : '🔦 Flash';
+                                    }
+                                } catch(err) {}
+                            };
+                            doc.body.appendChild(btn);
+                        }
+                    } else {
+                        var flashBtn = doc.getElementById('btn-flash');
+                        if (flashBtn) flashBtn.remove();
+                    }
+                }
+            }
+        } catch(e) {}
+    }
 }}
 
-setInterval(ajustarLayoutCamera, 400);
+setInterval(ajustarLayoutCamera, 350);
 </script>
 """
 components.html(js_camera, height=0)
